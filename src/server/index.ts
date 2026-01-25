@@ -33,6 +33,17 @@ app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// Serve static frontend in production
+if (process.env.NODE_ENV === 'production') {
+  const clientPath = path.join(__dirname, '../client');
+  app.use(express.static(clientPath));
+
+  // Handle SPA routing - serve index.html for all non-API routes
+  app.get('*', (_req, res) => {
+    res.sendFile(path.join(clientPath, 'index.html'));
+  });
+}
+
 // Error handling middleware
 app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error(err.stack);
