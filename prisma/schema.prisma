@@ -1,0 +1,115 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+// Users - managers and admins who review applicants
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      String   @default("reviewer") // admin, hiring_manager, reviewer
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  reviews   Review[]
+  jobs      Job[]    @relation("JobCreator")
+}
+
+// Job postings
+model Job {
+  id          String   @id @default(uuid())
+  title       String
+  department  String   // e.g., "Design", "Project Management", "Engineering"
+  location    String
+  type        String   // full-time, part-time, contract, internship
+  description String
+  requirements String
+  salary      String?
+  status      String   @default("open") // open, closed, on-hold
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  closedAt    DateTime?
+
+  createdBy   User     @relation("JobCreator", fields: [createdById], references: [id])
+  createdById String
+
+  applicants  Applicant[]
+}
+
+// Applicants applying for jobs
+model Applicant {
+  id              String   @id @default(uuid())
+  firstName       String
+  lastName        String
+  email           String
+  phone           String?
+  linkedIn        String?
+  website         String?
+
+  // Resume and portfolio
+  resumePath      String?
+  portfolioPath   String?
+  portfolioUrl    String?  // external portfolio link
+
+  // Application details
+  coverLetter     String?
+  yearsExperience Int?
+  currentCompany  String?
+  currentTitle    String?
+
+  // Workflow status
+  stage           String   @default("new") // new, screening, interview, offer, hired, rejected
+  source          String?  // where they applied from
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  job             Job      @relation(fields: [jobId], references: [id])
+  jobId           String
+
+  reviews         Review[]
+  notes           Note[]
+}
+
+// Reviews/ratings from managers
+model Review {
+  id          String   @id @default(uuid())
+  rating      Int      // 1-5 stars
+
+  // Specific criteria ratings for architecture firms
+  technicalSkills   Int?  // 1-5
+  designAbility     Int?  // 1-5
+  portfolioQuality  Int?  // 1-5
+  communication     Int?  // 1-5
+  cultureFit        Int?  // 1-5
+
+  recommendation    String? // strong_yes, yes, maybe, no, strong_no
+  comments          String?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  reviewer    User     @relation(fields: [reviewerId], references: [id])
+  reviewerId  String
+
+  applicant   Applicant @relation(fields: [applicantId], references: [id])
+  applicantId String
+
+  @@unique([reviewerId, applicantId])
+}
+
+// Internal notes on applicants
+model Note {
+  id        String   @id @default(uuid())
+  content   String
+  createdAt DateTime @default(now())
+
+  applicant   Applicant @relation(fields: [applicantId], references: [id])
+  applicantId String
+}
