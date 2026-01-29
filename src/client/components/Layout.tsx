@@ -20,7 +20,7 @@ export default function Layout() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header */}
       <header className="bg-black text-white shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -111,12 +111,12 @@ export default function Layout() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full">
         <Outlet />
       </main>
 
       {/* Footer */}
-      <footer className="bg-black text-gray-500 py-6 mt-auto">
+      <footer className="bg-black text-gray-500 py-6 sticky bottom-0">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-sm">
           <p>&copy; {new Date().getFullYear()} WHLC Architecture. All rights reserved.</p>
           <p className="mt-1">Baton Rouge, LA | Fairhope, AL | Biloxi, MS</p>
