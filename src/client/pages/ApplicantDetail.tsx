@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import DocumentViewer from '../components/DocumentViewer';
@@ -61,9 +61,14 @@ const stageLabels: Record<string, string> = {
 export default function ApplicantDetail() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [applicant, setApplicant] = useState<Applicant | null>(null);
   const [loading, setLoading] = useState(true);
   const [showReviewModal, setShowReviewModal] = useState(false);
+  const [showRejectionModal, setShowRejectionModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [pendingStage, setPendingStage] = useState<string | null>(null);
   const [newNote, setNewNote] = useState('');
   const [addingNote, setAddingNote] = useState(false);
   const [viewingDocument, setViewingDocument] = useState<{ url: string; title: string } | null>(null);
@@ -80,6 +85,22 @@ export default function ApplicantDetail() {
       setApplicant(res.data);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const getRejectionDate = (): string | null => {
+    if (!applicant) return null;
+    const note = applicant.notes.find((n) => n.content.startsWith('Rejection letter sent on '));
+    if (!note) return null;
+    return note.content.replace('Rejection letter sent on ', '');
+  };
+
+  const handleStageClick = (stage: string) => {
+    if (!applicant) return;
+    if (applicant.stage === 'rejected' && stage !== 'rejected' && getRejectionDate()) {
+      setPendingStage(stage);
+    } else {
+      updateStage(stage);
     }
   };
 
@@ -105,6 +126,21 @@ export default function ApplicantDetail() {
       setAddingNote(false);
     }
   };
+
+  const deleteApplicant = async () => {
+    if (!id) return;
+    setDeleting(true);
+    try {
+      await api.delete(`/applicants/${id}`);
+      navigate('/applicants');
+    } catch (err) {
+      console.error('Failed to delete applicant:', err);
+      setDeleting(false);
+      setShowDeleteModal(false);
+    }
+  };
+
+  const canDelete = user?.role === 'admin' || user?.role === 'hiring_manager';
 
   if (loading) {
     return (
@@ -194,6 +230,22 @@ export default function ApplicantDetail() {
             >
               {myReview ? 'Edit My Review' : 'Add Review'}
             </button>
+            {applicant.stage !== 'rejected' && applicant.stage !== 'hired' && (
+              <button
+                onClick={() => setShowRejectionModal(true)}
+                className="btn btn-secondary"
+              >
+                Send Rejection Letter
+              </button>
+            )}
+            {canDelete && (
+              <button
+                onClick={() => setShowDeleteModal(true)}
+                className="btn btn-secondary text-red-600 hover:text-red-700"
+              >
+                Delete Applicant
+              </button>
+            )}
           </div>
         </div>
 
@@ -204,7 +256,7 @@ export default function ApplicantDetail() {
             {stages.map((stage) => (
               <button
                 key={stage}
-                onClick={() => updateStage(stage)}
+                onClick={() => handleStageClick(stage)}
                 className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
                   applicant.stage === stage
                     ? stage === 'rejected'
@@ -457,6 +509,92 @@ export default function ApplicantDetail() {
         />
       )}
 
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded max-w-md w-full">
+            <div className="p-6 border-b border-gray-200">
+              <h2 className="text-xl font-display font-semibold uppercase tracking-wide">
+                Delete Applicant
+              </h2>
+            </div>
+            <div className="p-6 space-y-4">
+              <p className="text-gray-700">
+                Are you sure you want to delete <span className="font-medium">{applicant.firstName} {applicant.lastName}</span>?
+                This will permanently remove their application, reviews, and notes.
+              </p>
+              <div className="flex justify-end gap-3 pt-4">
+                <button
+                  onClick={() => setShowDeleteModal(false)}
+                  disabled={deleting}
+                  className="btn btn-secondary"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={deleteApplicant}
+                  disabled={deleting}
+                  className="btn btn-primary bg-red-600 hover:bg-red-700 border-red-600"
+                >
+                  {deleting ? 'Deleting...' : 'Yes, Delete'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Un-reject Confirmation Modal */}
+      {pendingStage && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded max-w-md w-full">
+            <div className="p-6 border-b border-gray-200">
+              <h2 className="text-xl font-display font-semibold uppercase tracking-wide">
+                Un-reject Applicant?
+              </h2>
+            </div>
+            <div className="p-6 space-y-4">
+              <p className="text-gray-700">
+                A rejection letter was sent to <span className="font-medium">{applicant.firstName} {applicant.lastName}</span> on{' '}
+                <span className="font-medium">{getRejectionDate()}</span>.
+              </p>
+              <p className="text-gray-700">
+                Are you sure you want to move this applicant to <span className="font-medium">{stageLabels[pendingStage]}</span>?
+              </p>
+              <div className="flex justify-end gap-3 pt-4">
+                <button
+                  onClick={() => setPendingStage(null)}
+                  className="btn btn-secondary"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    updateStage(pendingStage);
+                    setPendingStage(null);
+                  }}
+                  className="btn btn-primary"
+                >
+                  Yes, Un-reject
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Rejection Modal */}
+      {showRejectionModal && (
+        <RejectionModal
+          applicant={applicant}
+          onClose={() => setShowRejectionModal(false)}
+          onSent={(updated) => {
+            setShowRejectionModal(false);
+            setApplicant(updated);
+          }}
+        />
+      )}
+
       {/* Document Viewer */}
       {viewingDocument && (
         <DocumentViewer
@@ -659,6 +797,108 @@ function ReviewModal({
             </button>
           </div>
         </form>
+      </div>
+    </div>
+  );
+}
+
+function RejectionModal({
+  applicant,
+  onClose,
+  onSent,
+}: {
+  applicant: Applicant;
+  onClose: () => void;
+  onSent: (updated: Applicant) => void;
+}) {
+  const defaultTemplate = `Dear ${applicant.firstName},
+
+Thank you for your interest in the ${applicant.job.title} position and for taking the time to apply. We appreciate the effort you put into your application.
+
+After careful consideration, we have decided to move forward with other candidates whose qualifications more closely align with our current needs.
+
+We encourage you to apply for future openings that match your skills and experience. We wish you all the best in your career search.
+
+Sincerely,
+The Hiring Team`;
+
+  const [emailBody, setEmailBody] = useState(defaultTemplate);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSend = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const res = await api.post<Applicant>(`/applicants/${applicant.id}/send-rejection`, { emailBody });
+      onSent(res.data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to send rejection email');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded max-w-lg w-full max-h-[90vh] overflow-y-auto">
+        <div className="p-6 border-b border-gray-200 sticky top-0 bg-white">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-display font-semibold uppercase tracking-wide">
+              Send Rejection Letter
+            </h2>
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div className="p-6 space-y-4">
+          {error && (
+            <div className="bg-gray-100 border border-gray-300 text-gray-800 px-4 py-3 rounded">
+              {error}
+            </div>
+          )}
+
+          <dl className="grid grid-cols-1 gap-2">
+            <div>
+              <dt className="text-sm text-gray-500">Applicant</dt>
+              <dd className="font-medium">{applicant.firstName} {applicant.lastName}</dd>
+            </div>
+            <div>
+              <dt className="text-sm text-gray-500">Email</dt>
+              <dd className="font-medium">{applicant.email}</dd>
+            </div>
+            <div>
+              <dt className="text-sm text-gray-500">Position</dt>
+              <dd className="font-medium">{applicant.job.title}</dd>
+            </div>
+          </dl>
+
+          <div>
+            <label className="label">Rejection Letter</label>
+            <textarea
+              value={emailBody}
+              onChange={(e) => setEmailBody(e.target.value)}
+              className="input min-h-[200px]"
+            />
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4">
+            <button type="button" onClick={onClose} className="btn btn-secondary">
+              Cancel
+            </button>
+            <button
+              onClick={handleSend}
+              disabled={loading || !emailBody.trim()}
+              className="btn btn-primary"
+            >
+              {loading ? 'Sending...' : 'Send Rejection Letter'}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

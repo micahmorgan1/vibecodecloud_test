@@ -2,6 +2,7 @@ import { Router, Response, Request } from 'express';
 import prisma from '../db.js';
 import { authenticate, requireRole, AuthRequest } from '../middleware/auth.js';
 import { uploadApplicationFiles } from '../middleware/upload.js';
+import { sendRejectionEmail } from '../services/email.js';
 
 const router = Router();
 
@@ -348,8 +349,94 @@ router.get('/:id/notes', authenticate, async (req: AuthRequest, res: Response) =
   }
 });
 
-// Delete applicant
-router.delete('/:id', authenticate, async (req: AuthRequest, res: Response) => {
+// Send rejection email
+router.post('/:id/send-rejection', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { emailBody } = req.body;
+
+    if (!emailBody) {
+      return res.status(400).json({ error: 'Email body is required' });
+    }
+
+    const applicant = await prisma.applicant.findUnique({
+      where: { id },
+      include: { job: { select: { title: true } } },
+    });
+
+    if (!applicant) {
+      return res.status(404).json({ error: 'Applicant not found' });
+    }
+
+    // Send the rejection email (mock in staging)
+    await sendRejectionEmail({
+      to: applicant.email,
+      applicantName: `${applicant.firstName} ${applicant.lastName}`,
+      jobTitle: applicant.job.title,
+      emailBody,
+    });
+
+    // Update stage to rejected and add a note
+    const now = new Date();
+    await Promise.all([
+      prisma.applicant.update({
+        where: { id },
+        data: { stage: 'rejected' },
+        include: {
+          job: {
+            select: { id: true, title: true, department: true, location: true },
+          },
+          reviews: {
+            include: {
+              reviewer: {
+                select: { id: true, name: true, email: true },
+              },
+            },
+            orderBy: { createdAt: 'desc' },
+          },
+          notes: {
+            orderBy: { createdAt: 'desc' },
+          },
+        },
+      }),
+      prisma.note.create({
+        data: {
+          applicantId: id,
+          content: `Rejection letter sent on ${now.toLocaleString()}`,
+        },
+      }),
+    ]);
+
+    // Re-fetch to include the new note
+    const result = await prisma.applicant.findUnique({
+      where: { id },
+      include: {
+        job: {
+          select: { id: true, title: true, department: true, location: true },
+        },
+        reviews: {
+          include: {
+            reviewer: {
+              select: { id: true, name: true, email: true },
+            },
+          },
+          orderBy: { createdAt: 'desc' },
+        },
+        notes: {
+          orderBy: { createdAt: 'desc' },
+        },
+      },
+    });
+
+    res.json(result);
+  } catch (error) {
+    console.error('Send rejection error:', error);
+    res.status(500).json({ error: 'Failed to send rejection email' });
+  }
+});
+
+// Delete applicant (admin or hiring_manager only)
+router.delete('/:id', authenticate, requireRole('admin', 'hiring_manager'), async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
 

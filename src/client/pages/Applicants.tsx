@@ -68,7 +68,7 @@ export default function Applicants() {
 
   const canAdd = currentUser?.role === 'admin' || currentUser?.role === 'hiring_manager';
 
-  const stages = ['new', 'screening', 'interview', 'offer', 'hired', 'rejected'];
+  const stages = ['new', 'screening', 'interview', 'offer', 'hired', 'rejected', 'holding'];
 
   useEffect(() => {
     fetchApplicants();
