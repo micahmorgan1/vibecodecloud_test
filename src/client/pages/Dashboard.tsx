@@ -81,7 +81,7 @@ export default function Dashboard() {
     interview: 'bg-gray-500',
     offer: 'bg-gray-600',
     hired: 'bg-black',
-    rejected: 'bg-gray-200',
+    rejected: 'bg-red-500',
     holding: 'bg-yellow-300',
   };
 

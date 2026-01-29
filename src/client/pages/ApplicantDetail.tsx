@@ -260,7 +260,7 @@ export default function ApplicantDetail() {
                 className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
                   applicant.stage === stage
                     ? stage === 'rejected'
-                      ? 'bg-gray-300 text-gray-700'
+                      ? 'bg-red-500 text-white'
                       : stage === 'hired'
                       ? 'bg-black text-white'
                       : 'bg-gray-900 text-white'
