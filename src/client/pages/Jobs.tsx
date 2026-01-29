@@ -42,19 +42,19 @@ export default function Jobs() {
 
   const statusBadge = (status: string) => {
     const styles: Record<string, string> = {
-      open: 'bg-green-100 text-green-800',
-      closed: 'bg-gray-100 text-gray-800',
-      'on-hold': 'bg-yellow-100 text-yellow-800',
+      open: 'bg-black text-white',
+      closed: 'bg-gray-200 text-gray-500',
+      'on-hold': 'bg-gray-300 text-gray-700',
     };
     return styles[status] || styles.open;
   };
 
   const typeBadge = (type: string) => {
     const styles: Record<string, string> = {
-      'full-time': 'bg-blue-100 text-blue-800',
-      'part-time': 'bg-purple-100 text-purple-800',
-      contract: 'bg-orange-100 text-orange-800',
-      internship: 'bg-pink-100 text-pink-800',
+      'full-time': 'bg-gray-100 text-gray-800 border border-gray-300',
+      'part-time': 'bg-gray-100 text-gray-600 border border-gray-300',
+      contract: 'bg-gray-100 text-gray-600 border border-gray-300',
+      internship: 'bg-gray-100 text-gray-600 border border-gray-300',
     };
     return styles[type] || 'bg-gray-100 text-gray-800';
   };
@@ -64,13 +64,13 @@ export default function Jobs() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-display font-bold text-gray-900">Jobs</h1>
-          <p className="text-gray-600 mt-1">Manage job postings and track applicants</p>
+          <h1 className="text-3xl font-display font-bold text-gray-900 uppercase tracking-wide">Jobs</h1>
+          <p className="text-gray-500 mt-1">Manage job postings and track applicants</p>
         </div>
         {canCreateJob && (
           <button
             onClick={() => setShowCreateModal(true)}
-            className="btn btn-primary"
+            className="btn btn-primary font-display uppercase tracking-wider"
           >
             + Create Job
           </button>
@@ -83,10 +83,10 @@ export default function Jobs() {
           <button
             key={status}
             onClick={() => setStatusFilter(status)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
               statusFilter === status
-                ? 'bg-primary-600 text-white'
-                : 'bg-white text-gray-700 hover:bg-gray-100 border'
+                ? 'bg-black text-white'
+                : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
             }`}
           >
             {status === '' ? 'All' : status.charAt(0).toUpperCase() + status.slice(1)}
@@ -97,7 +97,7 @@ export default function Jobs() {
       {/* Jobs Grid */}
       {loading ? (
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black"></div>
         </div>
       ) : jobs.length === 0 ? (
         <div className="card text-center py-12">
@@ -117,7 +117,7 @@ export default function Jobs() {
             <Link
               key={job.id}
               to={`/jobs/${job.id}`}
-              className="card hover:shadow-lg transition-shadow"
+              className="card hover:shadow-md transition-shadow"
             >
               <div className="flex items-start justify-between mb-3">
                 <span className={`badge ${statusBadge(job.status)}`}>
@@ -128,8 +128,8 @@ export default function Jobs() {
                 </span>
               </div>
 
-              <h3 className="text-lg font-semibold text-gray-900 mb-1">{job.title}</h3>
-              <p className="text-gray-600 text-sm mb-3">{job.department}</p>
+              <h3 className="text-lg font-display font-semibold text-gray-900 mb-1">{job.title}</h3>
+              <p className="text-gray-500 text-sm mb-3">{job.department}</p>
 
               <div className="flex items-center text-sm text-gray-500 mb-3">
                 <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -140,12 +140,12 @@ export default function Jobs() {
               </div>
 
               {job.salary && (
-                <p className="text-sm text-gray-600 mb-3">{job.salary}</p>
+                <p className="text-sm text-gray-500 mb-3">{job.salary}</p>
               )}
 
-              <div className="flex items-center justify-between pt-3 border-t">
+              <div className="flex items-center justify-between pt-3 border-t border-gray-200">
                 <div className="flex items-center text-sm">
-                  <span className="text-primary-600 font-medium">{job._count.applicants}</span>
+                  <span className="text-gray-900 font-medium">{job._count.applicants}</span>
                   <span className="text-gray-500 ml-1">applicants</span>
                 </div>
                 <p className="text-xs text-gray-400">
@@ -207,10 +207,10 @@ function CreateJobModal({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6 border-b sticky top-0 bg-white">
+      <div className="bg-white rounded max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="p-6 border-b border-gray-200 sticky top-0 bg-white">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold">Create New Job</h2>
+            <h2 className="text-xl font-display font-semibold uppercase tracking-wide">Create New Job</h2>
             <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -221,7 +221,7 @@ function CreateJobModal({
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+            <div className="bg-gray-100 border border-gray-300 text-gray-800 px-4 py-3 rounded">
               {error}
             </div>
           )}

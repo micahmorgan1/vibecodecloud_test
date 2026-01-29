@@ -60,6 +60,7 @@ export default function Applicants() {
       offer: 'badge-offer',
       hired: 'badge-hired',
       rejected: 'badge-rejected',
+      holding: 'badge-holding',
     };
     return styles[stage] || 'badge-new';
   };
@@ -71,6 +72,7 @@ export default function Applicants() {
     offer: 'Offer',
     hired: 'Hired',
     rejected: 'Rejected',
+    holding: 'Holding',
   };
 
   const getAverageRating = (reviews: Applicant['reviews']) => {
@@ -83,8 +85,8 @@ export default function Applicants() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-display font-bold text-gray-900">Applicants</h1>
-        <p className="text-gray-600 mt-1">Review and manage job applicants</p>
+        <h1 className="text-3xl font-display font-bold text-gray-900 uppercase tracking-wide">Applicants</h1>
+        <p className="text-gray-500 mt-1">Review and manage job applicants</p>
       </div>
 
       {/* Search and Filters */}
@@ -119,9 +121,9 @@ export default function Applicants() {
         <div className="flex gap-2 flex-wrap mt-4">
           <button
             onClick={() => handleStageChange('')}
-            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+            className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
               stageFilter === ''
-                ? 'bg-primary-600 text-white'
+                ? 'bg-black text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
@@ -131,9 +133,9 @@ export default function Applicants() {
             <button
               key={stage}
               onClick={() => handleStageChange(stage)}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+              className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
                 stageFilter === stage
-                  ? 'bg-primary-600 text-white'
+                  ? 'bg-black text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
@@ -146,7 +148,7 @@ export default function Applicants() {
       {/* Applicants List */}
       {loading ? (
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black"></div>
         </div>
       ) : applicants.length === 0 ? (
         <div className="card text-center py-12">
@@ -166,13 +168,13 @@ export default function Applicants() {
                   <th className="px-6 py-4 font-medium"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y">
+              <tbody className="divide-y divide-gray-100">
                 {applicants.map((applicant) => (
                   <tr key={applicant.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-brand-100 rounded-full flex items-center justify-center">
-                          <span className="text-brand-700 font-medium">
+                        <div className="w-10 h-10 bg-gray-900 rounded-full flex items-center justify-center">
+                          <span className="text-white font-medium">
                             {applicant.firstName[0]}{applicant.lastName[0]}
                           </span>
                         </div>
@@ -187,7 +189,7 @@ export default function Applicants() {
                     <td className="px-6 py-4">
                       <Link
                         to={`/jobs/${applicant.job.id}`}
-                        className="text-primary-600 hover:text-primary-700 font-medium"
+                        className="text-gray-900 hover:text-gray-600 font-medium"
                       >
                         {applicant.job.title}
                       </Link>
@@ -201,7 +203,7 @@ export default function Applicants() {
                     <td className="px-6 py-4">
                       {applicant.reviews.length > 0 ? (
                         <div className="flex items-center">
-                          <span className="text-yellow-400 mr-1">★</span>
+                          <span className="text-gray-900 mr-1">★</span>
                           <span className="font-medium">{getAverageRating(applicant.reviews)}</span>
                           <span className="text-gray-400 text-sm ml-1">
                             ({applicant._count.reviews})
@@ -217,9 +219,9 @@ export default function Applicants() {
                     <td className="px-6 py-4">
                       <Link
                         to={`/applicants/${applicant.id}`}
-                        className="text-primary-600 hover:text-primary-700 text-sm font-medium"
+                        className="text-gray-900 hover:text-gray-600 text-sm font-medium"
                       >
-                        View →
+                        View &rarr;
                       </Link>
                     </td>
                   </tr>

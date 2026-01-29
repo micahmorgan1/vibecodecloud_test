@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
+import DocumentViewer from '../components/DocumentViewer';
 
 interface Review {
   id: string;
@@ -46,7 +47,7 @@ interface Applicant {
   notes: Note[];
 }
 
-const stages = ['new', 'screening', 'interview', 'offer', 'hired', 'rejected'];
+const stages = ['new', 'screening', 'interview', 'offer', 'hired', 'rejected', 'holding'];
 const stageLabels: Record<string, string> = {
   new: 'New',
   screening: 'Screening',
@@ -54,6 +55,7 @@ const stageLabels: Record<string, string> = {
   offer: 'Offer',
   hired: 'Hired',
   rejected: 'Rejected',
+  holding: 'Holding',
 };
 
 export default function ApplicantDetail() {
@@ -64,6 +66,7 @@ export default function ApplicantDetail() {
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [newNote, setNewNote] = useState('');
   const [addingNote, setAddingNote] = useState(false);
+  const [viewingDocument, setViewingDocument] = useState<{ url: string; title: string } | null>(null);
 
   useEffect(() => {
     if (id) {
@@ -106,7 +109,7 @@ export default function ApplicantDetail() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black"></div>
       </div>
     );
   }
@@ -131,18 +134,18 @@ export default function ApplicantDetail() {
   const myReview = applicant.reviews.find((r) => r.reviewer.id === user?.id);
 
   const recommendationLabels: Record<string, { label: string; color: string }> = {
-    strong_yes: { label: 'Strong Yes', color: 'text-green-600' },
-    yes: { label: 'Yes', color: 'text-green-500' },
-    maybe: { label: 'Maybe', color: 'text-yellow-600' },
-    no: { label: 'No', color: 'text-red-500' },
-    strong_no: { label: 'Strong No', color: 'text-red-600' },
+    strong_yes: { label: 'Strong Yes', color: 'text-gray-900 font-bold' },
+    yes: { label: 'Yes', color: 'text-gray-800' },
+    maybe: { label: 'Maybe', color: 'text-gray-500' },
+    no: { label: 'No', color: 'text-gray-400' },
+    strong_no: { label: 'Strong No', color: 'text-gray-400 line-through' },
   };
 
   return (
     <div className="space-y-6">
       {/* Breadcrumb */}
       <nav className="text-sm text-gray-500">
-        <Link to="/applicants" className="hover:text-primary-600">Applicants</Link>
+        <Link to="/applicants" className="hover:text-gray-900">Applicants</Link>
         <span className="mx-2">/</span>
         <span className="text-gray-900">{applicant.firstName} {applicant.lastName}</span>
       </nav>
@@ -151,25 +154,25 @@ export default function ApplicantDetail() {
       <div className="card">
         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
           <div className="flex items-start gap-4">
-            <div className="w-16 h-16 bg-brand-100 rounded-full flex items-center justify-center">
-              <span className="text-brand-700 text-2xl font-medium">
+            <div className="w-16 h-16 bg-gray-900 rounded-full flex items-center justify-center">
+              <span className="text-white text-2xl font-medium">
                 {applicant.firstName[0]}{applicant.lastName[0]}
               </span>
             </div>
             <div>
-              <h1 className="text-2xl font-display font-bold text-gray-900">
+              <h1 className="text-2xl font-display font-bold text-gray-900 uppercase tracking-wide">
                 {applicant.firstName} {applicant.lastName}
               </h1>
-              <p className="text-gray-600">{applicant.email}</p>
-              {applicant.phone && <p className="text-gray-500 text-sm">{applicant.phone}</p>}
+              <p className="text-gray-500">{applicant.email}</p>
+              {applicant.phone && <p className="text-gray-400 text-sm">{applicant.phone}</p>}
               <div className="flex items-center gap-3 mt-2">
                 {applicant.linkedIn && (
-                  <a href={`https://${applicant.linkedIn}`} target="_blank" rel="noopener noreferrer" className="text-primary-600 hover:text-primary-700 text-sm">
+                  <a href={`https://${applicant.linkedIn}`} target="_blank" rel="noopener noreferrer" className="text-gray-900 hover:text-gray-600 text-sm font-medium">
                     LinkedIn
                   </a>
                 )}
                 {applicant.website && (
-                  <a href={`https://${applicant.website}`} target="_blank" rel="noopener noreferrer" className="text-primary-600 hover:text-primary-700 text-sm">
+                  <a href={`https://${applicant.website}`} target="_blank" rel="noopener noreferrer" className="text-gray-900 hover:text-gray-600 text-sm font-medium">
                     Website
                   </a>
                 )}
@@ -180,8 +183,8 @@ export default function ApplicantDetail() {
           <div className="flex flex-col items-end gap-2">
             {getAverageRating() && (
               <div className="flex items-center gap-2">
-                <span className="text-yellow-400 text-xl">★</span>
-                <span className="text-2xl font-bold">{getAverageRating()}</span>
+                <span className="text-gray-900 text-xl">★</span>
+                <span className="text-2xl font-display font-bold">{getAverageRating()}</span>
                 <span className="text-gray-400">({applicant.reviews.length} reviews)</span>
               </div>
             )}
@@ -195,20 +198,20 @@ export default function ApplicantDetail() {
         </div>
 
         {/* Stage Pipeline */}
-        <div className="mt-6 pt-6 border-t">
+        <div className="mt-6 pt-6 border-t border-gray-200">
           <p className="text-sm font-medium text-gray-700 mb-3">Application Stage</p>
           <div className="flex flex-wrap gap-2">
             {stages.map((stage) => (
               <button
                 key={stage}
                 onClick={() => updateStage(stage)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
                   applicant.stage === stage
                     ? stage === 'rejected'
-                      ? 'bg-red-600 text-white'
+                      ? 'bg-gray-300 text-gray-700'
                       : stage === 'hired'
-                      ? 'bg-emerald-600 text-white'
-                      : 'bg-primary-600 text-white'
+                      ? 'bg-black text-white'
+                      : 'bg-gray-900 text-white'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
@@ -224,12 +227,12 @@ export default function ApplicantDetail() {
         <div className="lg:col-span-2 space-y-6">
           {/* Application Info */}
           <div className="card">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Application Details</h2>
+            <h2 className="text-lg font-display font-semibold text-gray-900 mb-4 uppercase tracking-wide">Application Details</h2>
             <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <dt className="text-sm text-gray-500">Position</dt>
                 <dd className="font-medium">
-                  <Link to={`/jobs/${applicant.job.id}`} className="text-primary-600 hover:text-primary-700">
+                  <Link to={`/jobs/${applicant.job.id}`} className="text-gray-900 hover:text-gray-600">
                     {applicant.job.title}
                   </Link>
                 </dd>
@@ -269,41 +272,37 @@ export default function ApplicantDetail() {
             </dl>
 
             {/* Documents */}
-            <div className="mt-6 pt-6 border-t">
+            <div className="mt-6 pt-6 border-t border-gray-200">
               <h3 className="text-sm font-medium text-gray-900 mb-3">Documents</h3>
               <div className="flex flex-wrap gap-3">
                 {applicant.resumePath && (
-                  <a
-                    href={applicant.resumePath}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                  <button
+                    onClick={() => setViewingDocument({ url: applicant.resumePath!, title: `Resume - ${applicant.firstName} ${applicant.lastName}` })}
+                    className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded hover:bg-gray-700 transition-colors"
                   >
-                    <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
-                    Resume
-                  </a>
+                    View Resume
+                  </button>
                 )}
                 {applicant.portfolioPath && (
-                  <a
-                    href={applicant.portfolioPath}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                  <button
+                    onClick={() => setViewingDocument({ url: applicant.portfolioPath!, title: `Portfolio - ${applicant.firstName} ${applicant.lastName}` })}
+                    className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded hover:bg-gray-700 transition-colors"
                   >
-                    <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
-                    Portfolio
-                  </a>
+                    View Portfolio
+                  </button>
                 )}
                 {applicant.portfolioUrl && (
                   <a
                     href={applicant.portfolioUrl.startsWith('http') ? applicant.portfolioUrl : `https://${applicant.portfolioUrl}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                    className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded hover:bg-gray-200 transition-colors"
                   >
                     <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
@@ -316,7 +315,7 @@ export default function ApplicantDetail() {
 
             {/* Cover Letter */}
             {applicant.coverLetter && (
-              <div className="mt-6 pt-6 border-t">
+              <div className="mt-6 pt-6 border-t border-gray-200">
                 <h3 className="text-sm font-medium text-gray-900 mb-3">Cover Letter</h3>
                 <p className="text-gray-600 whitespace-pre-wrap">{applicant.coverLetter}</p>
               </div>
@@ -325,7 +324,7 @@ export default function ApplicantDetail() {
 
           {/* Reviews */}
           <div className="card">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">
+            <h2 className="text-lg font-display font-semibold text-gray-900 mb-4 uppercase tracking-wide">
               Reviews ({applicant.reviews.length})
             </h2>
             {applicant.reviews.length === 0 ? (
@@ -333,7 +332,7 @@ export default function ApplicantDetail() {
             ) : (
               <div className="space-y-4">
                 {applicant.reviews.map((review) => (
-                  <div key={review.id} className="p-4 bg-gray-50 rounded-lg">
+                  <div key={review.id} className="p-4 bg-gray-50 rounded border border-gray-100">
                     <div className="flex items-start justify-between mb-3">
                       <div>
                         <p className="font-medium text-gray-900">{review.reviewer.name}</p>
@@ -347,7 +346,7 @@ export default function ApplicantDetail() {
                             <span
                               key={star}
                               className={`text-lg ${
-                                star <= review.rating ? 'text-yellow-400' : 'text-gray-300'
+                                star <= review.rating ? 'text-gray-900' : 'text-gray-300'
                               }`}
                             >
                               ★
@@ -365,31 +364,31 @@ export default function ApplicantDetail() {
                     {/* Criteria Ratings */}
                     <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-3">
                       {review.technicalSkills && (
-                        <div className="text-center p-2 bg-white rounded">
+                        <div className="text-center p-2 bg-white rounded border border-gray-100">
                           <p className="text-xs text-gray-500">Technical</p>
                           <p className="font-medium">{review.technicalSkills}/5</p>
                         </div>
                       )}
                       {review.designAbility && (
-                        <div className="text-center p-2 bg-white rounded">
+                        <div className="text-center p-2 bg-white rounded border border-gray-100">
                           <p className="text-xs text-gray-500">Design</p>
                           <p className="font-medium">{review.designAbility}/5</p>
                         </div>
                       )}
                       {review.portfolioQuality && (
-                        <div className="text-center p-2 bg-white rounded">
+                        <div className="text-center p-2 bg-white rounded border border-gray-100">
                           <p className="text-xs text-gray-500">Portfolio</p>
                           <p className="font-medium">{review.portfolioQuality}/5</p>
                         </div>
                       )}
                       {review.communication && (
-                        <div className="text-center p-2 bg-white rounded">
+                        <div className="text-center p-2 bg-white rounded border border-gray-100">
                           <p className="text-xs text-gray-500">Communication</p>
                           <p className="font-medium">{review.communication}/5</p>
                         </div>
                       )}
                       {review.cultureFit && (
-                        <div className="text-center p-2 bg-white rounded">
+                        <div className="text-center p-2 bg-white rounded border border-gray-100">
                           <p className="text-xs text-gray-500">Culture Fit</p>
                           <p className="font-medium">{review.cultureFit}/5</p>
                         </div>
@@ -409,7 +408,7 @@ export default function ApplicantDetail() {
         {/* Sidebar - Notes */}
         <div className="space-y-6">
           <div className="card">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Notes</h2>
+            <h2 className="text-lg font-display font-semibold text-gray-900 mb-4 uppercase tracking-wide">Notes</h2>
 
             <form onSubmit={addNote} className="mb-4">
               <textarea
@@ -432,7 +431,7 @@ export default function ApplicantDetail() {
             ) : (
               <div className="space-y-3">
                 {applicant.notes.map((note) => (
-                  <div key={note.id} className="p-3 bg-gray-50 rounded-lg">
+                  <div key={note.id} className="p-3 bg-gray-50 rounded border border-gray-100">
                     <p className="text-sm text-gray-600">{note.content}</p>
                     <p className="text-xs text-gray-400 mt-2">
                       {new Date(note.createdAt).toLocaleString()}
@@ -455,6 +454,15 @@ export default function ApplicantDetail() {
             setShowReviewModal(false);
             fetchApplicant();
           }}
+        />
+      )}
+
+      {/* Document Viewer */}
+      {viewingDocument && (
+        <DocumentViewer
+          url={viewingDocument.url}
+          title={viewingDocument.title}
+          onClose={() => setViewingDocument(null)}
         />
       )}
     </div>
@@ -518,7 +526,7 @@ function ReviewModal({
             type="button"
             onClick={() => onChange(value === star ? null : star)}
             className={`text-2xl transition-colors ${
-              value && star <= value ? 'text-yellow-400' : 'text-gray-300 hover:text-yellow-300'
+              value && star <= value ? 'text-gray-900' : 'text-gray-300 hover:text-gray-500'
             }`}
           >
             ★
@@ -530,10 +538,10 @@ function ReviewModal({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6 border-b sticky top-0 bg-white">
+      <div className="bg-white rounded max-w-lg w-full max-h-[90vh] overflow-y-auto">
+        <div className="p-6 border-b border-gray-200 sticky top-0 bg-white">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold">
+            <h2 className="text-xl font-display font-semibold uppercase tracking-wide">
               {existingReview ? 'Edit Review' : 'Add Review'}
             </h2>
             <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
@@ -546,7 +554,7 @@ function ReviewModal({
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+            <div className="bg-gray-100 border border-gray-300 text-gray-800 px-4 py-3 rounded">
               {error}
             </div>
           )}
@@ -561,7 +569,7 @@ function ReviewModal({
                   type="button"
                   onClick={() => setFormData({ ...formData, rating: star })}
                   className={`text-3xl transition-colors ${
-                    star <= formData.rating ? 'text-yellow-400' : 'text-gray-300 hover:text-yellow-300'
+                    star <= formData.rating ? 'text-gray-900' : 'text-gray-300 hover:text-gray-500'
                   }`}
                 >
                   ★
@@ -604,11 +612,11 @@ function ReviewModal({
             <p className="text-sm font-medium text-gray-700 mb-2">Recommendation</p>
             <div className="flex flex-wrap gap-2">
               {[
-                { value: 'strong_yes', label: 'Strong Yes', color: 'bg-green-100 text-green-800 border-green-300' },
-                { value: 'yes', label: 'Yes', color: 'bg-green-50 text-green-700 border-green-200' },
-                { value: 'maybe', label: 'Maybe', color: 'bg-yellow-50 text-yellow-700 border-yellow-200' },
-                { value: 'no', label: 'No', color: 'bg-red-50 text-red-700 border-red-200' },
-                { value: 'strong_no', label: 'Strong No', color: 'bg-red-100 text-red-800 border-red-300' },
+                { value: 'strong_yes', label: 'Strong Yes', color: 'bg-gray-900 text-white border-gray-900' },
+                { value: 'yes', label: 'Yes', color: 'bg-gray-700 text-white border-gray-700' },
+                { value: 'maybe', label: 'Maybe', color: 'bg-gray-300 text-gray-800 border-gray-400' },
+                { value: 'no', label: 'No', color: 'bg-gray-100 text-gray-500 border-gray-300' },
+                { value: 'strong_no', label: 'Strong No', color: 'bg-gray-50 text-gray-400 border-gray-200' },
               ].map((rec) => (
                 <button
                   key={rec.value}
@@ -619,7 +627,7 @@ function ReviewModal({
                       recommendation: formData.recommendation === rec.value ? '' : rec.value,
                     })
                   }
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
+                  className={`px-3 py-1.5 rounded text-sm font-medium border transition-colors ${
                     formData.recommendation === rec.value
                       ? rec.color
                       : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'

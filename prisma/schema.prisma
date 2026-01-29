@@ -64,7 +64,7 @@ model Applicant {
   currentTitle    String?
 
   // Workflow status
-  stage           String   @default("new") // new, screening, interview, offer, hired, rejected
+  stage           String   @default("new") // new, screening, interview, offer, hired, rejected, holding
   source          String?  // where they applied from
 
   createdAt       DateTime @default(now())

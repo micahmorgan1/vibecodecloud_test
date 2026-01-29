@@ -60,7 +60,7 @@ export default function JobDetail() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black"></div>
       </div>
     );
   }
@@ -84,6 +84,7 @@ export default function JobDetail() {
       offer: 'badge-offer',
       hired: 'badge-hired',
       rejected: 'badge-rejected',
+      holding: 'badge-holding',
     };
     return styles[stage] || 'badge-new';
   };
@@ -95,6 +96,7 @@ export default function JobDetail() {
     offer: 'Offer',
     hired: 'Hired',
     rejected: 'Rejected',
+    holding: 'Holding',
   };
 
   const getAverageRating = (reviews: Applicant['reviews']) => {
@@ -110,7 +112,7 @@ export default function JobDetail() {
     <div className="space-y-6">
       {/* Breadcrumb */}
       <nav className="text-sm text-gray-500">
-        <Link to="/jobs" className="hover:text-primary-600">Jobs</Link>
+        <Link to="/jobs" className="hover:text-gray-900">Jobs</Link>
         <span className="mx-2">/</span>
         <span className="text-gray-900">{job.title}</span>
       </nav>
@@ -120,16 +122,16 @@ export default function JobDetail() {
         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-2xl font-display font-bold text-gray-900">{job.title}</h1>
+              <h1 className="text-2xl font-display font-bold text-gray-900 uppercase tracking-wide">{job.title}</h1>
               <span className={`badge ${
-                job.status === 'open' ? 'bg-green-100 text-green-800' :
-                job.status === 'closed' ? 'bg-gray-100 text-gray-800' :
-                'bg-yellow-100 text-yellow-800'
+                job.status === 'open' ? 'bg-black text-white' :
+                job.status === 'closed' ? 'bg-gray-200 text-gray-500' :
+                'bg-gray-300 text-gray-700'
               }`}>
                 {job.status}
               </span>
             </div>
-            <div className="flex flex-wrap gap-4 text-sm text-gray-600">
+            <div className="flex flex-wrap gap-4 text-sm text-gray-500">
               <span className="flex items-center">
                 <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
@@ -207,7 +209,7 @@ export default function JobDetail() {
         </div>
 
         {/* Application Link */}
-        <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+        <div className="mt-6 p-4 bg-gray-50 rounded border border-gray-200">
           <p className="text-sm font-medium text-gray-700 mb-2">Application Link</p>
           <div className="flex items-center gap-2">
             <input
@@ -230,14 +232,14 @@ export default function JobDetail() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           <div className="card">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Description</h2>
+            <h2 className="text-lg font-display font-semibold text-gray-900 mb-4 uppercase tracking-wide">Description</h2>
             <div className="prose prose-sm max-w-none text-gray-600 whitespace-pre-wrap">
               {job.description}
             </div>
           </div>
 
           <div className="card">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Requirements</h2>
+            <h2 className="text-lg font-display font-semibold text-gray-900 mb-4 uppercase tracking-wide">Requirements</h2>
             <div className="prose prose-sm max-w-none text-gray-600 whitespace-pre-wrap">
               {job.requirements}
             </div>
@@ -246,7 +248,7 @@ export default function JobDetail() {
 
         <div className="space-y-6">
           <div className="card">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Details</h2>
+            <h2 className="text-lg font-display font-semibold text-gray-900 mb-4 uppercase tracking-wide">Details</h2>
             <dl className="space-y-3 text-sm">
               <div>
                 <dt className="text-gray-500">Posted by</dt>
@@ -270,7 +272,7 @@ export default function JobDetail() {
       {/* Applicants */}
       <div className="card">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">
+          <h2 className="text-lg font-display font-semibold text-gray-900 uppercase tracking-wide">
             Applicants ({job.applicants.length})
           </h2>
         </div>
@@ -281,7 +283,7 @@ export default function JobDetail() {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b text-left text-sm text-gray-500">
+                <tr className="border-b border-gray-200 text-left text-sm text-gray-500">
                   <th className="pb-3 font-medium">Applicant</th>
                   <th className="pb-3 font-medium">Stage</th>
                   <th className="pb-3 font-medium">Rating</th>
@@ -289,13 +291,13 @@ export default function JobDetail() {
                   <th className="pb-3 font-medium"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y">
+              <tbody className="divide-y divide-gray-100">
                 {job.applicants.map((applicant) => (
                   <tr key={applicant.id} className="hover:bg-gray-50">
                     <td className="py-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-brand-100 rounded-full flex items-center justify-center">
-                          <span className="text-brand-700 text-sm font-medium">
+                        <div className="w-8 h-8 bg-gray-900 rounded-full flex items-center justify-center">
+                          <span className="text-white text-sm font-medium">
                             {applicant.firstName[0]}{applicant.lastName[0]}
                           </span>
                         </div>
@@ -315,7 +317,7 @@ export default function JobDetail() {
                     <td className="py-3">
                       {applicant.reviews.length > 0 ? (
                         <div className="flex items-center">
-                          <span className="text-yellow-400 mr-1">★</span>
+                          <span className="text-gray-900 mr-1">★</span>
                           <span className="font-medium">{getAverageRating(applicant.reviews)}</span>
                           <span className="text-gray-400 text-sm ml-1">
                             ({applicant.reviews.length})
@@ -331,9 +333,9 @@ export default function JobDetail() {
                     <td className="py-3">
                       <Link
                         to={`/applicants/${applicant.id}`}
-                        className="text-primary-600 hover:text-primary-700 text-sm font-medium"
+                        className="text-gray-900 hover:text-gray-600 text-sm font-medium"
                       >
-                        View →
+                        View &rarr;
                       </Link>
                     </td>
                   </tr>

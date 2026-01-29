@@ -167,7 +167,7 @@ router.patch('/:id/stage', authenticate, async (req: AuthRequest, res: Response)
     const { id } = req.params;
     const { stage } = req.body;
 
-    const validStages = ['new', 'screening', 'interview', 'offer', 'hired', 'rejected'];
+    const validStages = ['new', 'screening', 'interview', 'offer', 'hired', 'rejected', 'holding'];
     if (!stage || !validStages.includes(stage)) {
       return res.status(400).json({ error: 'Invalid stage. Valid stages: ' + validStages.join(', ') });
     }

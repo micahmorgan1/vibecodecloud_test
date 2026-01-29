@@ -3,16 +3,20 @@
 @tailwind utilities;
 
 body {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Oswald', system-ui, sans-serif;
 }
 
 @layer components {
   .btn {
-    @apply px-4 py-2 rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2;
+    @apply px-4 py-2 rounded font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2;
   }
 
   .btn-primary {
-    @apply bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500;
+    @apply bg-black text-white hover:bg-gray-800 focus:ring-gray-500;
   }
 
   .btn-secondary {
@@ -20,19 +24,19 @@ body {
   }
 
   .btn-danger {
-    @apply bg-red-600 text-white hover:bg-red-700 focus:ring-red-500;
+    @apply bg-gray-900 text-white hover:bg-gray-700 focus:ring-gray-500;
   }
 
   .input {
-    @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500;
+    @apply w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-gray-400 font-sans;
   }
 
   .label {
-    @apply block text-sm font-medium text-gray-700 mb-1;
+    @apply block text-sm font-medium text-gray-700 mb-1 font-sans;
   }
 
   .card {
-    @apply bg-white rounded-lg shadow-md p-6;
+    @apply bg-white rounded border border-gray-200 shadow-sm p-6;
   }
 
   .badge {
@@ -40,26 +44,184 @@ body {
   }
 
   .badge-new {
-    @apply bg-blue-100 text-blue-800;
+    @apply bg-gray-200 text-gray-800;
   }
 
   .badge-screening {
-    @apply bg-yellow-100 text-yellow-800;
+    @apply bg-gray-300 text-gray-900;
   }
 
   .badge-interview {
-    @apply bg-purple-100 text-purple-800;
+    @apply bg-gray-400 text-white;
   }
 
   .badge-offer {
-    @apply bg-green-100 text-green-800;
+    @apply bg-gray-600 text-white;
   }
 
   .badge-hired {
-    @apply bg-emerald-100 text-emerald-800;
+    @apply bg-black text-white;
   }
 
   .badge-rejected {
-    @apply bg-red-100 text-red-800;
+    @apply bg-gray-100 text-gray-500 line-through;
+  }
+
+  .badge-holding {
+    @apply bg-yellow-100 text-yellow-700;
   }
 }
+
+/* DOCX viewer - preserve original document formatting */
+.docx-content {
+  font-family: 'Inter', system-ui, sans-serif;
+  color: #1a1a1a;
+  line-height: 1.6;
+  font-size: 14px;
+}
+
+.docx-content h1,
+.docx-content h2,
+.docx-content h3,
+.docx-content h4,
+.docx-content h5,
+.docx-content h6 {
+  font-family: 'Oswald', system-ui, sans-serif;
+  color: #111;
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  line-height: 1.3;
+}
+
+.docx-content h1 { font-size: 1.8em; }
+.docx-content h2 { font-size: 1.5em; }
+.docx-content h3 { font-size: 1.25em; }
+.docx-content h4 { font-size: 1.1em; }
+
+.docx-content p {
+  margin-top: 0;
+  margin-bottom: 0.75em;
+  line-height: 1.6;
+}
+
+/* Preserve empty paragraphs as spacing */
+.docx-content p:empty {
+  min-height: 1em;
+}
+
+/* Preserve <br> line breaks */
+.docx-content br {
+  display: block;
+  content: "";
+  margin-top: 0.5em;
+}
+
+/* Bullet / unordered lists */
+.docx-content ul {
+  list-style-type: disc;
+  padding-left: 1.5em;
+  margin-top: 0.5em;
+  margin-bottom: 0.75em;
+}
+
+.docx-content ul ul {
+  list-style-type: circle;
+  margin-top: 0.25em;
+  margin-bottom: 0.25em;
+}
+
+.docx-content ul ul ul {
+  list-style-type: square;
+}
+
+/* Numbered / ordered lists */
+.docx-content ol {
+  list-style-type: decimal;
+  padding-left: 1.5em;
+  margin-top: 0.5em;
+  margin-bottom: 0.75em;
+}
+
+.docx-content ol ol {
+  list-style-type: lower-alpha;
+  margin-top: 0.25em;
+  margin-bottom: 0.25em;
+}
+
+.docx-content ol ol ol {
+  list-style-type: lower-roman;
+}
+
+.docx-content li {
+  margin-bottom: 0.35em;
+  line-height: 1.5;
+}
+
+.docx-content li p {
+  margin-bottom: 0.2em;
+}
+
+/* Horizontal rules / lines */
+.docx-content hr {
+  border: none;
+  border-top: 1px solid #d1d5db;
+  margin: 1.25em 0;
+}
+
+/* Bold, italic, underline */
+.docx-content strong,
+.docx-content b {
+  font-weight: 600;
+  color: #111;
+}
+
+.docx-content em,
+.docx-content i {
+  font-style: italic;
+}
+
+.docx-content u {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* Links */
+.docx-content a {
+  color: #111;
+  text-decoration: underline;
+}
+
+.docx-content a:hover {
+  color: #555;
+}
+
+/* Tables */
+.docx-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1em 0;
+}
+
+.docx-content th,
+.docx-content td {
+  border: 1px solid #d1d5db;
+  padding: 0.5em 0.75em;
+  text-align: left;
+  vertical-align: top;
+}
+
+.docx-content th {
+  background-color: #f3f4f6;
+  font-weight: 600;
+}
+
+/* Images embedded in docx */
+.docx-content img {
+  max-width: 100%;
+  height: auto;
+  margin: 1em 0;
+}
+
+/* Superscript / subscript */
+.docx-content sup { vertical-align: super; font-size: 0.8em; }
+.docx-content sub { vertical-align: sub; font-size: 0.8em; }

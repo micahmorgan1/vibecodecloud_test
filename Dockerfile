@@ -43,5 +43,5 @@ ENV PORT=3001
 # Expose port
 EXPOSE 3001
 
-# Start the server
-CMD ["node", "dist/server/index.js"]
+# Start the server (run db:push to ensure schema is applied, then start)
+CMD ["sh", "-c", "npx prisma db push --skip-generate && node dist/server/index.js"]

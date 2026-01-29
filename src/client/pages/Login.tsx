@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { WhlcMark, WhlcWordmark } from '../components/WhlcLogo';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -26,23 +27,27 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-brand-900 via-brand-800 to-primary-900 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-black flex items-center justify-center px-4">
       <div className="max-w-md w-full">
         {/* Logo and Header */}
         <div className="text-center mb-8">
-          <div className="w-20 h-20 bg-white rounded-xl mx-auto mb-4 flex items-center justify-center shadow-lg">
-            <span className="text-brand-900 font-bold text-3xl">W</span>
+          <div className="flex items-center justify-center gap-3 mb-4 text-white">
+            <WhlcMark height={48} />
+            <WhlcWordmark height={22} />
           </div>
-          <h1 className="text-3xl font-display font-bold text-white">WHLC Architecture</h1>
-          <p className="text-brand-300 mt-2">Applicant Tracking System</p>
+          <p className="text-gray-500 uppercase tracking-[0.2em] text-xs mt-3 font-display">
+            Applicant Tracking System
+          </p>
         </div>
 
         {/* Login Form */}
-        <div className="bg-white rounded-xl shadow-2xl p-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Sign In</h2>
+        <div className="bg-white rounded shadow-2xl p-8">
+          <h2 className="text-2xl font-display font-bold text-gray-900 mb-6 text-center uppercase tracking-wide">
+            Sign In
+          </h2>
 
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
+            <div className="bg-gray-100 border border-gray-300 text-gray-800 px-4 py-3 rounded mb-4 text-sm">
               {error}
             </div>
           )}
@@ -81,7 +86,7 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full btn btn-primary py-3 text-lg"
+              className="w-full btn btn-primary py-3 text-lg font-display uppercase tracking-wider"
             >
               {loading ? (
                 <span className="flex items-center justify-center">
@@ -98,9 +103,9 @@ export default function Login() {
           </form>
 
           {/* Demo credentials hint */}
-          <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+          <div className="mt-6 p-4 bg-gray-50 rounded border border-gray-200">
             <p className="text-sm text-gray-600 font-medium mb-2">Demo Credentials:</p>
-            <div className="text-xs text-gray-500 space-y-1">
+            <div className="text-xs text-gray-500 space-y-1 font-sans">
               <p><span className="font-medium">Admin:</span> admin@archfirm.com / admin123</p>
               <p><span className="font-medium">Manager:</span> manager@archfirm.com / manager123</p>
               <p><span className="font-medium">Reviewer:</span> reviewer@archfirm.com / reviewer123</p>
@@ -109,7 +114,7 @@ export default function Login() {
         </div>
 
         {/* Footer */}
-        <p className="text-center text-brand-400 text-sm mt-6">
+        <p className="text-center text-gray-600 text-sm mt-6">
           &copy; {new Date().getFullYear()} WHLC Architecture. All rights reserved.
         </p>
       </div>

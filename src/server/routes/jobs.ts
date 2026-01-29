@@ -34,7 +34,38 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
   }
 });
 
-// Get single job by ID
+// Get single job by ID (public - no auth required for apply page)
+router.get('/:id/public', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const job = await prisma.job.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        title: true,
+        department: true,
+        location: true,
+        type: true,
+        description: true,
+        requirements: true,
+        salary: true,
+        status: true,
+      },
+    });
+
+    if (!job) {
+      return res.status(404).json({ error: 'Job not found' });
+    }
+
+    res.json(job);
+  } catch (error) {
+    console.error('Get public job error:', error);
+    res.status(500).json({ error: 'Failed to fetch job' });
+  }
+});
+
+// Get single job by ID (authenticated - full details)
 router.get('/:id', authenticate, async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
