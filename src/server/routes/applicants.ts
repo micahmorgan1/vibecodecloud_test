@@ -1,6 +1,6 @@
 import { Router, Response, Request } from 'express';
 import prisma from '../db.js';
-import { authenticate, AuthRequest } from '../middleware/auth.js';
+import { authenticate, requireRole, AuthRequest } from '../middleware/auth.js';
 import { uploadApplicationFiles } from '../middleware/upload.js';
 
 const router = Router();
@@ -160,6 +160,76 @@ router.post('/', uploadApplicationFiles, async (req: Request, res: Response) => 
     res.status(500).json({ error: 'Failed to submit application' });
   }
 });
+
+// Manually add applicant (admin or hiring_manager only)
+router.post(
+  '/manual',
+  authenticate,
+  requireRole('admin', 'hiring_manager'),
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const {
+        jobId,
+        firstName,
+        lastName,
+        email,
+        phone,
+        linkedIn,
+        website,
+        portfolioUrl,
+        coverLetter,
+        yearsExperience,
+        currentCompany,
+        currentTitle,
+        source,
+      } = req.body;
+
+      if (!jobId || !firstName || !lastName || !email) {
+        return res.status(400).json({ error: 'Job, first name, last name, and email are required' });
+      }
+
+      const job = await prisma.job.findUnique({ where: { id: jobId } });
+      if (!job) {
+        return res.status(404).json({ error: 'Job not found' });
+      }
+
+      const existingApplication = await prisma.applicant.findFirst({
+        where: { jobId, email },
+      });
+      if (existingApplication) {
+        return res.status(400).json({ error: 'An applicant with this email already exists for this job' });
+      }
+
+      const applicant = await prisma.applicant.create({
+        data: {
+          jobId,
+          firstName,
+          lastName,
+          email,
+          phone: phone || null,
+          linkedIn: linkedIn || null,
+          website: website || null,
+          portfolioUrl: portfolioUrl || null,
+          coverLetter: coverLetter || null,
+          yearsExperience: yearsExperience ? parseInt(yearsExperience) : null,
+          currentCompany: currentCompany || null,
+          currentTitle: currentTitle || null,
+          source: source || 'manual',
+        },
+        include: {
+          job: {
+            select: { id: true, title: true, department: true },
+          },
+        },
+      });
+
+      res.status(201).json(applicant);
+    } catch (error) {
+      console.error('Manual add applicant error:', error);
+      res.status(500).json({ error: 'Failed to add applicant' });
+    }
+  }
+);
 
 // Update applicant stage (workflow)
 router.patch('/:id/stage', authenticate, async (req: AuthRequest, res: Response) => {

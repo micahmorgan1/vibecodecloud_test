@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { api } from '../lib/api';
 
 interface Applicant {
@@ -15,12 +16,57 @@ interface Applicant {
   _count: { reviews: number; notes: number };
 }
 
+interface Job {
+  id: string;
+  title: string;
+  department: string;
+  status: string;
+}
+
+interface ApplicantFormData {
+  jobId: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  linkedIn: string;
+  website: string;
+  portfolioUrl: string;
+  yearsExperience: string;
+  currentCompany: string;
+  currentTitle: string;
+  source: string;
+}
+
+const emptyForm: ApplicantFormData = {
+  jobId: '',
+  firstName: '',
+  lastName: '',
+  email: '',
+  phone: '',
+  linkedIn: '',
+  website: '',
+  portfolioUrl: '',
+  yearsExperience: '',
+  currentCompany: '',
+  currentTitle: '',
+  source: 'manual',
+};
+
 export default function Applicants() {
+  const { user: currentUser } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const [applicants, setApplicants] = useState<Applicant[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState(searchParams.get('search') || '');
   const [stageFilter, setStageFilter] = useState(searchParams.get('stage') || '');
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [formData, setFormData] = useState<ApplicantFormData>(emptyForm);
+  const [formError, setFormError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const canAdd = currentUser?.role === 'admin' || currentUser?.role === 'hiring_manager';
 
   const stages = ['new', 'screening', 'interview', 'offer', 'hired', 'rejected'];
 
@@ -50,6 +96,33 @@ export default function Applicants() {
   const handleStageChange = (stage: string) => {
     setStageFilter(stage);
     setSearchParams(stage ? { stage } : {});
+  };
+
+  const openAddModal = async () => {
+    setFormData(emptyForm);
+    setFormError('');
+    try {
+      const res = await api.get<Job[]>('/jobs?status=open');
+      setJobs(res.data);
+    } catch {
+      setJobs([]);
+    }
+    setShowAddModal(true);
+  };
+
+  const handleAddSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormError('');
+    setSubmitting(true);
+    try {
+      await api.post('/applicants/manual', formData);
+      setShowAddModal(false);
+      fetchApplicants();
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const stageBadge = (stage: string) => {
@@ -84,9 +157,16 @@ export default function Applicants() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-display font-bold text-gray-900 uppercase tracking-wide">Applicants</h1>
-        <p className="text-gray-500 mt-1">Review and manage job applicants</p>
+      <div className="flex justify-between items-start">
+        <div>
+          <h1 className="text-3xl font-display font-bold text-gray-900 uppercase tracking-wide">Applicants</h1>
+          <p className="text-gray-500 mt-1">Review and manage job applicants</p>
+        </div>
+        {canAdd && (
+          <button onClick={openAddModal} className="btn btn-primary">
+            + Add Applicant
+          </button>
+        )}
       </div>
 
       {/* Search and Filters */}
@@ -228,6 +308,173 @@ export default function Applicants() {
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* Add Applicant Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
+              <h2 className="text-xl font-display font-bold uppercase tracking-wide">Add Applicant</h2>
+              <button onClick={() => setShowAddModal(false)} className="text-gray-400 hover:text-gray-600">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <form onSubmit={handleAddSubmit} className="p-6 space-y-4">
+              {formError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
+                  {formError}
+                </div>
+              )}
+
+              <div>
+                <label className="label">Job Position</label>
+                <select
+                  value={formData.jobId}
+                  onChange={(e) => setFormData({ ...formData, jobId: e.target.value })}
+                  className="input"
+                  required
+                >
+                  <option value="">Select a job...</option>
+                  {jobs.map((job) => (
+                    <option key={job.id} value={job.id}>
+                      {job.title} — {job.department}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="label">First Name</label>
+                  <input
+                    type="text"
+                    value={formData.firstName}
+                    onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                    className="input"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="label">Last Name</label>
+                  <input
+                    type="text"
+                    value={formData.lastName}
+                    onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                    className="input"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="label">Email</label>
+                  <input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    className="input"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="label">Phone</label>
+                  <input
+                    type="tel"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    className="input"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="label">Current Title</label>
+                  <input
+                    type="text"
+                    value={formData.currentTitle}
+                    onChange={(e) => setFormData({ ...formData, currentTitle: e.target.value })}
+                    className="input"
+                  />
+                </div>
+                <div>
+                  <label className="label">Current Company</label>
+                  <input
+                    type="text"
+                    value={formData.currentCompany}
+                    onChange={(e) => setFormData({ ...formData, currentCompany: e.target.value })}
+                    className="input"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="label">Years of Experience</label>
+                  <input
+                    type="number"
+                    value={formData.yearsExperience}
+                    onChange={(e) => setFormData({ ...formData, yearsExperience: e.target.value })}
+                    className="input"
+                    min="0"
+                  />
+                </div>
+                <div>
+                  <label className="label">Source</label>
+                  <select
+                    value={formData.source}
+                    onChange={(e) => setFormData({ ...formData, source: e.target.value })}
+                    className="input"
+                  >
+                    <option value="manual">Manual Entry</option>
+                    <option value="referral">Referral</option>
+                    <option value="linkedin">LinkedIn</option>
+                    <option value="indeed">Indeed</option>
+                    <option value="website">Website</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="label">LinkedIn URL</label>
+                  <input
+                    type="url"
+                    value={formData.linkedIn}
+                    onChange={(e) => setFormData({ ...formData, linkedIn: e.target.value })}
+                    className="input"
+                    placeholder="https://linkedin.com/in/..."
+                  />
+                </div>
+                <div>
+                  <label className="label">Portfolio URL</label>
+                  <input
+                    type="url"
+                    value={formData.portfolioUrl}
+                    onChange={(e) => setFormData({ ...formData, portfolioUrl: e.target.value })}
+                    className="input"
+                    placeholder="https://..."
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4">
+                <button type="button" onClick={() => setShowAddModal(false)} className="btn btn-secondary">
+                  Cancel
+                </button>
+                <button type="submit" disabled={submitting} className="btn btn-primary">
+                  {submitting ? 'Adding...' : 'Add Applicant'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
