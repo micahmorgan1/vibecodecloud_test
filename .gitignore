@@ -26,6 +26,9 @@ uploads/
 .DS_Store
 Thumbs.db
 
+# Plans
+plans/
+
 # Logs
 *.log
 npm-debug.log*
