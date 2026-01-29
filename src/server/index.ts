@@ -7,6 +7,7 @@ import jobRoutes from './routes/jobs.js';
 import applicantRoutes from './routes/applicants.js';
 import reviewRoutes from './routes/reviews.js';
 import dashboardRoutes from './routes/dashboard.js';
+import userRoutes from './routes/users.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -27,6 +28,7 @@ app.use('/api/jobs', jobRoutes);
 app.use('/api/applicants', applicantRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/users', userRoutes);
 
 // Health check
 app.get('/api/health', (_req, res) => {

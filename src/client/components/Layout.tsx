@@ -17,6 +17,7 @@ export default function Layout() {
     { to: '/', label: 'Dashboard' },
     { to: '/jobs', label: 'Jobs' },
     { to: '/applicants', label: 'Applicants' },
+    ...(user?.role === 'admin' ? [{ to: '/users', label: 'Users' }] : []),
   ];
 
   return (
