@@ -36,6 +36,11 @@ model Job {
   updatedAt   DateTime @updatedAt
   closedAt    DateTime?
 
+  // LinkedIn tracking
+  postedToLinkedIn   Boolean   @default(false)
+  linkedInPostDate   DateTime?
+  linkedInPostUrl    String?
+
   createdBy   User     @relation("JobCreator", fields: [createdById], references: [id])
   createdById String
 
@@ -65,7 +70,15 @@ model Applicant {
 
   // Workflow status
   stage           String   @default("new") // new, screening, interview, offer, hired, rejected, holding
-  source          String?  // where they applied from
+
+  // Source tracking
+  source          String?  // High-level source: 'Direct Application', 'manual', 'LinkedIn', 'Indeed', etc.
+  sourceDetails   String?  // Additional context: UTM parameters, referrer, campaign
+  referrer        String?  // HTTP referrer URL
+  utmSource       String?  // UTM tracking parameters
+  utmMedium       String?
+  utmCampaign     String?
+  utmContent      String?
 
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt

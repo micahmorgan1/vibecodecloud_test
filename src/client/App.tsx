@@ -8,6 +8,7 @@ import JobDetail from './pages/JobDetail';
 import Applicants from './pages/Applicants';
 import ApplicantDetail from './pages/ApplicantDetail';
 import ApplyPage from './pages/ApplyPage';
+import PublicJobs from './pages/PublicJobs';
 import Users from './pages/Users';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
@@ -32,6 +33,7 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+      <Route path="/jobs-public" element={<PublicJobs />} />
       <Route path="/apply/:jobId" element={<ApplyPage />} />
       <Route
         path="/"

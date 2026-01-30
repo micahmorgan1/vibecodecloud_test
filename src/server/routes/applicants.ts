@@ -102,6 +102,12 @@ router.post('/', uploadApplicationFiles, async (req: Request, res: Response) => 
       currentCompany,
       currentTitle,
       source,
+      sourceDetails,
+      referrer,
+      utmSource,
+      utmMedium,
+      utmCampaign,
+      utmContent,
     } = req.body;
 
     if (!jobId || !firstName || !lastName || !email) {
@@ -144,7 +150,13 @@ router.post('/', uploadApplicationFiles, async (req: Request, res: Response) => 
         yearsExperience: yearsExperience ? parseInt(yearsExperience) : null,
         currentCompany,
         currentTitle,
-        source,
+        source: source || 'Direct Application',
+        sourceDetails,
+        referrer,
+        utmSource,
+        utmMedium,
+        utmCampaign,
+        utmContent,
         resumePath,
         portfolioPath,
       },

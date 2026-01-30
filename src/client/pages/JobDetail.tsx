@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
+import { LinkedInPostModal } from '../components/LinkedInPostModal';
 
 interface Applicant {
   id: string;
@@ -29,6 +30,9 @@ interface Job {
   createdAt: string;
   createdBy: { id: string; name: string; email: string };
   applicants: Applicant[];
+  postedToLinkedIn: boolean;
+  linkedInPostDate: string | null;
+  linkedInPostUrl: string | null;
 }
 
 export default function JobDetail() {
@@ -36,16 +40,21 @@ export default function JobDetail() {
   const { user } = useAuth();
   const [job, setJob] = useState<Job | null>(null);
   const [loading, setLoading] = useState(true);
+  const [linkedInModalOpen, setLinkedInModalOpen] = useState(false);
 
   const canEdit = user?.role === 'admin' || user?.role === 'hiring_manager';
 
   useEffect(() => {
+    loadJob();
+  }, [id]);
+
+  const loadJob = () => {
     if (id) {
       api.get<Job>(`/jobs/${id}`)
         .then((res) => setJob(res.data))
         .finally(() => setLoading(false));
     }
-  }, [id]);
+  };
 
   const updateStatus = async (status: string) => {
     if (!id) return;
@@ -163,47 +172,59 @@ export default function JobDetail() {
           </div>
 
           {canEdit && (
-            <div className="flex gap-2">
-              {job.status === 'open' && (
-                <>
-                  <button
-                    onClick={() => updateStatus('on-hold')}
-                    className="btn btn-secondary text-sm"
-                  >
-                    Put On Hold
-                  </button>
-                  <button
-                    onClick={() => updateStatus('closed')}
-                    className="btn btn-danger text-sm"
-                  >
-                    Close Job
-                  </button>
-                </>
-              )}
-              {job.status === 'closed' && (
-                <button
-                  onClick={() => updateStatus('open')}
-                  className="btn btn-primary text-sm"
-                >
-                  Reopen Job
-                </button>
-              )}
-              {job.status === 'on-hold' && (
-                <>
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={() => setLinkedInModalOpen(true)}
+                className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
+                  job.postedToLinkedIn
+                    ? 'bg-blue-100 text-blue-800 hover:bg-blue-200'
+                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                }`}
+              >
+                {job.postedToLinkedIn ? '✓ Posted to LinkedIn' : 'Post to LinkedIn'}
+              </button>
+              <div className="flex gap-2">
+                {job.status === 'open' && (
+                  <>
+                    <button
+                      onClick={() => updateStatus('on-hold')}
+                      className="btn btn-secondary text-sm"
+                    >
+                      Put On Hold
+                    </button>
+                    <button
+                      onClick={() => updateStatus('closed')}
+                      className="btn btn-danger text-sm"
+                    >
+                      Close Job
+                    </button>
+                  </>
+                )}
+                {job.status === 'closed' && (
                   <button
                     onClick={() => updateStatus('open')}
                     className="btn btn-primary text-sm"
                   >
-                    Resume
+                    Reopen Job
                   </button>
-                  <button
-                    onClick={() => updateStatus('closed')}
-                    className="btn btn-danger text-sm"
-                  >
-                    Close
-                  </button>
-                </>
-              )}
+                )}
+                {job.status === 'on-hold' && (
+                  <>
+                    <button
+                      onClick={() => updateStatus('open')}
+                      className="btn btn-primary text-sm"
+                    >
+                      Resume
+                    </button>
+                    <button
+                      onClick={() => updateStatus('closed')}
+                      className="btn btn-danger text-sm"
+                    >
+                      Close
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -345,6 +366,14 @@ export default function JobDetail() {
           </div>
         )}
       </div>
+
+      {/* LinkedIn Post Modal */}
+      <LinkedInPostModal
+        jobId={id || ''}
+        isOpen={linkedInModalOpen}
+        onClose={() => setLinkedInModalOpen(false)}
+        onPosted={loadJob}
+      />
     </div>
   );
 }

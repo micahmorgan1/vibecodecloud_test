@@ -184,4 +184,50 @@ router.get('/top-applicants', authenticate, async (_req: AuthRequest, res: Respo
   }
 });
 
+// Get source analytics
+router.get('/sources', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const { startDate, endDate } = req.query;
+
+    const where: Record<string, unknown> = {};
+    if (startDate || endDate) {
+      where.createdAt = {};
+      if (startDate) {
+        (where.createdAt as Record<string, unknown>).gte = new Date(startDate as string);
+      }
+      if (endDate) {
+        (where.createdAt as Record<string, unknown>).lte = new Date(endDate as string);
+      }
+    }
+
+    const applicants = await prisma.applicant.findMany({
+      where,
+      select: {
+        source: true,
+        utmSource: true,
+        utmMedium: true,
+        utmCampaign: true,
+        stage: true,
+      },
+    });
+
+    // Group by source
+    const sourceBreakdown = applicants.reduce((acc, app) => {
+      const source = app.source || 'Unknown';
+      if (!acc[source]) {
+        acc[source] = { total: 0, hired: 0, rejected: 0 };
+      }
+      acc[source].total++;
+      if (app.stage === 'hired') acc[source].hired++;
+      if (app.stage === 'rejected') acc[source].rejected++;
+      return acc;
+    }, {} as Record<string, { total: number; hired: number; rejected: number }>);
+
+    res.json({ sourceBreakdown });
+  } catch (error) {
+    console.error('Get source analytics error:', error);
+    res.status(500).json({ error: 'Failed to fetch source analytics' });
+  }
+});
+
 export default router;

@@ -1,6 +1,7 @@
 import { Router, Response } from 'express';
 import prisma from '../db.js';
 import { authenticate, requireRole, AuthRequest } from '../middleware/auth.js';
+import { formatJobForLinkedIn } from '../services/linkedInFormatter.js';
 
 const router = Router();
 
@@ -30,6 +31,41 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
     res.json(jobs);
   } catch (error) {
     console.error('Get jobs error:', error);
+    res.status(500).json({ error: 'Failed to fetch jobs' });
+  }
+});
+
+// Get all open jobs (public - no auth required)
+router.get('/public', async (req, res) => {
+  try {
+    const { department, type, location } = req.query;
+
+    const where: Record<string, unknown> = {
+      status: 'open',
+    };
+
+    if (department) where.department = department as string;
+    if (type) where.type = type as string;
+    if (location) where.location = location as string;
+
+    const jobs = await prisma.job.findMany({
+      where,
+      select: {
+        id: true,
+        title: true,
+        department: true,
+        location: true,
+        type: true,
+        description: true,
+        salary: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    res.json(jobs);
+  } catch (error) {
+    console.error('Get public jobs error:', error);
     res.status(500).json({ error: 'Failed to fetch jobs' });
   }
 });
@@ -253,5 +289,59 @@ router.get('/:id/stats', authenticate, async (req: AuthRequest, res: Response) =
     res.status(500).json({ error: 'Failed to fetch job statistics' });
   }
 });
+
+// Get LinkedIn preview for a job
+router.get('/:id/linkedin-preview', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const job = await prisma.job.findUnique({
+      where: { id },
+    });
+
+    if (!job) {
+      return res.status(404).json({ error: 'Job not found' });
+    }
+
+    const linkedInPost = formatJobForLinkedIn(job, job.id);
+
+    res.json({
+      ...linkedInPost,
+      currentlyPosted: job.postedToLinkedIn,
+      postDate: job.linkedInPostDate,
+      postUrl: job.linkedInPostUrl,
+    });
+  } catch (error) {
+    console.error('LinkedIn preview error:', error);
+    res.status(500).json({ error: 'Failed to generate LinkedIn preview' });
+  }
+});
+
+// Update LinkedIn status for a job
+router.patch(
+  '/:id/linkedin-status',
+  authenticate,
+  requireRole('admin', 'hiring_manager'),
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const { id } = req.params;
+      const { posted, postUrl } = req.body;
+
+      const job = await prisma.job.update({
+        where: { id },
+        data: {
+          postedToLinkedIn: posted,
+          linkedInPostDate: posted ? new Date() : null,
+          linkedInPostUrl: postUrl || null,
+        },
+      });
+
+      res.json(job);
+    } catch (error) {
+      console.error('Update LinkedIn status error:', error);
+      res.status(500).json({ error: 'Failed to update LinkedIn status' });
+    }
+  }
+);
 
 export default router;

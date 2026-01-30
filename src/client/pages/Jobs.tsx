@@ -14,6 +14,7 @@ interface Job {
   createdAt: string;
   createdBy: { id: string; name: string };
   _count: { applicants: number };
+  postedToLinkedIn: boolean;
 }
 
 export default function Jobs() {
@@ -120,9 +121,16 @@ export default function Jobs() {
               className="card hover:shadow-md transition-shadow"
             >
               <div className="flex items-start justify-between mb-3">
-                <span className={`badge ${statusBadge(job.status)}`}>
-                  {job.status}
-                </span>
+                <div className="flex gap-2">
+                  <span className={`badge ${statusBadge(job.status)}`}>
+                    {job.status}
+                  </span>
+                  {job.postedToLinkedIn && (
+                    <span className="badge bg-blue-100 text-blue-800 border border-blue-200">
+                      LinkedIn
+                    </span>
+                  )}
+                </div>
                 <span className={`badge ${typeBadge(job.type)}`}>
                   {job.type}
                 </span>

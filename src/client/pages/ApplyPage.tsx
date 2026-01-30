@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { api } from '../lib/api';
 import { WhlcMark, WhlcWordmark } from '../components/WhlcLogo';
 
@@ -17,11 +17,21 @@ interface Job {
 
 export default function ApplyPage() {
   const { jobId } = useParams<{ jobId: string }>();
+  const [searchParams] = useSearchParams();
   const [job, setJob] = useState<Job | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
+  const [sourceTracking, setSourceTracking] = useState({
+    source: '',
+    sourceDetails: '',
+    referrer: '',
+    utmSource: '',
+    utmMedium: '',
+    utmCampaign: '',
+    utmContent: '',
+  });
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -38,6 +48,71 @@ export default function ApplyPage() {
   });
   const [resume, setResume] = useState<File | null>(null);
   const [portfolio, setPortfolio] = useState<File | null>(null);
+
+  const ShareButtons = ({ jobId, jobTitle }: { jobId: string; jobTitle: string }) => {
+    const baseUrl = window.location.origin;
+    const jobUrl = `${baseUrl}/apply/${jobId}?utm_source=linkedin&utm_medium=social&utm_campaign=job_share`;
+    const encodedUrl = encodeURIComponent(jobUrl);
+    const encodedTitle = encodeURIComponent(`We're hiring: ${jobTitle}`);
+
+    return (
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+        <h3 className="font-semibold text-gray-900 mb-2">Share this job</h3>
+        <div className="flex flex-wrap gap-2">
+          <a
+            href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm font-medium transition-colors"
+          >
+            Share on LinkedIn
+          </a>
+          <a
+            href={`https://twitter.com/intent/tweet?text=${encodedTitle}&url=${encodedUrl}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-4 py-2 bg-sky-500 text-white rounded hover:bg-sky-600 text-sm font-medium transition-colors"
+          >
+            Share on Twitter
+          </a>
+          <button
+            onClick={() => {
+              navigator.clipboard.writeText(jobUrl);
+              alert('Link copied to clipboard!');
+            }}
+            className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 text-sm font-medium transition-colors"
+          >
+            Copy Link
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  useEffect(() => {
+    // Capture source tracking from URL parameters
+    const source = searchParams.get('source') || '';
+    const utmSource = searchParams.get('utm_source') || '';
+    const utmMedium = searchParams.get('utm_medium') || '';
+    const utmCampaign = searchParams.get('utm_campaign') || '';
+    const utmContent = searchParams.get('utm_content') || '';
+
+    // Capture referrer
+    const referrer = document.referrer || '';
+
+    // Build source details from all query parameters
+    const sourceDetails = searchParams.toString();
+
+    setSourceTracking({
+      source: source || (utmSource ? 'Social Media' : ''),
+      sourceDetails,
+      referrer,
+      utmSource,
+      utmMedium,
+      utmCampaign,
+      utmContent,
+    });
+  }, [searchParams]);
 
   useEffect(() => {
     if (jobId) {
@@ -71,7 +146,15 @@ export default function ApplyPage() {
       if (formData.yearsExperience) data.append('yearsExperience', formData.yearsExperience);
       if (formData.currentCompany) data.append('currentCompany', formData.currentCompany);
       if (formData.currentTitle) data.append('currentTitle', formData.currentTitle);
-      data.append('source', 'Direct Application');
+
+      // Add source tracking fields
+      if (sourceTracking.source) data.append('source', sourceTracking.source);
+      if (sourceTracking.sourceDetails) data.append('sourceDetails', sourceTracking.sourceDetails);
+      if (sourceTracking.referrer) data.append('referrer', sourceTracking.referrer);
+      if (sourceTracking.utmSource) data.append('utmSource', sourceTracking.utmSource);
+      if (sourceTracking.utmMedium) data.append('utmMedium', sourceTracking.utmMedium);
+      if (sourceTracking.utmCampaign) data.append('utmCampaign', sourceTracking.utmCampaign);
+      if (sourceTracking.utmContent) data.append('utmContent', sourceTracking.utmContent);
 
       if (resume) data.append('resume', resume);
       if (portfolio) data.append('portfolio', portfolio);
@@ -175,6 +258,9 @@ export default function ApplyPage() {
             <p className="whitespace-pre-wrap">{job.requirements}</p>
           </div>
         </div>
+
+        {/* Share Buttons */}
+        <ShareButtons jobId={job.id} jobTitle={job.title} />
 
         {/* Application Form */}
         <div className="card">

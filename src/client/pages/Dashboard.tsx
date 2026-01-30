@@ -37,10 +37,19 @@ interface Activity {
   }>;
 }
 
+interface SourceAnalytics {
+  sourceBreakdown: Record<string, {
+    total: number;
+    hired: number;
+    rejected: number;
+  }>;
+}
+
 export default function Dashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [pipeline, setPipeline] = useState<PipelineStage[]>([]);
   const [activity, setActivity] = useState<Activity | null>(null);
+  const [sourceAnalytics, setSourceAnalytics] = useState<SourceAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -48,11 +57,13 @@ export default function Dashboard() {
       api.get<DashboardStats>('/dashboard/stats'),
       api.get<PipelineStage[]>('/dashboard/pipeline'),
       api.get<Activity>('/dashboard/activity'),
+      api.get<SourceAnalytics>('/dashboard/sources'),
     ])
-      .then(([statsRes, pipelineRes, activityRes]) => {
+      .then(([statsRes, pipelineRes, activityRes, sourcesRes]) => {
         setStats(statsRes.data);
         setPipeline(pipelineRes.data);
         setActivity(activityRes.data);
+        setSourceAnalytics(sourcesRes.data);
       })
       .finally(() => setLoading(false));
   }, []);
@@ -253,6 +264,40 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      {/* Application Sources */}
+      {sourceAnalytics && Object.keys(sourceAnalytics.sourceBreakdown).length > 0 && (
+        <div className="card">
+          <h2 className="text-lg font-display font-semibold text-gray-900 mb-4 uppercase tracking-wide">
+            Application Sources
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {Object.entries(sourceAnalytics.sourceBreakdown).map(([source, data]) => {
+              const conversionRate = data.total > 0 ? ((data.hired / data.total) * 100).toFixed(1) : '0.0';
+              return (
+                <div key={source} className="border border-gray-200 rounded p-4">
+                  <p className="text-sm font-medium text-gray-500 mb-2">{source || 'Unknown'}</p>
+                  <p className="text-2xl font-display font-bold text-gray-900">{data.total}</p>
+                  <div className="mt-3 space-y-1 text-xs text-gray-600">
+                    <div className="flex justify-between">
+                      <span>Hired:</span>
+                      <span className="font-medium">{data.hired}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Rejected:</span>
+                      <span className="font-medium">{data.rejected}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Conversion:</span>
+                      <span className="font-medium">{conversionRate}%</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
