@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { LinkedInPostModal } from '../components/LinkedInPostModal';
+import { TrackingLinks } from '../components/TrackingLinks';
 
 interface Applicant {
   id: string;
@@ -41,6 +42,7 @@ export default function JobDetail() {
   const [job, setJob] = useState<Job | null>(null);
   const [loading, setLoading] = useState(true);
   const [linkedInModalOpen, setLinkedInModalOpen] = useState(false);
+  const [copiedAppLink, setCopiedAppLink] = useState(false);
 
   const canEdit = user?.role === 'admin' || user?.role === 'hiring_manager';
 
@@ -240,10 +242,31 @@ export default function JobDetail() {
               className="input flex-1 text-sm bg-white"
             />
             <button
-              onClick={() => navigator.clipboard.writeText(applicationUrl)}
+              onClick={() => {
+                // Use reliable copy method
+                const textArea = document.createElement('textarea');
+                textArea.value = applicationUrl;
+                textArea.style.position = 'fixed';
+                textArea.style.top = '0';
+                textArea.style.left = '0';
+                textArea.style.opacity = '0';
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+
+                try {
+                  document.execCommand('copy');
+                  setCopiedAppLink(true);
+                  setTimeout(() => setCopiedAppLink(false), 2000);
+                } catch (err) {
+                  console.error('Copy failed:', err);
+                }
+
+                document.body.removeChild(textArea);
+              }}
               className="btn btn-secondary text-sm"
             >
-              Copy
+              {copiedAppLink ? '✓ Copied!' : 'Copy'}
             </button>
           </div>
         </div>
@@ -289,6 +312,11 @@ export default function JobDetail() {
           </div>
         </div>
       </div>
+
+      {/* Tracking Links */}
+      {canEdit && (
+        <TrackingLinks jobId={id || ''} onUpdate={loadJob} />
+      )}
 
       {/* Applicants */}
       <div className="card">

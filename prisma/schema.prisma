@@ -41,6 +41,19 @@ model Job {
   linkedInPostDate   DateTime?
   linkedInPostUrl    String?
 
+  // Other job board tracking
+  postedToHandshake  Boolean   @default(false)
+  handshakePostDate  DateTime?
+  handshakePostUrl   String?
+
+  postedToAIALA      Boolean   @default(false)
+  aialaPostDate      DateTime?
+  aialaPostUrl       String?
+
+  postedToAIABR      Boolean   @default(false)
+  aiabrPostDate      DateTime?
+  aiabrPostUrl       String?
+
   createdBy   User     @relation("JobCreator", fields: [createdById], references: [id])
   createdById String
 

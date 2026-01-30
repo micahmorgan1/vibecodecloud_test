@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../lib/api';
+import { PLATFORMS, getPlatformColorClasses, getPlatformTextColorClasses } from '../lib/platforms';
 
 interface DashboardStats {
   jobs: { total: number; open: number };
@@ -266,38 +267,59 @@ export default function Dashboard() {
       </div>
 
       {/* Application Sources */}
-      {sourceAnalytics && Object.keys(sourceAnalytics.sourceBreakdown).length > 0 && (
-        <div className="card">
-          <h2 className="text-lg font-display font-semibold text-gray-900 mb-4 uppercase tracking-wide">
-            Application Sources
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {Object.entries(sourceAnalytics.sourceBreakdown).map(([source, data]) => {
-              const conversionRate = data.total > 0 ? ((data.hired / data.total) * 100).toFixed(1) : '0.0';
-              return (
-                <div key={source} className="border border-gray-200 rounded p-4">
-                  <p className="text-sm font-medium text-gray-500 mb-2">{source || 'Unknown'}</p>
-                  <p className="text-2xl font-display font-bold text-gray-900">{data.total}</p>
-                  <div className="mt-3 space-y-1 text-xs text-gray-600">
-                    <div className="flex justify-between">
-                      <span>Hired:</span>
-                      <span className="font-medium">{data.hired}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Rejected:</span>
-                      <span className="font-medium">{data.rejected}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Conversion:</span>
-                      <span className="font-medium">{conversionRate}%</span>
-                    </div>
+      <div className="card">
+        <h2 className="text-lg font-display font-semibold text-gray-900 mb-4 uppercase tracking-wide">
+          Application Sources
+        </h2>
+        <p className="text-sm text-gray-600 mb-4">
+          Track where your applicants are coming from and measure the effectiveness of each platform.
+        </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+          {PLATFORMS.filter(p => ['website', 'linkedin', 'handshake', 'aiala', 'aiabr'].includes(p.id)).map((platform) => {
+            // Find data for this platform from the analytics
+            const sourceData = sourceAnalytics?.sourceBreakdown
+              ? Object.entries(sourceAnalytics.sourceBreakdown).find(([source]) => {
+                  const normalized = source.toLowerCase().trim();
+                  return normalized === platform.name.toLowerCase() ||
+                         normalized === platform.id ||
+                         normalized.includes(platform.id);
+                })
+              : null;
+
+            const data = sourceData ? sourceData[1] : { total: 0, hired: 0, rejected: 0 };
+            const conversionRate = data.total > 0 ? ((data.hired / data.total) * 100).toFixed(1) : '0.0';
+            const colorClasses = getPlatformColorClasses(platform.color);
+            const textColorClasses = getPlatformTextColorClasses(platform.color);
+
+            return (
+              <div key={platform.id} className={`border rounded-lg p-4 ${colorClasses}`}>
+                <div className="flex items-center justify-between mb-2">
+                  <p className={`text-sm font-semibold ${textColorClasses}`}>
+                    {platform.name}
+                  </p>
+                </div>
+                <p className={`text-3xl font-display font-bold ${textColorClasses} mb-3`}>
+                  {data.total}
+                </p>
+                <div className="space-y-1.5 text-xs text-gray-700">
+                  <div className="flex justify-between">
+                    <span className="font-medium">Hired:</span>
+                    <span className="font-semibold">{data.hired}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="font-medium">Rejected:</span>
+                    <span className="font-semibold">{data.rejected}</span>
+                  </div>
+                  <div className="flex justify-between pt-1.5 border-t border-gray-300">
+                    <span className="font-medium">Conversion:</span>
+                    <span className="font-bold">{conversionRate}%</span>
                   </div>
                 </div>
-              );
-            })}
-          </div>
+              </div>
+            );
+          })}
         </div>
-      )}
+      </div>
     </div>
   );
 }

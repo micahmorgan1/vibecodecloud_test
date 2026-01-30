@@ -2,6 +2,7 @@ import { Router, Response } from 'express';
 import prisma from '../db.js';
 import { authenticate, requireRole, AuthRequest } from '../middleware/auth.js';
 import { formatJobForLinkedIn } from '../services/linkedInFormatter.js';
+import { JOB_BOARD_PLATFORMS, getPlatformById, generateTrackingUrl } from '../services/jobBoardPlatforms.js';
 
 const router = Router();
 
@@ -340,6 +341,74 @@ router.patch(
     } catch (error) {
       console.error('Update LinkedIn status error:', error);
       res.status(500).json({ error: 'Failed to update LinkedIn status' });
+    }
+  }
+);
+
+// Get all job board platforms with tracking URLs and status
+router.get('/:id/platforms', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const job = await prisma.job.findUnique({
+      where: { id },
+    });
+
+    if (!job) {
+      return res.status(404).json({ error: 'Job not found' });
+    }
+
+    // Build platform status for each job board
+    const platforms = JOB_BOARD_PLATFORMS.map(platform => ({
+      id: platform.id,
+      name: platform.name,
+      description: platform.description,
+      color: platform.color,
+      trackingUrl: generateTrackingUrl(platform, job.id),
+      externalUrl: platform.externalUrl,
+      posted: (job as Record<string, unknown>)[platform.postedField] as boolean || false,
+      postDate: (job as Record<string, unknown>)[platform.postDateField] as Date | null,
+      postUrl: (job as Record<string, unknown>)[platform.postUrlField] as string | null,
+    }));
+
+    res.json({ platforms });
+  } catch (error) {
+    console.error('Get platforms error:', error);
+    res.status(500).json({ error: 'Failed to fetch platforms' });
+  }
+});
+
+// Update platform posting status
+router.patch(
+  '/:id/platform-status',
+  authenticate,
+  requireRole('admin', 'hiring_manager'),
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const { id } = req.params;
+      const { platformId, posted, postUrl } = req.body;
+
+      const platform = getPlatformById(platformId);
+      if (!platform) {
+        return res.status(400).json({ error: 'Invalid platform ID' });
+      }
+
+      // Build update data dynamically based on platform
+      const updateData: Record<string, unknown> = {
+        [platform.postedField]: posted,
+        [platform.postDateField]: posted ? new Date() : null,
+        [platform.postUrlField]: postUrl || null,
+      };
+
+      const job = await prisma.job.update({
+        where: { id },
+        data: updateData,
+      });
+
+      res.json(job);
+    } catch (error) {
+      console.error('Update platform status error:', error);
+      res.status(500).json({ error: 'Failed to update platform status' });
     }
   }
 );
