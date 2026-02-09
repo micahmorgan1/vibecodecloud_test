@@ -67,6 +67,7 @@ export default function ApplicantDetail() {
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [showRejectionModal, setShowRejectionModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showRequestReviewModal, setShowRequestReviewModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [pendingStage, setPendingStage] = useState<string | null>(null);
   const [newNote, setNewNote] = useState('');
@@ -236,6 +237,14 @@ export default function ApplicantDetail() {
                 className="btn btn-secondary"
               >
                 Send Rejection Letter
+              </button>
+            )}
+            {(user?.role === 'admin' || user?.role === 'hiring_manager') && (
+              <button
+                onClick={() => setShowRequestReviewModal(true)}
+                className="btn btn-secondary"
+              >
+                Request Review
               </button>
             )}
             {canDelete && (
@@ -595,6 +604,18 @@ export default function ApplicantDetail() {
         />
       )}
 
+      {/* Request Review Modal */}
+      {showRequestReviewModal && (
+        <RequestReviewModal
+          applicant={applicant}
+          onClose={() => setShowRequestReviewModal(false)}
+          onSent={() => {
+            setShowRequestReviewModal(false);
+            fetchApplicant();
+          }}
+        />
+      )}
+
       {/* Document Viewer */}
       {viewingDocument && (
         <DocumentViewer
@@ -811,7 +832,7 @@ function RejectionModal({
   onClose: () => void;
   onSent: (updated: Applicant) => void;
 }) {
-  const defaultTemplate = `Dear ${applicant.firstName},
+  const hardcodedTemplate = `Dear ${applicant.firstName},
 
 Thank you for your interest in the ${applicant.job.title} position and for taking the time to apply. We appreciate the effort you put into your application.
 
@@ -822,9 +843,28 @@ We encourage you to apply for future openings that match your skills and experie
 Sincerely,
 The Hiring Team`;
 
-  const [emailBody, setEmailBody] = useState(defaultTemplate);
+  const [emailBody, setEmailBody] = useState(hardcodedTemplate);
   const [loading, setLoading] = useState(false);
+  const [loadingTemplate, setLoadingTemplate] = useState(true);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await api.get<{ subject: string; body: string }>('/email-settings/templates/rejection');
+        // Replace template variables with actual applicant data
+        let body = res.data.body;
+        body = body.replace(/\{\{firstName\}\}/g, applicant.firstName);
+        body = body.replace(/\{\{lastName\}\}/g, applicant.lastName);
+        body = body.replace(/\{\{jobTitle\}\}/g, applicant.job.title);
+        setEmailBody(body);
+      } catch {
+        // Fall back to hardcoded template
+      } finally {
+        setLoadingTemplate(false);
+      }
+    })();
+  }, []);
 
   const handleSend = async () => {
     setLoading(true);
@@ -879,11 +919,17 @@ The Hiring Team`;
 
           <div>
             <label className="label">Rejection Letter</label>
-            <textarea
-              value={emailBody}
-              onChange={(e) => setEmailBody(e.target.value)}
-              className="input min-h-[200px]"
-            />
+            {loadingTemplate ? (
+              <div className="flex items-center justify-center h-[200px] border rounded bg-gray-50">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
+              </div>
+            ) : (
+              <textarea
+                value={emailBody}
+                onChange={(e) => setEmailBody(e.target.value)}
+                className="input min-h-[200px]"
+              />
+            )}
           </div>
 
           <div className="flex justify-end gap-3 pt-4">
@@ -896,6 +942,158 @@ The Hiring Team`;
               className="btn btn-primary"
             >
               {loading ? 'Sending...' : 'Send Rejection Letter'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function RequestReviewModal({
+  applicant,
+  onClose,
+  onSent,
+}: {
+  applicant: Applicant;
+  onClose: () => void;
+  onSent: () => void;
+}) {
+  const [users, setUsers] = useState<{ id: string; name: string; email: string; role: string }[]>([]);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [message, setMessage] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await api.get<{ id: string; name: string; email: string; role: string }[]>('/email-settings/users');
+        setUsers(res.data);
+      } catch {
+        setError('Failed to load users');
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  const toggleUser = (userId: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(userId)) {
+        next.delete(userId);
+      } else {
+        next.add(userId);
+      }
+      return next;
+    });
+  };
+
+  const handleSend = async () => {
+    setSending(true);
+    setError('');
+    try {
+      await api.post(`/email-settings/request-review/${applicant.id}`, {
+        userIds: Array.from(selectedIds),
+        message: message.trim() || undefined,
+      });
+      onSent();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to send review requests');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const roleLabels: Record<string, string> = {
+    admin: 'Admin',
+    hiring_manager: 'Hiring Manager',
+    reviewer: 'Reviewer',
+  };
+
+  const roleBadgeStyles: Record<string, string> = {
+    admin: 'bg-gray-900 text-white',
+    hiring_manager: 'bg-blue-100 text-blue-800',
+    reviewer: 'bg-green-100 text-green-800',
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded max-w-lg w-full max-h-[90vh] overflow-y-auto">
+        <div className="p-6 border-b border-gray-200 sticky top-0 bg-white">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-display font-semibold uppercase tracking-wide">
+              Request Review
+            </h2>
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div className="p-6 space-y-4">
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
+              {error}
+            </div>
+          )}
+
+          <p className="text-sm text-gray-600">
+            Send a review request for <span className="font-medium">{applicant.firstName} {applicant.lastName}</span> ({applicant.job.title}) to selected users.
+          </p>
+
+          {loading ? (
+            <div className="flex items-center justify-center h-20">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
+            </div>
+          ) : (
+            <div className="border rounded divide-y max-h-[250px] overflow-y-auto">
+              {users.map((u) => (
+                <div key={u.id} className="flex items-center justify-between px-4 py-3">
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(u.id)}
+                      onChange={() => toggleUser(u.id)}
+                      className="h-4 w-4 rounded border-gray-300"
+                    />
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{u.name}</p>
+                      <p className="text-xs text-gray-500">{u.email}</p>
+                    </div>
+                  </div>
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${roleBadgeStyles[u.role] || 'bg-gray-100 text-gray-800'}`}>
+                    {roleLabels[u.role] || u.role}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div>
+            <label className="label">Message (optional)</label>
+            <textarea
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder="Add a note for the reviewers..."
+              className="input min-h-[80px]"
+            />
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4">
+            <button type="button" onClick={onClose} className="btn btn-secondary">
+              Cancel
+            </button>
+            <button
+              onClick={handleSend}
+              disabled={sending || selectedIds.size === 0}
+              className="btn btn-primary"
+            >
+              {sending ? 'Sending...' : `Send to ${selectedIds.size} user${selectedIds.size !== 1 ? 's' : ''}`}
             </button>
           </div>
         </div>

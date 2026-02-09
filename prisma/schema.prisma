@@ -17,8 +17,10 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  reviews   Review[]
-  jobs      Job[]    @relation("JobCreator")
+  reviews           Review[]
+  jobs              Job[]                @relation("JobCreator")
+  assignedJobs      JobReviewer[]
+  notificationSubs  JobNotificationSub[]
 }
 
 // Job postings
@@ -57,7 +59,9 @@ model Job {
   createdBy   User     @relation("JobCreator", fields: [createdById], references: [id])
   createdById String
 
-  applicants  Applicant[]
+  applicants        Applicant[]
+  reviewers         JobReviewer[]
+  notificationSubs  JobNotificationSub[]
 }
 
 // Applicants applying for jobs
@@ -138,4 +142,36 @@ model Note {
 
   applicant   Applicant @relation(fields: [applicantId], references: [id])
   applicantId String
+}
+
+// Configurable email templates
+model EmailTemplate {
+  id        String   @id @default(uuid())
+  type      String   @unique   // 'thank_you' | 'rejection'
+  subject   String
+  body      String
+  updatedAt DateTime @updatedAt
+  updatedBy String?
+}
+
+// Reviewer-to-job assignments for access control (reviewers only)
+model JobReviewer {
+  id        String   @id @default(uuid())
+  userId    String
+  jobId     String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  job       Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  @@unique([userId, jobId])
+}
+
+// Per-user, per-job notification subscriptions (any role)
+model JobNotificationSub {
+  id        String   @id @default(uuid())
+  userId    String
+  jobId     String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  job       Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  @@unique([userId, jobId])
 }

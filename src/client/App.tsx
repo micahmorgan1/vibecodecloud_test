@@ -10,6 +10,7 @@ import ApplicantDetail from './pages/ApplicantDetail';
 import ApplyPage from './pages/ApplyPage';
 import PublicJobs from './pages/PublicJobs';
 import Users from './pages/Users';
+import EmailSettings from './pages/EmailSettings';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -48,6 +49,7 @@ function AppRoutes() {
         <Route path="jobs/:id" element={<JobDetail />} />
         <Route path="applicants" element={<Applicants />} />
         <Route path="applicants/:id" element={<ApplicantDetail />} />
+        <Route path="email-settings" element={<EmailSettings />} />
         <Route path="users" element={<Users />} />
       </Route>
     </Routes>

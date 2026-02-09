@@ -1,12 +1,16 @@
 import { Router, Response } from 'express';
 import prisma from '../db.js';
-import { authenticate, AuthRequest } from '../middleware/auth.js';
+import { authenticate, AuthRequest, getAccessibleJobIds } from '../middleware/auth.js';
 
 const router = Router();
 
 // Get dashboard overview stats
-router.get('/stats', authenticate, async (_req: AuthRequest, res: Response) => {
+router.get('/stats', authenticate, async (req: AuthRequest, res: Response) => {
   try {
+    const accessibleJobIds = await getAccessibleJobIds(req.user!);
+    const jobFilter = accessibleJobIds !== null ? { id: { in: accessibleJobIds } } : {};
+    const applicantFilter = accessibleJobIds !== null ? { jobId: { in: accessibleJobIds } } : {};
+
     const [
       totalJobs,
       openJobs,
@@ -15,12 +19,12 @@ router.get('/stats', authenticate, async (_req: AuthRequest, res: Response) => {
       inReviewApplicants,
       totalReviews,
     ] = await Promise.all([
-      prisma.job.count(),
-      prisma.job.count({ where: { status: 'open' } }),
-      prisma.applicant.count(),
-      prisma.applicant.count({ where: { stage: 'new' } }),
-      prisma.applicant.count({ where: { stage: { in: ['screening', 'interview'] } } }),
-      prisma.review.count(),
+      prisma.job.count({ where: jobFilter }),
+      prisma.job.count({ where: { ...jobFilter, status: 'open' } }),
+      prisma.applicant.count({ where: applicantFilter }),
+      prisma.applicant.count({ where: { ...applicantFilter, stage: 'new' } }),
+      prisma.applicant.count({ where: { ...applicantFilter, stage: { in: ['screening', 'interview'] } } }),
+      prisma.review.count(accessibleJobIds !== null ? { where: { applicant: { jobId: { in: accessibleJobIds } } } } : undefined),
     ]);
 
     res.json({
@@ -44,15 +48,18 @@ router.get('/stats', authenticate, async (_req: AuthRequest, res: Response) => {
 });
 
 // Get applicants by stage (pipeline view)
-router.get('/pipeline', authenticate, async (_req: AuthRequest, res: Response) => {
+router.get('/pipeline', authenticate, async (req: AuthRequest, res: Response) => {
   try {
     const stages = ['new', 'screening', 'interview', 'offer', 'hired', 'rejected', 'holding'];
+    const accessibleJobIds = await getAccessibleJobIds(req.user!);
+    const applicantFilter = accessibleJobIds !== null ? { jobId: { in: accessibleJobIds } } : {};
 
     const pipeline = await Promise.all(
       stages.map(async (stage) => {
-        const count = await prisma.applicant.count({ where: { stage } });
+        const where = { ...applicantFilter, stage };
+        const count = await prisma.applicant.count({ where });
         const applicants = await prisma.applicant.findMany({
-          where: { stage },
+          where,
           take: 5,
           orderBy: { createdAt: 'desc' },
           include: {
@@ -76,10 +83,15 @@ router.get('/pipeline', authenticate, async (_req: AuthRequest, res: Response) =
 });
 
 // Get recent activity
-router.get('/activity', authenticate, async (_req: AuthRequest, res: Response) => {
+router.get('/activity', authenticate, async (req: AuthRequest, res: Response) => {
   try {
+    const accessibleJobIds = await getAccessibleJobIds(req.user!);
+    const applicantFilter = accessibleJobIds !== null ? { jobId: { in: accessibleJobIds } } : {};
+    const reviewFilter = accessibleJobIds !== null ? { applicant: { jobId: { in: accessibleJobIds } } } : {};
+
     const [recentApplicants, recentReviews] = await Promise.all([
       prisma.applicant.findMany({
+        where: applicantFilter,
         take: 10,
         orderBy: { createdAt: 'desc' },
         include: {
@@ -89,6 +101,7 @@ router.get('/activity', authenticate, async (_req: AuthRequest, res: Response) =
         },
       }),
       prisma.review.findMany({
+        where: reviewFilter,
         take: 10,
         orderBy: { createdAt: 'desc' },
         include: {
@@ -113,25 +126,29 @@ router.get('/activity', authenticate, async (_req: AuthRequest, res: Response) =
 });
 
 // Get hiring funnel metrics
-router.get('/funnel', authenticate, async (_req: AuthRequest, res: Response) => {
+router.get('/funnel', authenticate, async (req: AuthRequest, res: Response) => {
   try {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
+    const accessibleJobIds = await getAccessibleJobIds(req.user!);
+    const applicantFilter = accessibleJobIds !== null ? { jobId: { in: accessibleJobIds } } : {};
+
     const applicantsByStage = await prisma.applicant.groupBy({
       by: ['stage'],
+      where: applicantFilter,
       _count: { id: true },
     });
 
     const applicantsLast30Days = await prisma.applicant.count({
-      where: { createdAt: { gte: thirtyDaysAgo } },
+      where: { ...applicantFilter, createdAt: { gte: thirtyDaysAgo } },
     });
 
     const hiredCount = await prisma.applicant.count({
-      where: { stage: 'hired' },
+      where: { ...applicantFilter, stage: 'hired' },
     });
 
-    const totalApplicants = await prisma.applicant.count();
+    const totalApplicants = await prisma.applicant.count({ where: applicantFilter });
 
     res.json({
       stages: applicantsByStage.reduce((acc, item) => {
@@ -148,10 +165,14 @@ router.get('/funnel', authenticate, async (_req: AuthRequest, res: Response) => 
 });
 
 // Get top rated applicants
-router.get('/top-applicants', authenticate, async (_req: AuthRequest, res: Response) => {
+router.get('/top-applicants', authenticate, async (req: AuthRequest, res: Response) => {
   try {
+    const accessibleJobIds = await getAccessibleJobIds(req.user!);
+    const applicantFilter = accessibleJobIds !== null ? { jobId: { in: accessibleJobIds } } : {};
+
     const applicantsWithReviews = await prisma.applicant.findMany({
       where: {
+        ...applicantFilter,
         stage: { notIn: ['rejected', 'hired'] },
         reviews: { some: {} },
       },
@@ -189,7 +210,8 @@ router.get('/sources', authenticate, async (req: AuthRequest, res: Response) => 
   try {
     const { startDate, endDate } = req.query;
 
-    const where: Record<string, unknown> = {};
+    const accessibleJobIds = await getAccessibleJobIds(req.user!);
+    const where: Record<string, unknown> = accessibleJobIds !== null ? { jobId: { in: accessibleJobIds } } : {};
     if (startDate || endDate) {
       where.createdAt = {};
       if (startDate) {

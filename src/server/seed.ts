@@ -342,6 +342,110 @@ Key Responsibilities:
   ]);
 
   console.log('Created notes');
+
+  // Seed default email templates
+  await prisma.emailTemplate.upsert({
+    where: { type: 'thank_you' },
+    update: {},
+    create: {
+      type: 'thank_you',
+      subject: 'Thank you for applying — {{jobTitle}}',
+      body: `Dear {{firstName}},
+
+Thank you for your interest in the {{jobTitle}} position at WHLC Architecture. We have received your application and appreciate the time you invested.
+
+Our team will carefully review your qualifications and experience. If your background aligns with our needs, we will reach out to schedule next steps.
+
+We appreciate your patience during this process.
+
+Best regards,
+The Hiring Team
+WHLC Architecture`,
+    },
+  });
+
+  await prisma.emailTemplate.upsert({
+    where: { type: 'rejection' },
+    update: {},
+    create: {
+      type: 'rejection',
+      subject: 'Update on your application for {{jobTitle}}',
+      body: `Dear {{firstName}},
+
+Thank you for your interest in the {{jobTitle}} position and for taking the time to apply. We appreciate the effort you put into your application.
+
+After careful consideration, we have decided to move forward with other candidates whose qualifications more closely align with our current needs.
+
+We encourage you to apply for future openings that match your skills and experience. We wish you all the best in your career search.
+
+Sincerely,
+The Hiring Team`,
+    },
+  });
+
+  console.log('Created email templates');
+
+  // Seed reviewer-to-job access assignments
+  await prisma.jobReviewer.upsert({
+    where: {
+      userId_jobId: {
+        userId: reviewer.id,
+        jobId: jobs[0].id,
+      },
+    },
+    update: {},
+    create: {
+      userId: reviewer.id,
+      jobId: jobs[0].id,
+    },
+  });
+
+  await prisma.jobReviewer.upsert({
+    where: {
+      userId_jobId: {
+        userId: reviewer.id,
+        jobId: jobs[1].id,
+      },
+    },
+    update: {},
+    create: {
+      userId: reviewer.id,
+      jobId: jobs[1].id,
+    },
+  });
+
+  console.log('Created reviewer assignments');
+
+  // Seed notification subscriptions (manager gets notified for Senior Architect)
+  await prisma.jobNotificationSub.upsert({
+    where: {
+      userId_jobId: {
+        userId: manager.id,
+        jobId: jobs[0].id,
+      },
+    },
+    update: {},
+    create: {
+      userId: manager.id,
+      jobId: jobs[0].id,
+    },
+  });
+
+  await prisma.jobNotificationSub.upsert({
+    where: {
+      userId_jobId: {
+        userId: admin.id,
+        jobId: jobs[0].id,
+      },
+    },
+    update: {},
+    create: {
+      userId: admin.id,
+      jobId: jobs[0].id,
+    },
+  });
+
+  console.log('Created notification subscriptions');
   console.log('Seeding complete!');
 }
 

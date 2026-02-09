@@ -1,6 +1,6 @@
 import { Router, Response } from 'express';
 import prisma from '../db.js';
-import { authenticate, requireRole, AuthRequest } from '../middleware/auth.js';
+import { authenticate, requireRole, AuthRequest, getAccessibleJobIds } from '../middleware/auth.js';
 import { formatJobForLinkedIn } from '../services/linkedInFormatter.js';
 import { JOB_BOARD_PLATFORMS, getPlatformById, generateTrackingUrl } from '../services/jobBoardPlatforms.js';
 
@@ -11,10 +11,19 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
   try {
     const { status, department, type } = req.query;
 
-    const where: Record<string, string> = {};
+    const where: Record<string, unknown> = {};
     if (status) where.status = status as string;
     if (department) where.department = department as string;
     if (type) where.type = type as string;
+
+    // Reviewer access control: only see assigned jobs
+    const accessibleJobIds = await getAccessibleJobIds(req.user!);
+    if (accessibleJobIds !== null) {
+      if (accessibleJobIds.length === 0) {
+        return res.json([]);
+      }
+      where.id = { in: accessibleJobIds };
+    }
 
     const jobs = await prisma.job.findMany({
       where,
@@ -106,6 +115,12 @@ router.get('/:id/public', async (req, res) => {
 router.get('/:id', authenticate, async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
+
+    // Reviewer access control
+    const accessibleJobIds = await getAccessibleJobIds(req.user!);
+    if (accessibleJobIds !== null && !accessibleJobIds.includes(id)) {
+      return res.status(404).json({ error: 'Job not found' });
+    }
 
     const job = await prisma.job.findUnique({
       where: { id },

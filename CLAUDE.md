@@ -26,9 +26,9 @@ No test framework is configured.
 
 **Client** (`src/client/`): React 18 + React Router 6 + TailwindCSS, built with Vite. Pages are in `src/client/pages/`, auth state lives in `src/client/context/AuthContext.tsx`, and `src/client/lib/api.ts` is a singleton fetch wrapper that auto-attaches JWT tokens from localStorage.
 
-**Server** (`src/server/`): Express on port 3001. Routes are in `src/server/routes/` (auth, jobs, applicants, reviews, users, dashboard). JWT authentication middleware is in `src/server/middleware/auth.ts`. File uploads (multer) go to `uploads/resumes/` and `uploads/portfolios/`.
+**Server** (`src/server/`): Express on port 3001. Routes are in `src/server/routes/` (auth, jobs, applicants, reviews, users, dashboard, emailSettings). JWT authentication middleware is in `src/server/middleware/auth.ts`. File uploads (multer) go to `uploads/resumes/` and `uploads/portfolios/`.
 
-**Database**: SQLite (`prisma/dev.db`). Schema is in `prisma/schema.prisma`. Models: User, Job, Applicant, Review, Note. One review per reviewer per applicant (upsert pattern).
+**Database**: SQLite (`prisma/dev.db`). Schema is in `prisma/schema.prisma`. Models: User, Job, Applicant, Review, Note, EmailTemplate, JobReviewer, JobNotificationSub. One review per reviewer per applicant (upsert pattern).
 
 **Dev proxy**: Vite proxies `/api` and `/uploads` to `localhost:3001`. In production, Express serves the built client and handles SPA fallback.
 
@@ -37,9 +37,9 @@ No test framework is configured.
 Three roles with cascading permissions:
 - **admin**: Full access including user management and applicant deletion
 - **hiring_manager**: Job/applicant CRUD, can manually add applicants
-- **reviewer**: Read-only jobs/applicants, can add reviews
+- **reviewer**: Read-only jobs/applicants, can add reviews. Reviewers are scoped to assigned jobs via `JobReviewer` — unassigned reviewers see nothing. Assigned reviewers can also manually add applicants to their jobs.
 
-Auth uses `authenticate` and `requireRole(...roles)` middleware. Demo logins: `admin@archfirm.com`, `manager@archfirm.com`, `reviewer@archfirm.com` (all use password `admin123`/`manager123`/`reviewer123`).
+Auth uses `authenticate`, `requireRole(...roles)`, and `getAccessibleJobIds(user)` middleware. The latter returns `null` for admin/hiring_manager (no filter) or an array of job IDs for reviewers. Demo logins: `admin@archfirm.com`, `manager@archfirm.com`, `reviewer@archfirm.com` (all use password `admin123`/`manager123`/`reviewer123`).
 
 ## Hiring Pipeline
 
@@ -50,4 +50,16 @@ Seven stages: `new` → `screening` → `interview` → `offer` → `hired` / `r
 - API client (`src/client/lib/api.ts`): typed `get<T>`, `post<T>`, `put<T>`, `patch<T>`, `delete<T>`, `upload<T>` methods
 - Custom CSS badge classes for stages defined in `src/client/index.css` (e.g., `.badge-new`, `.badge-rejected`)
 - Stage color mappings are duplicated in Dashboard.tsx, Applicants.tsx, JobDetail.tsx, and ApplicantDetail.tsx
-- Email service (`src/server/services/email.ts`) is a stub ready for a real provider
+- Email service (`src/server/services/email.ts`) is a mock/console-logged stub ready for a real provider (e.g., Postmark)
+- Email templates (`EmailTemplate` model) are configurable via the Notifications page (`/email-settings`); `getTemplate(type)` loads from DB with hardcoded fallbacks
+- Template variable resolution: `{{firstName}}`, `{{lastName}}`, `{{jobTitle}}` via `resolveTemplate()`
+
+## Notifications & Email
+
+**Email templates**: Thank-you auto-responder and default rejection letter are stored in `EmailTemplate` and editable by admin/hiring_manager at `/email-settings`. The rejection modal in `ApplicantDetail.tsx` pre-fills from the saved template.
+
+**Notification subscriptions** (`JobNotificationSub`): Per-user, per-job. Any role can subscribe. When a public application is submitted, subscribed users receive a notification email (mock). Configured separately from reviewer access.
+
+**Reviewer job access** (`JobReviewer`): Controls which jobs reviewers can see. Purely access control — does not affect notifications. Managed at `/email-settings`.
+
+**Request Review**: Admin/hiring_manager can send a specific applicant to specific users for review via a modal on the applicant detail page. Sends mock email and creates a note on the applicant.
