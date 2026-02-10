@@ -1,17 +1,14 @@
 import { Router, Response } from 'express';
 import prisma from '../db.js';
-import { authenticate, AuthRequest, getAccessibleJobIds } from '../middleware/auth.js';
+import { authenticate, AuthRequest, getAccessibleApplicantFilter } from '../middleware/auth.js';
 
 const router = Router();
 
 // Get dashboard overview stats
 router.get('/stats', authenticate, async (req: AuthRequest, res: Response) => {
   try {
-    const accessibleJobIds = await getAccessibleJobIds(req.user!);
-    const jobFilter = accessibleJobIds !== null
-      ? { id: { in: accessibleJobIds }, archived: false }
-      : { archived: false };
-    const applicantFilter = accessibleJobIds !== null ? { jobId: { in: accessibleJobIds } } : {};
+    const applicantFilter = await getAccessibleApplicantFilter(req.user!);
+    const isReviewer = req.user!.role === 'reviewer';
 
     const [
       totalJobs,
@@ -21,14 +18,20 @@ router.get('/stats', authenticate, async (req: AuthRequest, res: Response) => {
       inReviewApplicants,
       totalReviews,
       generalPool,
+      totalEvents,
+      upcomingEvents,
     ] = await Promise.all([
-      prisma.job.count({ where: jobFilter }),
-      prisma.job.count({ where: { ...jobFilter, status: 'open' } }),
+      prisma.job.count({ where: { archived: false } }),
+      prisma.job.count({ where: { archived: false, status: 'open' } }),
       prisma.applicant.count({ where: applicantFilter }),
       prisma.applicant.count({ where: { ...applicantFilter, stage: 'new' } }),
       prisma.applicant.count({ where: { ...applicantFilter, stage: { in: ['screening', 'interview'] } } }),
-      prisma.review.count(accessibleJobIds !== null ? { where: { applicant: { jobId: { in: accessibleJobIds } } } } : undefined),
+      isReviewer
+        ? prisma.review.count({ where: { applicant: applicantFilter } })
+        : prisma.review.count(),
       prisma.applicant.count({ where: { jobId: null } }),
+      prisma.recruitmentEvent.count(),
+      prisma.recruitmentEvent.count({ where: { date: { gte: new Date() } } }),
     ]);
 
     res.json({
@@ -45,6 +48,10 @@ router.get('/stats', authenticate, async (req: AuthRequest, res: Response) => {
       reviews: {
         total: totalReviews,
       },
+      events: {
+        total: totalEvents,
+        upcoming: upcomingEvents,
+      },
     });
   } catch (error) {
     console.error('Get dashboard stats error:', error);
@@ -56,8 +63,7 @@ router.get('/stats', authenticate, async (req: AuthRequest, res: Response) => {
 router.get('/pipeline', authenticate, async (req: AuthRequest, res: Response) => {
   try {
     const stages = ['new', 'screening', 'interview', 'offer', 'hired', 'rejected', 'holding'];
-    const accessibleJobIds = await getAccessibleJobIds(req.user!);
-    const applicantFilter = accessibleJobIds !== null ? { jobId: { in: accessibleJobIds } } : {};
+    const applicantFilter = await getAccessibleApplicantFilter(req.user!);
 
     const pipeline = await Promise.all(
       stages.map(async (stage) => {
@@ -90,9 +96,8 @@ router.get('/pipeline', authenticate, async (req: AuthRequest, res: Response) =>
 // Get recent activity
 router.get('/activity', authenticate, async (req: AuthRequest, res: Response) => {
   try {
-    const accessibleJobIds = await getAccessibleJobIds(req.user!);
-    const applicantFilter = accessibleJobIds !== null ? { jobId: { in: accessibleJobIds } } : {};
-    const reviewFilter = accessibleJobIds !== null ? { applicant: { jobId: { in: accessibleJobIds } } } : {};
+    const applicantFilter = await getAccessibleApplicantFilter(req.user!);
+    const reviewFilter = Object.keys(applicantFilter).length > 0 ? { applicant: applicantFilter } : {};
 
     const [recentApplicants, recentReviews] = await Promise.all([
       prisma.applicant.findMany({
@@ -136,8 +141,7 @@ router.get('/funnel', authenticate, async (req: AuthRequest, res: Response) => {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    const accessibleJobIds = await getAccessibleJobIds(req.user!);
-    const applicantFilter = accessibleJobIds !== null ? { jobId: { in: accessibleJobIds } } : {};
+    const applicantFilter = await getAccessibleApplicantFilter(req.user!);
 
     const applicantsByStage = await prisma.applicant.groupBy({
       by: ['stage'],
@@ -172,8 +176,7 @@ router.get('/funnel', authenticate, async (req: AuthRequest, res: Response) => {
 // Get top rated applicants
 router.get('/top-applicants', authenticate, async (req: AuthRequest, res: Response) => {
   try {
-    const accessibleJobIds = await getAccessibleJobIds(req.user!);
-    const applicantFilter = accessibleJobIds !== null ? { jobId: { in: accessibleJobIds } } : {};
+    const applicantFilter = await getAccessibleApplicantFilter(req.user!);
 
     const applicantsWithReviews = await prisma.applicant.findMany({
       where: {
@@ -215,8 +218,8 @@ router.get('/sources', authenticate, async (req: AuthRequest, res: Response) => 
   try {
     const { startDate, endDate } = req.query;
 
-    const accessibleJobIds = await getAccessibleJobIds(req.user!);
-    const where: Record<string, unknown> = accessibleJobIds !== null ? { jobId: { in: accessibleJobIds } } : {};
+    const applicantAccessFilter = await getAccessibleApplicantFilter(req.user!);
+    const where: Record<string, unknown> = { ...applicantAccessFilter };
     if (startDate || endDate) {
       where.createdAt = {};
       if (startDate) {
@@ -254,6 +257,24 @@ router.get('/sources', authenticate, async (req: AuthRequest, res: Response) => 
   } catch (error) {
     console.error('Get source analytics error:', error);
     res.status(500).json({ error: 'Failed to fetch source analytics' });
+  }
+});
+
+// Get upcoming events
+router.get('/upcoming-events', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const events = await prisma.recruitmentEvent.findMany({
+      where: { date: { gte: new Date() } },
+      orderBy: { date: 'asc' },
+      take: 3,
+      include: {
+        _count: { select: { applicants: true } },
+      },
+    });
+    res.json(events);
+  } catch (error) {
+    console.error('Get upcoming events error:', error);
+    res.status(500).json({ error: 'Failed to fetch upcoming events' });
   }
 });
 

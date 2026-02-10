@@ -6,6 +6,20 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('Seeding database...');
 
+  // Wipe all tables in dependency order (children first)
+  await prisma.review.deleteMany();
+  await prisma.note.deleteMany();
+  await prisma.jobReviewer.deleteMany();
+  await prisma.jobNotificationSub.deleteMany();
+  await prisma.eventAttendee.deleteMany();
+  await prisma.applicant.deleteMany();
+  await prisma.recruitmentEvent.deleteMany();
+  await prisma.job.deleteMany();
+  await prisma.emailTemplate.deleteMany();
+  await prisma.office.deleteMany();
+  await prisma.user.deleteMany();
+  console.log('Cleared existing data');
+
   // Create users
   const adminPassword = await bcrypt.hash('admin123', 10);
   const managerPassword = await bcrypt.hash('manager123', 10);
@@ -45,6 +59,51 @@ async function main() {
   });
 
   console.log('Created users:', { admin: admin.email, manager: manager.email, reviewer: reviewer.email });
+
+  // Create offices
+  const officeBR = await prisma.office.upsert({
+    where: { id: 'office-baton-rouge' },
+    update: {},
+    create: {
+      id: 'office-baton-rouge',
+      name: 'Baton Rouge',
+      address: '10 Cl Way',
+      city: 'Baton Rouge',
+      state: 'LA',
+      zip: '70808',
+      phone: '(225) 767-1530',
+    },
+  });
+
+  const officeFairhope = await prisma.office.upsert({
+    where: { id: 'office-fairhope' },
+    update: {},
+    create: {
+      id: 'office-fairhope',
+      name: 'Fairhope',
+      address: '401 Fairhope Ave',
+      city: 'Fairhope',
+      state: 'AL',
+      zip: '36532',
+      phone: '(251) 990-6200',
+    },
+  });
+
+  const officeBiloxi = await prisma.office.upsert({
+    where: { id: 'office-biloxi' },
+    update: {},
+    create: {
+      id: 'office-biloxi',
+      name: 'Biloxi',
+      address: '2350 Beach Blvd, Suite 102',
+      city: 'Biloxi',
+      state: 'MS',
+      zip: '39531',
+      phone: '(228) 385-8564',
+    },
+  });
+
+  console.log('Created offices:', { br: officeBR.name, fairhope: officeFairhope.name, biloxi: officeBiloxi.name });
 
   // Create jobs
   const jobs = await Promise.all([
@@ -196,9 +255,6 @@ Key Responsibilities:
         phone: '212-555-0101',
         linkedIn: 'linkedin.com/in/jameswilson',
         website: 'jameswilsonarchitect.com',
-        yearsExperience: 10,
-        currentCompany: 'Foster + Partners',
-        currentTitle: 'Project Architect',
         coverLetter: 'I am excited to apply for the Senior Architect position at your firm. With over 10 years of experience...',
         stage: 'interview',
         source: 'LinkedIn',
@@ -213,9 +269,6 @@ Key Responsibilities:
         phone: '323-555-0102',
         linkedIn: 'linkedin.com/in/sofiamartinez',
         portfolioUrl: 'behance.net/sofiamartinez',
-        yearsExperience: 2,
-        currentCompany: 'Gensler',
-        currentTitle: 'Designer',
         stage: 'screening',
         source: 'Website',
         jobId: jobs[1].id,
@@ -227,9 +280,6 @@ Key Responsibilities:
         lastName: 'Kim',
         email: 'david.kim@email.com',
         phone: '415-555-0103',
-        yearsExperience: 5,
-        currentCompany: 'HKS Architects',
-        currentTitle: 'Interior Designer',
         stage: 'new',
         source: 'Referral',
         jobId: jobs[2].id,
@@ -242,9 +292,6 @@ Key Responsibilities:
         email: 'rachel.t@email.com',
         phone: '312-555-0104',
         linkedIn: 'linkedin.com/in/rachelthompson',
-        yearsExperience: 7,
-        currentCompany: 'Perkins&Will',
-        currentTitle: 'BIM Specialist',
         stage: 'offer',
         source: 'Indeed',
         jobId: jobs[3].id,
@@ -257,8 +304,6 @@ Key Responsibilities:
         email: 'alex.chen@university.edu',
         phone: '617-555-0105',
         website: 'alexchenportfolio.com',
-        currentCompany: 'MIT',
-        currentTitle: 'Architecture Student',
         stage: 'new',
         source: 'University Career Fair',
         jobId: jobs[4].id,
@@ -451,6 +496,139 @@ The Hiring Team`,
   });
 
   console.log('Created notification subscriptions');
+
+  // Create recruitment events
+  const lsuEvent = await prisma.recruitmentEvent.create({
+    data: {
+      name: 'LSU College of Design Job Fair 2026',
+      type: 'job_fair',
+      location: 'LSU Student Union',
+      date: new Date('2026-03-15'),
+      notes: 'Annual spring job fair. Bring portfolio review station and firm brochures.',
+      createdById: manager.id,
+    },
+  });
+
+  const ullEvent = await prisma.recruitmentEvent.create({
+    data: {
+      name: 'ULL Architecture Career Day 2026',
+      type: 'campus_visit',
+      location: 'ULL Fletcher Hall',
+      date: new Date('2026-04-10'),
+      notes: 'Invited to give firm presentation + portfolio reviews.',
+      createdById: admin.id,
+    },
+  });
+
+  console.log('Created recruitment events');
+
+  // Assign attendees
+  await prisma.eventAttendee.create({
+    data: { userId: reviewer.id, eventId: lsuEvent.id },
+  });
+  await prisma.eventAttendee.create({
+    data: { userId: manager.id, eventId: lsuEvent.id },
+  });
+  await prisma.eventAttendee.create({
+    data: { userId: admin.id, eventId: ullEvent.id },
+  });
+
+  console.log('Created event attendees');
+
+  // Create fair applicants for LSU event
+  const fairApplicant1 = await prisma.applicant.create({
+    data: {
+      firstName: 'Marcus',
+      lastName: 'Reed',
+      email: 'marcus.reed@lsu.edu',
+      phone: '225-555-0201',
+      stage: 'new',
+      source: 'LSU College of Design Job Fair 2026',
+      jobId: jobs[1].id, // Junior Architect
+      eventId: lsuEvent.id,
+    },
+  });
+
+  const fairApplicant2 = await prisma.applicant.create({
+    data: {
+      firstName: 'Priya',
+      lastName: 'Patel',
+      email: 'priya.patel@lsu.edu',
+      stage: 'new',
+      source: 'LSU College of Design Job Fair 2026',
+      eventId: lsuEvent.id, // General interest
+    },
+  });
+
+  const fairApplicant3 = await prisma.applicant.create({
+    data: {
+      firstName: 'Jake',
+      lastName: 'Fontenot',
+      email: 'jake.fontenot@lsu.edu',
+      phone: '337-555-0202',
+      stage: 'screening',
+      source: 'LSU College of Design Job Fair 2026',
+      jobId: jobs[4].id, // Architecture Intern
+      eventId: lsuEvent.id,
+    },
+  });
+
+  console.log('Created fair applicants');
+
+  // Create inline reviews for fair applicants
+  await prisma.review.create({
+    data: {
+      reviewerId: reviewer.id,
+      applicantId: fairApplicant1.id,
+      rating: 4,
+      recommendation: 'yes',
+      comments: 'Strong Revit skills, good portfolio. Interested in healthcare design.',
+    },
+  });
+
+  await prisma.review.create({
+    data: {
+      reviewerId: reviewer.id,
+      applicantId: fairApplicant2.id,
+      rating: 3,
+      recommendation: 'maybe',
+      comments: 'Enthusiastic but early in studies. Follow up next year.',
+    },
+  });
+
+  await prisma.review.create({
+    data: {
+      reviewerId: reviewer.id,
+      applicantId: fairApplicant3.id,
+      rating: 5,
+      recommendation: 'strong_yes',
+      comments: 'Exceptional model-making skills. Great personality, would fit in well.',
+    },
+  });
+
+  console.log('Created fair applicant reviews');
+
+  // Add notes for fair applicants
+  await prisma.note.create({
+    data: {
+      applicantId: fairApplicant1.id,
+      content: `Added at LSU College of Design Job Fair 2026 by ${reviewer.email}`,
+    },
+  });
+  await prisma.note.create({
+    data: {
+      applicantId: fairApplicant2.id,
+      content: `Added at LSU College of Design Job Fair 2026 by ${reviewer.email}`,
+    },
+  });
+  await prisma.note.create({
+    data: {
+      applicantId: fairApplicant3.id,
+      content: `Added at LSU College of Design Job Fair 2026 by ${reviewer.email}`,
+    },
+  });
+
+  console.log('Created fair applicant notes');
   console.log('Seeding complete!');
 }
 

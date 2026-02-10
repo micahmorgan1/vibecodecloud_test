@@ -9,6 +9,8 @@ import reviewRoutes from './routes/reviews.js';
 import dashboardRoutes from './routes/dashboard.js';
 import userRoutes from './routes/users.js';
 import emailSettingsRoutes from './routes/emailSettings.js';
+import officeRoutes from './routes/offices.js';
+import eventRoutes from './routes/events.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -31,6 +33,8 @@ app.use('/api/reviews', reviewRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/email-settings', emailSettingsRoutes);
+app.use('/api/offices', officeRoutes);
+app.use('/api/events', eventRoutes);
 
 // Health check
 app.get('/api/health', (_req, res) => {

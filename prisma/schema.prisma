@@ -21,6 +21,8 @@ model User {
   jobs              Job[]                @relation("JobCreator")
   assignedJobs      JobReviewer[]
   notificationSubs  JobNotificationSub[]
+  createdEvents     RecruitmentEvent[]   @relation("EventCreator")
+  eventAttendees    EventAttendee[]
 }
 
 // Job postings
@@ -108,6 +110,9 @@ model Applicant {
   job             Job?     @relation(fields: [jobId], references: [id])
   jobId           String?
 
+  eventId         String?
+  event           RecruitmentEvent? @relation(fields: [eventId], references: [id])
+
   reviews         Review[]
   notes           Note[]
 }
@@ -179,6 +184,33 @@ model JobNotificationSub {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   job       Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
   @@unique([userId, jobId])
+}
+
+// Recruitment events (job fairs, campus visits, etc.)
+model RecruitmentEvent {
+  id          String   @id @default(uuid())
+  name        String
+  type        String   @default("job_fair") // job_fair, campus_visit, info_session
+  location    String?
+  date        DateTime
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  createdById String
+  createdBy   User     @relation("EventCreator", fields: [createdById], references: [id])
+  applicants  Applicant[]
+  attendees   EventAttendee[]
+}
+
+// Event attendee assignments (which users attend which events)
+model EventAttendee {
+  id        String   @id @default(uuid())
+  userId    String
+  eventId   String
+  createdAt DateTime @default(now())
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event     RecruitmentEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  @@unique([userId, eventId])
 }
 
 // Office locations

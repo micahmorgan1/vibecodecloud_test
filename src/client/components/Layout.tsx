@@ -17,9 +17,11 @@ export default function Layout() {
     { to: '/', label: 'Dashboard' },
     { to: '/jobs', label: 'Jobs' },
     { to: '/applicants', label: 'Applicants' },
+    { to: '/events', label: 'Events' },
     ...(user?.role === 'admin' || user?.role === 'hiring_manager'
       ? [{ to: '/email-settings', label: 'Notifications' }]
       : []),
+    ...(user?.role === 'admin' ? [{ to: '/offices', label: 'Offices' }] : []),
     ...(user?.role === 'admin' ? [{ to: '/users', label: 'Users' }] : []),
   ];
 

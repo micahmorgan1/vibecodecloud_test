@@ -1,6 +1,6 @@
 import { Router, Response } from 'express';
 import prisma from '../db.js';
-import { authenticate, AuthRequest, getAccessibleJobIds } from '../middleware/auth.js';
+import { authenticate, AuthRequest, getAccessibleApplicantFilter } from '../middleware/auth.js';
 
 const router = Router();
 
@@ -9,13 +9,10 @@ router.get('/applicant/:applicantId', authenticate, async (req: AuthRequest, res
   try {
     const { applicantId } = req.params;
 
-    // Reviewer access control
-    const applicant = await prisma.applicant.findUnique({ where: { id: applicantId }, select: { jobId: true } });
+    // Access control
+    const accessFilter = await getAccessibleApplicantFilter(req.user!);
+    const applicant = await prisma.applicant.findFirst({ where: { id: applicantId, ...accessFilter } });
     if (!applicant) {
-      return res.status(404).json({ error: 'Applicant not found' });
-    }
-    const accessibleJobIds = await getAccessibleJobIds(req.user!);
-    if (accessibleJobIds !== null && (!applicant.jobId || !accessibleJobIds.includes(applicant.jobId))) {
       return res.status(404).json({ error: 'Applicant not found' });
     }
 
@@ -41,13 +38,10 @@ router.get('/applicant/:applicantId/summary', authenticate, async (req: AuthRequ
   try {
     const { applicantId } = req.params;
 
-    // Reviewer access control
-    const applicantRecord = await prisma.applicant.findUnique({ where: { id: applicantId }, select: { jobId: true } });
+    // Access control
+    const accessFilter = await getAccessibleApplicantFilter(req.user!);
+    const applicantRecord = await prisma.applicant.findFirst({ where: { id: applicantId, ...accessFilter } });
     if (!applicantRecord) {
-      return res.status(404).json({ error: 'Applicant not found' });
-    }
-    const summaryAccessibleJobIds = await getAccessibleJobIds(req.user!);
-    if (summaryAccessibleJobIds !== null && (!applicantRecord.jobId || !summaryAccessibleJobIds.includes(applicantRecord.jobId))) {
       return res.status(404).json({ error: 'Applicant not found' });
     }
 
@@ -165,15 +159,10 @@ router.post('/applicant/:applicantId', authenticate, async (req: AuthRequest, re
       return res.status(400).json({ error: 'Invalid recommendation value' });
     }
 
-    // Check if applicant exists
-    const applicant = await prisma.applicant.findUnique({ where: { id: applicantId } });
+    // Access control
+    const accessFilter = await getAccessibleApplicantFilter(req.user!);
+    const applicant = await prisma.applicant.findFirst({ where: { id: applicantId, ...accessFilter } });
     if (!applicant) {
-      return res.status(404).json({ error: 'Applicant not found' });
-    }
-
-    // Reviewer access control
-    const accessibleJobIds = await getAccessibleJobIds(req.user!);
-    if (accessibleJobIds !== null && (!applicant.jobId || !accessibleJobIds.includes(applicant.jobId))) {
       return res.status(404).json({ error: 'Applicant not found' });
     }
 
@@ -226,13 +215,10 @@ router.get('/applicant/:applicantId/mine', authenticate, async (req: AuthRequest
   try {
     const { applicantId } = req.params;
 
-    // Reviewer access control
-    const mineApplicant = await prisma.applicant.findUnique({ where: { id: applicantId }, select: { jobId: true } });
+    // Access control
+    const accessFilter = await getAccessibleApplicantFilter(req.user!);
+    const mineApplicant = await prisma.applicant.findFirst({ where: { id: applicantId, ...accessFilter } });
     if (!mineApplicant) {
-      return res.status(404).json({ error: 'Applicant not found' });
-    }
-    const mineAccessibleJobIds = await getAccessibleJobIds(req.user!);
-    if (mineAccessibleJobIds !== null && (!mineApplicant.jobId || !mineAccessibleJobIds.includes(mineApplicant.jobId))) {
       return res.status(404).json({ error: 'Applicant not found' });
     }
 

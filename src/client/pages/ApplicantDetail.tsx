@@ -40,6 +40,7 @@ interface Applicant {
   source: string | null;
   createdAt: string;
   job: { id: string; title: string; department: string; location: string } | null;
+  event: { id: string; name: string } | null;
   reviews: Review[];
   notes: Note[];
 }
@@ -316,6 +317,16 @@ export default function ApplicantDetail() {
                 <dt className="text-sm text-gray-500">Department</dt>
                 <dd className="font-medium">{applicant.job?.department || '—'}</dd>
               </div>
+              {applicant.event && (
+                <div>
+                  <dt className="text-sm text-gray-500">Event</dt>
+                  <dd className="font-medium">
+                    <Link to={`/events/${applicant.event.id}`} className="text-gray-900 hover:text-gray-600">
+                      {applicant.event.name}
+                    </Link>
+                  </dd>
+                </div>
+              )}
               {applicant.source && (
                 <div>
                   <dt className="text-sm text-gray-500">Source</dt>

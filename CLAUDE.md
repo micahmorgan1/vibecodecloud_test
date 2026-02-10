@@ -26,9 +26,9 @@ No test framework is configured.
 
 **Client** (`src/client/`): React 18 + React Router 6 + TailwindCSS, built with Vite. Pages are in `src/client/pages/`, auth state lives in `src/client/context/AuthContext.tsx`, and `src/client/lib/api.ts` is a singleton fetch wrapper that auto-attaches JWT tokens from localStorage.
 
-**Server** (`src/server/`): Express on port 3001. Routes are in `src/server/routes/` (auth, jobs, applicants, reviews, users, dashboard, emailSettings). JWT authentication middleware is in `src/server/middleware/auth.ts`. File uploads (multer) go to `uploads/resumes/` and `uploads/portfolios/`.
+**Server** (`src/server/`): Express on port 3001. Routes are in `src/server/routes/` (auth, jobs, applicants, reviews, users, dashboard, emailSettings, events). JWT authentication middleware is in `src/server/middleware/auth.ts`. File uploads (multer) go to `uploads/resumes/` and `uploads/portfolios/`.
 
-**Database**: SQLite (`prisma/dev.db`). Schema is in `prisma/schema.prisma`. Models: User, Job, Applicant, Review, Note, EmailTemplate, JobReviewer, JobNotificationSub, Office. One review per reviewer per applicant (upsert pattern).
+**Database**: SQLite (`prisma/dev.db`). Schema is in `prisma/schema.prisma`. Models: User, Job, Applicant, Review, Note, EmailTemplate, JobReviewer, JobNotificationSub, Office, RecruitmentEvent, EventAttendee. One review per reviewer per applicant (upsert pattern).
 
 **Dev proxy**: Vite proxies `/api` and `/uploads` to `localhost:3001`. In production, Express serves the built client and handles SPA fallback.
 
@@ -39,7 +39,7 @@ Three roles with cascading permissions:
 - **hiring_manager**: Job/applicant CRUD, can manually add applicants
 - **reviewer**: Read-only jobs/applicants, can add reviews. Reviewers are scoped to assigned jobs via `JobReviewer` — unassigned reviewers see nothing. Assigned reviewers can also manually add applicants to their jobs.
 
-Auth uses `authenticate`, `requireRole(...roles)`, and `getAccessibleJobIds(user)` middleware. The latter returns `null` for admin/hiring_manager (no filter) or an array of job IDs for reviewers. Demo logins: `admin@archfirm.com`, `manager@archfirm.com`, `reviewer@archfirm.com` (all use password `admin123`/`manager123`/`reviewer123`).
+Auth uses `authenticate`, `requireRole(...roles)`, `getAccessibleJobIds(user)`, `getAccessibleEventIds(user)`, and `getAccessibleApplicantFilter(user)` middleware. `getAccessibleJobIds` returns `null` for admin/hiring_manager (no filter) or an array of job IDs for reviewers. `getAccessibleApplicantFilter` returns a compound Prisma WHERE clause combining job + event access for applicant queries. Demo logins: `admin@archfirm.com`, `manager@archfirm.com`, `reviewer@archfirm.com` (all use password `admin123`/`manager123`/`reviewer123`).
 
 ## Job Archiving & General Applicant Pool
 
@@ -75,3 +75,19 @@ Seven stages: `new` → `screening` → `interview` → `offer` → `hired` / `r
 ## Website Integration
 
 Jobs have a `slug` (unique, auto-generated from title) and `publishToWebsite` flag. Public endpoints `GET /jobs/website` and `GET /jobs/website/:slug` serve published open jobs to the WHLC website. The WHLCddev project (`ats` branch) has Alpine.js components (`atsJobs`, `atsJobDetail`, `atsApplyForm`, `atsGeneralApplyForm`) that fetch from the ATS API. The general apply form (`atsGeneralApplyForm`) submits applicants without a `jobId` for the "Send us your Resume" page. The `ATS_API_URL` env var configures the API base URL.
+
+## Recruitment Events
+
+**Models**: `RecruitmentEvent` (name, type, location, date, notes, createdById) and `EventAttendee` (userId + eventId unique). `Applicant.eventId` is an optional foreign key linking applicants to events.
+
+**Event types**: `job_fair`, `campus_visit`, `info_session`.
+
+**Access control**: `getAccessibleEventIds(user)` returns `null` for admin/HM, event IDs for reviewers. `getAccessibleApplicantFilter(user)` combines job + event access into a single compound Prisma WHERE clause using `OR` conditions. This replaces the old job-only `applicantFilter` pattern in applicant, review, and dashboard routes.
+
+**Fair Intake**: `POST /api/events/:id/intake` atomically creates an applicant + review + note in a single transaction. Used by the "Save & Add Another" flow in the EventDetail page. Any authenticated user with event access can use it.
+
+**Event-scoped reviewer access**: Reviewers assigned as attendees to an event can see that event and its applicants, independently from their job assignments. A reviewer can be assigned to both jobs and events — the compound filter handles the union.
+
+**Routes** (`src/server/routes/events.ts`): CRUD for events, `PUT /:id/attendees` for managing attendees (delete-and-recreate pattern), `POST /:id/intake` for fair intake. Registered at `/api/events`.
+
+**Client pages**: `Events.tsx` (list + create modal), `EventDetail.tsx` (detail + fair intake form + applicants table). Events nav item visible to all roles.

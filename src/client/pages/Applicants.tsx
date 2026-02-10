@@ -12,6 +12,7 @@ interface Applicant {
   stage: string;
   createdAt: string;
   job: { id: string; title: string; department: string; archived: boolean } | null;
+  event: { id: string; name: string } | null;
   reviews: Array<{ rating: number }>;
   _count: { reviews: number; notes: number };
 }
@@ -276,6 +277,14 @@ export default function Applicants() {
                         </>
                       ) : (
                         <span className="text-gray-500 italic">General Application</span>
+                      )}
+                      {applicant.event && (
+                        <Link
+                          to={`/events/${applicant.event.id}`}
+                          className="text-xs text-blue-600 hover:text-blue-800 block mt-0.5"
+                        >
+                          {applicant.event.name}
+                        </Link>
                       )}
                     </td>
                     <td className="px-6 py-4">

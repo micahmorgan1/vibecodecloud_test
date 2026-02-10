@@ -7,6 +7,16 @@ interface DashboardStats {
   jobs: { total: number; open: number };
   applicants: { total: number; new: number; inReview: number; generalPool: number };
   reviews: { total: number };
+  events?: { total: number; upcoming: number };
+}
+
+interface UpcomingEvent {
+  id: string;
+  name: string;
+  type: string;
+  date: string;
+  location: string | null;
+  _count: { applicants: number };
 }
 
 interface PipelineStage {
@@ -51,6 +61,7 @@ export default function Dashboard() {
   const [pipeline, setPipeline] = useState<PipelineStage[]>([]);
   const [activity, setActivity] = useState<Activity | null>(null);
   const [sourceAnalytics, setSourceAnalytics] = useState<SourceAnalytics | null>(null);
+  const [upcomingEvents, setUpcomingEvents] = useState<UpcomingEvent[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -59,12 +70,14 @@ export default function Dashboard() {
       api.get<PipelineStage[]>('/dashboard/pipeline'),
       api.get<Activity>('/dashboard/activity'),
       api.get<SourceAnalytics>('/dashboard/sources'),
+      api.get<UpcomingEvent[]>('/dashboard/upcoming-events'),
     ])
-      .then(([statsRes, pipelineRes, activityRes, sourcesRes]) => {
+      .then(([statsRes, pipelineRes, activityRes, sourcesRes, eventsRes]) => {
         setStats(statsRes.data);
         setPipeline(pipelineRes.data);
         setActivity(activityRes.data);
         setSourceAnalytics(sourcesRes.data);
+        setUpcomingEvents(eventsRes.data);
       })
       .finally(() => setLoading(false));
   }, []);
@@ -265,6 +278,36 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      {/* Upcoming Events */}
+      {upcomingEvents.length > 0 && (
+        <div className="card">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-display font-semibold text-gray-900 uppercase tracking-wide">Upcoming Events</h2>
+            <Link to="/events" className="text-sm text-gray-900 hover:text-gray-600 font-medium">
+              View all &rarr;
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {upcomingEvents.map((event) => (
+              <Link
+                key={event.id}
+                to={`/events/${event.id}`}
+                className="p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                <p className="font-medium text-gray-900">{event.name}</p>
+                <p className="text-sm text-gray-500 mt-1">
+                  {new Date(event.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                  {event.location && ` — ${event.location}`}
+                </p>
+                <p className="text-sm text-gray-400 mt-2">
+                  {event._count.applicants} applicant{event._count.applicants !== 1 ? 's' : ''}
+                </p>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Application Sources */}
       <div className="card">
