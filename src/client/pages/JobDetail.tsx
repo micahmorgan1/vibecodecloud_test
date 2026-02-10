@@ -21,6 +21,7 @@ interface Applicant {
 interface Job {
   id: string;
   title: string;
+  slug: string;
   department: string;
   location: string;
   type: string;
@@ -28,6 +29,7 @@ interface Job {
   requirements: string;
   salary: string | null;
   status: string;
+  publishToWebsite: boolean;
   createdAt: string;
   createdBy: { id: string; name: string; email: string };
   applicants: Applicant[];
@@ -271,6 +273,76 @@ export default function JobDetail() {
           </div>
         </div>
       </div>
+
+      {/* Website Publishing */}
+      {canEdit && (
+        <div className="card">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-display font-semibold text-gray-900 uppercase tracking-wide">Website Publishing</h2>
+          </div>
+          <div className="flex items-center gap-4 mb-4">
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={job.publishToWebsite}
+                onChange={async () => {
+                  try {
+                    await api.put(`/jobs/${id}`, {
+                      publishToWebsite: !job.publishToWebsite,
+                    });
+                    loadJob();
+                  } catch (err) {
+                    console.error('Failed to toggle website publish:', err);
+                  }
+                }}
+                className="h-4 w-4 rounded border-gray-300"
+              />
+              <span className="text-sm font-medium text-gray-700">
+                Publish to WHLC Website
+              </span>
+            </label>
+            {job.publishToWebsite && (
+              <span className="badge bg-green-100 text-green-800 border border-green-200">
+                Live
+              </span>
+            )}
+          </div>
+          <div className="space-y-3">
+            <div>
+              <label className="text-sm text-gray-500">Slug</label>
+              <div className="flex items-center gap-2 mt-1">
+                <input
+                  type="text"
+                  value={job.slug}
+                  onChange={(e) => setJob({ ...job, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '') })}
+                  className="input flex-1 text-sm"
+                />
+                <button
+                  onClick={async () => {
+                    try {
+                      await api.put(`/jobs/${id}`, { slug: job.slug });
+                      loadJob();
+                    } catch (err) {
+                      console.error('Failed to update slug:', err);
+                    }
+                  }}
+                  className="btn btn-secondary text-sm"
+                >
+                  Save Slug
+                </button>
+              </div>
+            </div>
+            {job.publishToWebsite && (
+              <div className="p-3 bg-green-50 rounded border border-green-200">
+                <p className="text-xs text-gray-500 mb-1">Website URL</p>
+                <p className="text-sm font-medium text-green-800">
+                  whlcarchitecture.com/careers/{job.slug}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Job Details */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

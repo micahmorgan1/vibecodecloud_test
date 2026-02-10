@@ -6,11 +6,13 @@ import { useAuth } from '../context/AuthContext';
 interface Job {
   id: string;
   title: string;
+  slug: string;
   department: string;
   location: string;
   type: string;
   status: string;
   salary: string | null;
+  publishToWebsite: boolean;
   createdAt: string;
   createdBy: { id: string; name: string };
   _count: { applicants: number };
@@ -125,6 +127,11 @@ export default function Jobs() {
                   <span className={`badge ${statusBadge(job.status)}`}>
                     {job.status}
                   </span>
+                  {job.publishToWebsite && (
+                    <span className="badge bg-green-100 text-green-800 border border-green-200">
+                      Website
+                    </span>
+                  )}
                   {job.postedToLinkedIn && (
                     <span className="badge bg-blue-100 text-blue-800 border border-blue-200">
                       LinkedIn
@@ -188,13 +195,19 @@ function CreateJobModal({
 }) {
   const [formData, setFormData] = useState({
     title: '',
+    slug: '',
     department: '',
     location: '',
     type: 'full-time',
     description: '',
     requirements: '',
     salary: '',
+    publishToWebsite: false,
   });
+  const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
+
+  const toSlug = (text: string) =>
+    text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -204,7 +217,11 @@ function CreateJobModal({
     setError('');
 
     try {
-      await api.post('/jobs', formData);
+      const payload = {
+        ...formData,
+        slug: formData.slug || undefined, // let backend auto-generate if empty
+      };
+      await api.post('/jobs', payload);
       onCreated();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create job');
@@ -240,7 +257,14 @@ function CreateJobModal({
               <input
                 type="text"
                 value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                onChange={(e) => {
+                  const title = e.target.value;
+                  setFormData({
+                    ...formData,
+                    title,
+                    ...(slugManuallyEdited ? {} : { slug: toSlug(title) }),
+                  });
+                }}
                 className="input"
                 placeholder="e.g., Senior Architect"
                 required
@@ -295,6 +319,36 @@ function CreateJobModal({
               className="input"
               placeholder="e.g., $80,000 - $100,000"
             />
+          </div>
+
+          <div>
+            <label className="label">URL Slug</label>
+            <input
+              type="text"
+              value={formData.slug}
+              onChange={(e) => {
+                setSlugManuallyEdited(true);
+                setFormData({ ...formData, slug: toSlug(e.target.value) });
+              }}
+              className="input"
+              placeholder="auto-generated from title"
+            />
+            <p className="text-xs text-gray-400 mt-1">
+              Leave blank to auto-generate from the title
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <input
+              type="checkbox"
+              id="publishToWebsite"
+              checked={formData.publishToWebsite}
+              onChange={(e) => setFormData({ ...formData, publishToWebsite: e.target.checked })}
+              className="h-4 w-4 rounded border-gray-300"
+            />
+            <label htmlFor="publishToWebsite" className="text-sm font-medium text-gray-700">
+              Publish to WHLC Website
+            </label>
           </div>
 
           <div>

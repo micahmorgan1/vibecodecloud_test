@@ -27,6 +27,7 @@ model User {
 model Job {
   id          String   @id @default(uuid())
   title       String
+  slug        String   @unique
   department  String   // e.g., "Design", "Project Management", "Engineering"
   location    String
   type        String   // full-time, part-time, contract, internship
@@ -34,6 +35,7 @@ model Job {
   requirements String
   salary      String?
   status      String   @default("open") // open, closed, on-hold
+  publishToWebsite Boolean @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   closedAt    DateTime?

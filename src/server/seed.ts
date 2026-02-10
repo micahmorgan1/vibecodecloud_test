@@ -51,6 +51,7 @@ async function main() {
     prisma.job.create({
       data: {
         title: 'Senior Architect',
+        slug: 'senior-architect',
         department: 'Design',
         location: 'New York, NY',
         type: 'full-time',
@@ -77,6 +78,7 @@ Key Responsibilities:
     prisma.job.create({
       data: {
         title: 'Junior Architect',
+        slug: 'junior-architect',
         department: 'Design',
         location: 'New York, NY',
         type: 'full-time',
@@ -103,6 +105,7 @@ Key Responsibilities:
     prisma.job.create({
       data: {
         title: 'Interior Designer',
+        slug: 'interior-designer',
         department: 'Interiors',
         location: 'Los Angeles, CA',
         type: 'full-time',
@@ -129,6 +132,7 @@ Key Responsibilities:
     prisma.job.create({
       data: {
         title: 'BIM Manager',
+        slug: 'bim-manager',
         department: 'Technology',
         location: 'Chicago, IL',
         type: 'full-time',
@@ -155,6 +159,7 @@ Key Responsibilities:
     prisma.job.create({
       data: {
         title: 'Architecture Intern',
+        slug: 'architecture-intern',
         department: 'Design',
         location: 'New York, NY',
         type: 'internship',

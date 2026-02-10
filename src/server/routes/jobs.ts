@@ -3,6 +3,7 @@ import prisma from '../db.js';
 import { authenticate, requireRole, AuthRequest, getAccessibleJobIds } from '../middleware/auth.js';
 import { formatJobForLinkedIn } from '../services/linkedInFormatter.js';
 import { JOB_BOARD_PLATFORMS, getPlatformById, generateTrackingUrl } from '../services/jobBoardPlatforms.js';
+import { generateUniqueSlug } from '../utils/slugify.js';
 
 const router = Router();
 
@@ -77,6 +78,69 @@ router.get('/public', async (req, res) => {
   } catch (error) {
     console.error('Get public jobs error:', error);
     res.status(500).json({ error: 'Failed to fetch jobs' });
+  }
+});
+
+// Get open jobs published to the website (public - for WHLC website)
+router.get('/website', async (_req, res) => {
+  try {
+    const jobs = await prisma.job.findMany({
+      where: {
+        status: 'open',
+        publishToWebsite: true,
+      },
+      select: {
+        id: true,
+        slug: true,
+        title: true,
+        department: true,
+        location: true,
+        type: true,
+        description: true,
+        salary: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    res.json(jobs);
+  } catch (error) {
+    console.error('Get website jobs error:', error);
+    res.status(500).json({ error: 'Failed to fetch jobs' });
+  }
+});
+
+// Get single job by slug for the website (public)
+router.get('/website/:slug', async (req, res) => {
+  try {
+    const { slug } = req.params;
+
+    const job = await prisma.job.findUnique({
+      where: { slug },
+      select: {
+        id: true,
+        slug: true,
+        title: true,
+        department: true,
+        location: true,
+        type: true,
+        description: true,
+        requirements: true,
+        salary: true,
+        status: true,
+        createdAt: true,
+        publishToWebsite: true,
+      },
+    });
+
+    if (!job || job.status !== 'open' || !job.publishToWebsite) {
+      return res.status(404).json({ error: 'Job not found' });
+    }
+
+    res.json(job);
+  } catch (error) {
+    console.error('Get website job error:', error);
+    res.status(500).json({ error: 'Failed to fetch job' });
   }
 });
 
@@ -161,21 +225,27 @@ router.post(
   requireRole('admin', 'hiring_manager'),
   async (req: AuthRequest, res: Response) => {
     try {
-      const { title, department, location, type, description, requirements, salary } = req.body;
+      const { title, department, location, type, description, requirements, salary, slug: providedSlug, publishToWebsite } = req.body;
 
       if (!title || !department || !location || !type || !description || !requirements) {
         return res.status(400).json({ error: 'Missing required fields' });
       }
 
+      const slug = providedSlug
+        ? providedSlug
+        : await generateUniqueSlug(title);
+
       const job = await prisma.job.create({
         data: {
           title,
+          slug,
           department,
           location,
           type,
           description,
           requirements,
           salary,
+          publishToWebsite: publishToWebsite ?? false,
           createdById: req.user!.id,
         },
         include: {
@@ -201,7 +271,7 @@ router.put(
   async (req: AuthRequest, res: Response) => {
     try {
       const { id } = req.params;
-      const { title, department, location, type, description, requirements, salary, status } = req.body;
+      const { title, department, location, type, description, requirements, salary, status, slug, publishToWebsite } = req.body;
 
       const existingJob = await prisma.job.findUnique({ where: { id } });
       if (!existingJob) {
@@ -216,6 +286,8 @@ router.put(
       if (description) updateData.description = description;
       if (requirements) updateData.requirements = requirements;
       if (salary !== undefined) updateData.salary = salary;
+      if (slug !== undefined) updateData.slug = slug;
+      if (publishToWebsite !== undefined) updateData.publishToWebsite = publishToWebsite;
       if (status) {
         updateData.status = status;
         if (status === 'closed') {
