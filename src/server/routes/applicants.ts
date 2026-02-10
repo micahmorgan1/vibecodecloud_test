@@ -22,7 +22,7 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
       ];
     }
 
-    // Reviewer access control: only see applicants for assigned jobs
+    // Reviewer access control: only see applicants for assigned jobs (excludes general pool)
     const accessibleJobIds = await getAccessibleJobIds(req.user!);
     if (accessibleJobIds !== null) {
       if (accessibleJobIds.length === 0) {
@@ -37,7 +37,7 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
       where,
       include: {
         job: {
-          select: { id: true, title: true, department: true },
+          select: { id: true, title: true, department: true, archived: true },
         },
         reviews: {
           include: {
@@ -89,9 +89,9 @@ router.get('/:id', authenticate, async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ error: 'Applicant not found' });
     }
 
-    // Reviewer access control
+    // Reviewer access control (general pool applicants hidden from reviewers)
     const accessibleJobIds = await getAccessibleJobIds(req.user!);
-    if (accessibleJobIds !== null && !accessibleJobIds.includes(applicant.jobId)) {
+    if (accessibleJobIds !== null && (!applicant.jobId || !accessibleJobIds.includes(applicant.jobId))) {
       return res.status(404).json({ error: 'Applicant not found' });
     }
 
@@ -115,9 +115,6 @@ router.post('/', uploadApplicationFiles, async (req: Request, res: Response) => 
       website,
       portfolioUrl,
       coverLetter,
-      yearsExperience,
-      currentCompany,
-      currentTitle,
       source,
       sourceDetails,
       referrer,
@@ -127,25 +124,29 @@ router.post('/', uploadApplicationFiles, async (req: Request, res: Response) => 
       utmContent,
     } = req.body;
 
-    if (!jobId || !firstName || !lastName || !email) {
-      return res.status(400).json({ error: 'Job ID, first name, last name, and email are required' });
+    if (!firstName || !lastName || !email) {
+      return res.status(400).json({ error: 'First name, last name, and email are required' });
     }
 
-    // Verify job exists and is open
-    const job = await prisma.job.findUnique({ where: { id: jobId } });
-    if (!job) {
-      return res.status(404).json({ error: 'Job not found' });
-    }
-    if (job.status !== 'open') {
-      return res.status(400).json({ error: 'This job is no longer accepting applications' });
-    }
+    let job: { id: string; title: string; status: string } | null = null;
 
-    // Check for duplicate application
-    const existingApplication = await prisma.applicant.findFirst({
-      where: { jobId, email },
-    });
-    if (existingApplication) {
-      return res.status(400).json({ error: 'You have already applied for this position' });
+    if (jobId) {
+      // Verify job exists and is open
+      job = await prisma.job.findUnique({ where: { id: jobId }, select: { id: true, title: true, status: true } });
+      if (!job) {
+        return res.status(404).json({ error: 'Job not found' });
+      }
+      if (job.status !== 'open') {
+        return res.status(400).json({ error: 'This job is no longer accepting applications' });
+      }
+
+      // Check for duplicate application
+      const existingApplication = await prisma.applicant.findFirst({
+        where: { jobId, email },
+      });
+      if (existingApplication) {
+        return res.status(400).json({ error: 'You have already applied for this position' });
+      }
     }
 
     // Get uploaded file paths
@@ -155,7 +156,7 @@ router.post('/', uploadApplicationFiles, async (req: Request, res: Response) => 
 
     const applicant = await prisma.applicant.create({
       data: {
-        jobId,
+        jobId: jobId || null,
         firstName,
         lastName,
         email,
@@ -164,10 +165,7 @@ router.post('/', uploadApplicationFiles, async (req: Request, res: Response) => 
         website,
         portfolioUrl,
         coverLetter,
-        yearsExperience: yearsExperience ? parseInt(yearsExperience) : null,
-        currentCompany,
-        currentTitle,
-        source: source || 'Direct Application',
+        source: source || (jobId ? 'Direct Application' : 'General Application'),
         sourceDetails,
         referrer,
         utmSource,
@@ -184,11 +182,13 @@ router.post('/', uploadApplicationFiles, async (req: Request, res: Response) => 
       },
     });
 
+    const jobTitle = job?.title || 'General Application';
+
     // Fire-and-forget: thank-you auto-responder
     (async () => {
       try {
         const template = await getTemplate('thank_you');
-        const variables = { firstName, lastName, jobTitle: job.title };
+        const variables = { firstName, lastName, jobTitle };
         const subject = resolveTemplate(template.subject, variables);
         const body = resolveTemplate(template.body, variables);
         await sendThankYouEmail({ to: email, applicantName: `${firstName} ${lastName}`, subject, body });
@@ -197,25 +197,27 @@ router.post('/', uploadApplicationFiles, async (req: Request, res: Response) => 
       }
     })();
 
-    // Fire-and-forget: notify users subscribed to this job's notifications
-    (async () => {
-      try {
-        const subscribers = await prisma.jobNotificationSub.findMany({
-          where: { jobId },
-          include: { user: { select: { name: true, email: true } } },
-        });
-        for (const sub of subscribers) {
-          await sendReviewerNotification({
-            to: sub.user.email,
-            reviewerName: sub.user.name,
-            applicantName: `${firstName} ${lastName}`,
-            jobTitle: job.title,
+    // Fire-and-forget: notify users subscribed to this job's notifications (skip for general pool)
+    if (jobId) {
+      (async () => {
+        try {
+          const subscribers = await prisma.jobNotificationSub.findMany({
+            where: { jobId },
+            include: { user: { select: { name: true, email: true } } },
           });
+          for (const sub of subscribers) {
+            await sendReviewerNotification({
+              to: sub.user.email,
+              reviewerName: sub.user.name,
+              applicantName: `${firstName} ${lastName}`,
+              jobTitle,
+            });
+          }
+        } catch (err) {
+          console.error('Subscriber notification failed:', err);
         }
-      } catch (err) {
-        console.error('Subscriber notification failed:', err);
-      }
-    })();
+      })();
+    }
 
     res.status(201).json(applicant);
   } catch (error) {
@@ -240,18 +242,20 @@ router.post(
         website,
         portfolioUrl,
         coverLetter,
-        yearsExperience,
-        currentCompany,
-        currentTitle,
         source,
       } = req.body;
 
-      if (!jobId || !firstName || !lastName || !email) {
-        return res.status(400).json({ error: 'Job, first name, last name, and email are required' });
+      if (!firstName || !lastName || !email) {
+        return res.status(400).json({ error: 'First name, last name, and email are required' });
       }
 
-      // Check permissions: admin/hiring_manager always allowed, reviewer only if assigned to this job
-      if (req.user!.role === 'reviewer') {
+      // Check permissions: admin/hiring_manager always allowed, reviewer only if assigned to a specific job
+      if (!jobId) {
+        // General pool: only admin/hiring_manager can add
+        if (req.user!.role !== 'admin' && req.user!.role !== 'hiring_manager') {
+          return res.status(403).json({ error: 'Insufficient permissions' });
+        }
+      } else if (req.user!.role === 'reviewer') {
         const accessibleJobIds = await getAccessibleJobIds(req.user!);
         if (accessibleJobIds !== null && !accessibleJobIds.includes(jobId)) {
           return res.status(403).json({ error: 'Insufficient permissions' });
@@ -260,21 +264,23 @@ router.post(
         return res.status(403).json({ error: 'Insufficient permissions' });
       }
 
-      const job = await prisma.job.findUnique({ where: { id: jobId } });
-      if (!job) {
-        return res.status(404).json({ error: 'Job not found' });
-      }
+      if (jobId) {
+        const job = await prisma.job.findUnique({ where: { id: jobId } });
+        if (!job) {
+          return res.status(404).json({ error: 'Job not found' });
+        }
 
-      const existingApplication = await prisma.applicant.findFirst({
-        where: { jobId, email },
-      });
-      if (existingApplication) {
-        return res.status(400).json({ error: 'An applicant with this email already exists for this job' });
+        const existingApplication = await prisma.applicant.findFirst({
+          where: { jobId, email },
+        });
+        if (existingApplication) {
+          return res.status(400).json({ error: 'An applicant with this email already exists for this job' });
+        }
       }
 
       const applicant = await prisma.applicant.create({
         data: {
-          jobId,
+          jobId: jobId || null,
           firstName,
           lastName,
           email,
@@ -283,9 +289,6 @@ router.post(
           website: website || null,
           portfolioUrl: portfolioUrl || null,
           coverLetter: coverLetter || null,
-          yearsExperience: yearsExperience ? parseInt(yearsExperience) : null,
-          currentCompany: currentCompany || null,
-          currentTitle: currentTitle || null,
           source: source || 'manual',
         },
         include: {
@@ -320,7 +323,7 @@ router.patch('/:id/stage', authenticate, async (req: AuthRequest, res: Response)
       return res.status(404).json({ error: 'Applicant not found' });
     }
     const accessibleJobIds = await getAccessibleJobIds(req.user!);
-    if (accessibleJobIds !== null && !accessibleJobIds.includes(existing.jobId)) {
+    if (accessibleJobIds !== null && (!existing.jobId || !accessibleJobIds.includes(existing.jobId))) {
       return res.status(404).json({ error: 'Applicant not found' });
     }
 
@@ -354,9 +357,6 @@ router.put('/:id', authenticate, async (req: AuthRequest, res: Response) => {
       website,
       portfolioUrl,
       coverLetter,
-      yearsExperience,
-      currentCompany,
-      currentTitle,
     } = req.body;
 
     // Reviewer access control
@@ -365,7 +365,7 @@ router.put('/:id', authenticate, async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ error: 'Applicant not found' });
     }
     const accessibleJobIds = await getAccessibleJobIds(req.user!);
-    if (accessibleJobIds !== null && !accessibleJobIds.includes(existing.jobId)) {
+    if (accessibleJobIds !== null && (!existing.jobId || !accessibleJobIds.includes(existing.jobId))) {
       return res.status(404).json({ error: 'Applicant not found' });
     }
 
@@ -378,9 +378,6 @@ router.put('/:id', authenticate, async (req: AuthRequest, res: Response) => {
     if (website !== undefined) updateData.website = website;
     if (portfolioUrl !== undefined) updateData.portfolioUrl = portfolioUrl;
     if (coverLetter !== undefined) updateData.coverLetter = coverLetter;
-    if (yearsExperience !== undefined) updateData.yearsExperience = yearsExperience;
-    if (currentCompany !== undefined) updateData.currentCompany = currentCompany;
-    if (currentTitle !== undefined) updateData.currentTitle = currentTitle;
 
     const applicant = await prisma.applicant.update({
       where: { id },
@@ -411,7 +408,7 @@ router.post('/:id/notes', authenticate, async (req: AuthRequest, res: Response) 
 
     // Reviewer access control
     const accessibleJobIds = await getAccessibleJobIds(req.user!);
-    if (accessibleJobIds !== null && !accessibleJobIds.includes(applicant.jobId)) {
+    if (accessibleJobIds !== null && (!applicant.jobId || !accessibleJobIds.includes(applicant.jobId))) {
       return res.status(404).json({ error: 'Applicant not found' });
     }
 
@@ -440,7 +437,7 @@ router.get('/:id/notes', authenticate, async (req: AuthRequest, res: Response) =
       return res.status(404).json({ error: 'Applicant not found' });
     }
     const accessibleJobIds = await getAccessibleJobIds(req.user!);
-    if (accessibleJobIds !== null && !accessibleJobIds.includes(applicant.jobId)) {
+    if (accessibleJobIds !== null && (!applicant.jobId || !accessibleJobIds.includes(applicant.jobId))) {
       return res.status(404).json({ error: 'Applicant not found' });
     }
 
@@ -477,7 +474,7 @@ router.post('/:id/send-rejection', authenticate, async (req: AuthRequest, res: R
 
     // Reviewer access control
     const accessibleJobIds = await getAccessibleJobIds(req.user!);
-    if (accessibleJobIds !== null && !accessibleJobIds.includes(applicant.jobId)) {
+    if (accessibleJobIds !== null && (!applicant.jobId || !accessibleJobIds.includes(applicant.jobId))) {
       return res.status(404).json({ error: 'Applicant not found' });
     }
 
@@ -485,7 +482,7 @@ router.post('/:id/send-rejection', authenticate, async (req: AuthRequest, res: R
     await sendRejectionEmail({
       to: applicant.email,
       applicantName: `${applicant.firstName} ${applicant.lastName}`,
-      jobTitle: applicant.job.title,
+      jobTitle: applicant.job?.title || 'General Application',
       emailBody,
     });
 
@@ -547,6 +544,104 @@ router.post('/:id/send-rejection', authenticate, async (req: AuthRequest, res: R
     res.status(500).json({ error: 'Failed to send rejection email' });
   }
 });
+
+// Assign or reassign applicant to a job (admin/hiring_manager only)
+router.patch(
+  '/:id/assign-job',
+  authenticate,
+  requireRole('admin', 'hiring_manager'),
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const { id } = req.params;
+      const { jobId } = req.body;
+
+      const applicant = await prisma.applicant.findUnique({
+        where: { id },
+        include: { job: { select: { title: true } } },
+      });
+      if (!applicant) {
+        return res.status(404).json({ error: 'Applicant not found' });
+      }
+
+      const oldJobTitle = applicant.job?.title || 'General Pool';
+
+      if (jobId) {
+        // Validate target job
+        const targetJob = await prisma.job.findUnique({ where: { id: jobId } });
+        if (!targetJob) {
+          return res.status(404).json({ error: 'Target job not found' });
+        }
+        if (targetJob.archived) {
+          return res.status(400).json({ error: 'Cannot assign to an archived job' });
+        }
+
+        // Check for duplicate email in target job
+        if (applicant.jobId !== jobId) {
+          const existing = await prisma.applicant.findFirst({
+            where: { jobId, email: applicant.email },
+          });
+          if (existing) {
+            return res.status(400).json({ error: 'This applicant already has an application for the target job' });
+          }
+        }
+
+        const newJobTitle = targetJob.title;
+        await Promise.all([
+          prisma.applicant.update({
+            where: { id },
+            data: { jobId },
+          }),
+          prisma.note.create({
+            data: {
+              applicantId: id,
+              content: `Reassigned from "${oldJobTitle}" to "${newJobTitle}" by ${req.user!.email}`,
+            },
+          }),
+        ]);
+      } else {
+        // Unassign — move to general pool
+        await Promise.all([
+          prisma.applicant.update({
+            where: { id },
+            data: { jobId: null },
+          }),
+          prisma.note.create({
+            data: {
+              applicantId: id,
+              content: `Moved to General Pool from "${oldJobTitle}" by ${req.user!.email}`,
+            },
+          }),
+        ]);
+      }
+
+      // Re-fetch full applicant
+      const updated = await prisma.applicant.findUnique({
+        where: { id },
+        include: {
+          job: {
+            select: { id: true, title: true, department: true, location: true },
+          },
+          reviews: {
+            include: {
+              reviewer: {
+                select: { id: true, name: true, email: true },
+              },
+            },
+            orderBy: { createdAt: 'desc' },
+          },
+          notes: {
+            orderBy: { createdAt: 'desc' },
+          },
+        },
+      });
+
+      res.json(updated);
+    } catch (error) {
+      console.error('Assign job error:', error);
+      res.status(500).json({ error: 'Failed to assign job' });
+    }
+  }
+);
 
 // Delete applicant (admin or hiring_manager only)
 router.delete('/:id', authenticate, requireRole('admin', 'hiring_manager'), async (req: AuthRequest, res: Response) => {

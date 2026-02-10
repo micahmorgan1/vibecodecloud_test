@@ -36,9 +36,15 @@ model Job {
   salary      String?
   status      String   @default("open") // open, closed, on-hold
   publishToWebsite Boolean @default(false)
+  archived    Boolean  @default(false)
+  archivedAt  DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   closedAt    DateTime?
+
+  // Office association
+  officeId    String?
+  office      Office?  @relation(fields: [officeId], references: [id])
 
   // LinkedIn tracking
   postedToLinkedIn   Boolean   @default(false)
@@ -83,9 +89,6 @@ model Applicant {
 
   // Application details
   coverLetter     String?
-  yearsExperience Int?
-  currentCompany  String?
-  currentTitle    String?
 
   // Workflow status
   stage           String   @default("new") // new, screening, interview, offer, hired, rejected, holding
@@ -102,8 +105,8 @@ model Applicant {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  job             Job      @relation(fields: [jobId], references: [id])
-  jobId           String
+  job             Job?     @relation(fields: [jobId], references: [id])
+  jobId           String?
 
   reviews         Review[]
   notes           Note[]
@@ -176,4 +179,18 @@ model JobNotificationSub {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   job       Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
   @@unique([userId, jobId])
+}
+
+// Office locations
+model Office {
+  id        String   @id @default(uuid())
+  name      String
+  address   String
+  city      String
+  state     String
+  zip       String
+  phone     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  jobs      Job[]
 }

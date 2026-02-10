@@ -15,7 +15,7 @@ router.get('/applicant/:applicantId', authenticate, async (req: AuthRequest, res
       return res.status(404).json({ error: 'Applicant not found' });
     }
     const accessibleJobIds = await getAccessibleJobIds(req.user!);
-    if (accessibleJobIds !== null && !accessibleJobIds.includes(applicant.jobId)) {
+    if (accessibleJobIds !== null && (!applicant.jobId || !accessibleJobIds.includes(applicant.jobId))) {
       return res.status(404).json({ error: 'Applicant not found' });
     }
 
@@ -47,7 +47,7 @@ router.get('/applicant/:applicantId/summary', authenticate, async (req: AuthRequ
       return res.status(404).json({ error: 'Applicant not found' });
     }
     const summaryAccessibleJobIds = await getAccessibleJobIds(req.user!);
-    if (summaryAccessibleJobIds !== null && !summaryAccessibleJobIds.includes(applicantRecord.jobId)) {
+    if (summaryAccessibleJobIds !== null && (!applicantRecord.jobId || !summaryAccessibleJobIds.includes(applicantRecord.jobId))) {
       return res.status(404).json({ error: 'Applicant not found' });
     }
 
@@ -173,7 +173,7 @@ router.post('/applicant/:applicantId', authenticate, async (req: AuthRequest, re
 
     // Reviewer access control
     const accessibleJobIds = await getAccessibleJobIds(req.user!);
-    if (accessibleJobIds !== null && !accessibleJobIds.includes(applicant.jobId)) {
+    if (accessibleJobIds !== null && (!applicant.jobId || !accessibleJobIds.includes(applicant.jobId))) {
       return res.status(404).json({ error: 'Applicant not found' });
     }
 
@@ -232,7 +232,7 @@ router.get('/applicant/:applicantId/mine', authenticate, async (req: AuthRequest
       return res.status(404).json({ error: 'Applicant not found' });
     }
     const mineAccessibleJobIds = await getAccessibleJobIds(req.user!);
-    if (mineAccessibleJobIds !== null && !mineAccessibleJobIds.includes(mineApplicant.jobId)) {
+    if (mineAccessibleJobIds !== null && (!mineApplicant.jobId || !mineAccessibleJobIds.includes(mineApplicant.jobId))) {
       return res.status(404).json({ error: 'Applicant not found' });
     }
 

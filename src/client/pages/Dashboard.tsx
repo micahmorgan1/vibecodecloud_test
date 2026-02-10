@@ -5,7 +5,7 @@ import { PLATFORMS, getPlatformColorClasses, getPlatformTextColorClasses } from 
 
 interface DashboardStats {
   jobs: { total: number; open: number };
-  applicants: { total: number; new: number; inReview: number };
+  applicants: { total: number; new: number; inReview: number; generalPool: number };
   reviews: { total: number };
 }
 
@@ -16,7 +16,7 @@ interface PipelineStage {
     id: string;
     firstName: string;
     lastName: string;
-    job: { id: string; title: string };
+    job: { id: string; title: string } | null;
     _count: { reviews: number };
   }>;
 }
@@ -27,7 +27,7 @@ interface Activity {
     firstName: string;
     lastName: string;
     createdAt: string;
-    job: { id: string; title: string };
+    job: { id: string; title: string } | null;
   }>;
   recentReviews: Array<{
     id: string;
@@ -210,7 +210,7 @@ export default function Dashboard() {
                     <p className="font-medium text-gray-900">
                       {applicant.firstName} {applicant.lastName}
                     </p>
-                    <p className="text-sm text-gray-500">{applicant.job.title}</p>
+                    <p className="text-sm text-gray-500">{applicant.job?.title || 'General Application'}</p>
                   </div>
                 </div>
                 <p className="text-xs text-gray-400">

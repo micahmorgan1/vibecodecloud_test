@@ -28,7 +28,7 @@ No test framework is configured.
 
 **Server** (`src/server/`): Express on port 3001. Routes are in `src/server/routes/` (auth, jobs, applicants, reviews, users, dashboard, emailSettings). JWT authentication middleware is in `src/server/middleware/auth.ts`. File uploads (multer) go to `uploads/resumes/` and `uploads/portfolios/`.
 
-**Database**: SQLite (`prisma/dev.db`). Schema is in `prisma/schema.prisma`. Models: User, Job, Applicant, Review, Note, EmailTemplate, JobReviewer, JobNotificationSub. One review per reviewer per applicant (upsert pattern).
+**Database**: SQLite (`prisma/dev.db`). Schema is in `prisma/schema.prisma`. Models: User, Job, Applicant, Review, Note, EmailTemplate, JobReviewer, JobNotificationSub, Office. One review per reviewer per applicant (upsert pattern).
 
 **Dev proxy**: Vite proxies `/api` and `/uploads` to `localhost:3001`. In production, Express serves the built client and handles SPA fallback.
 
@@ -40,6 +40,14 @@ Three roles with cascading permissions:
 - **reviewer**: Read-only jobs/applicants, can add reviews. Reviewers are scoped to assigned jobs via `JobReviewer` — unassigned reviewers see nothing. Assigned reviewers can also manually add applicants to their jobs.
 
 Auth uses `authenticate`, `requireRole(...roles)`, and `getAccessibleJobIds(user)` middleware. The latter returns `null` for admin/hiring_manager (no filter) or an array of job IDs for reviewers. Demo logins: `admin@archfirm.com`, `manager@archfirm.com`, `reviewer@archfirm.com` (all use password `admin123`/`manager123`/`reviewer123`).
+
+## Job Archiving & General Applicant Pool
+
+Jobs are **archived** instead of deleted. `DELETE /jobs/:id` sets `archived: true`, `archivedAt`, and `publishToWebsite: false` — all applicant data is preserved. Admin can view archived jobs via a "Show Archived" toggle and unarchive them (`PATCH /jobs/:id/unarchive`). All list/public endpoints filter `archived: false` by default.
+
+**General applicant pool**: `Applicant.jobId` is nullable. Applicants with no job appear as "General Application" in the UI. Public and manual creation endpoints accept optional `jobId`. Reviewers cannot see general pool applicants (null `jobId` is excluded from their accessible jobs filter).
+
+**Reassignment**: Admin/hiring_manager can reassign applicants between jobs or to/from the general pool via `PATCH /applicants/:id/assign-job`. The applicant's current stage is preserved and a note is created documenting the change.
 
 ## Hiring Pipeline
 
@@ -63,3 +71,7 @@ Seven stages: `new` → `screening` → `interview` → `offer` → `hired` / `r
 **Reviewer job access** (`JobReviewer`): Controls which jobs reviewers can see. Purely access control — does not affect notifications. Managed at `/email-settings`.
 
 **Request Review**: Admin/hiring_manager can send a specific applicant to specific users for review via a modal on the applicant detail page. Sends mock email and creates a note on the applicant.
+
+## Website Integration
+
+Jobs have a `slug` (unique, auto-generated from title) and `publishToWebsite` flag. Public endpoints `GET /jobs/website` and `GET /jobs/website/:slug` serve published open jobs to the WHLC website. The WHLCddev project (`ats` branch) has Alpine.js components (`atsJobs`, `atsJobDetail`, `atsApplyForm`, `atsGeneralApplyForm`) that fetch from the ATS API. The general apply form (`atsGeneralApplyForm`) submits applicants without a `jobId` for the "Send us your Resume" page. The `ATS_API_URL` env var configures the API base URL.

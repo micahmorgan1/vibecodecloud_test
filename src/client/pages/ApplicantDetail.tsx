@@ -36,13 +36,10 @@ interface Applicant {
   portfolioPath: string | null;
   portfolioUrl: string | null;
   coverLetter: string | null;
-  yearsExperience: number | null;
-  currentCompany: string | null;
-  currentTitle: string | null;
   stage: string;
   source: string | null;
   createdAt: string;
-  job: { id: string; title: string; department: string; location: string };
+  job: { id: string; title: string; department: string; location: string } | null;
   reviews: Review[];
   notes: Note[];
 }
@@ -68,6 +65,7 @@ export default function ApplicantDetail() {
   const [showRejectionModal, setShowRejectionModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showRequestReviewModal, setShowRequestReviewModal] = useState(false);
+  const [showAssignJobModal, setShowAssignJobModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [pendingStage, setPendingStage] = useState<string | null>(null);
   const [newNote, setNewNote] = useState('');
@@ -217,12 +215,12 @@ export default function ApplicantDetail() {
             </div>
           </div>
 
-          <div className="flex flex-col items-end gap-2">
+          <div className="flex items-center gap-2">
             {getAverageRating() && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 mr-2">
                 <span className="text-gray-900 text-xl">★</span>
                 <span className="text-2xl font-display font-bold">{getAverageRating()}</span>
-                <span className="text-gray-400">({applicant.reviews.length} reviews)</span>
+                <span className="text-gray-400 text-sm">({applicant.reviews.length})</span>
               </div>
             )}
             <button
@@ -231,30 +229,6 @@ export default function ApplicantDetail() {
             >
               {myReview ? 'Edit My Review' : 'Add Review'}
             </button>
-            {applicant.stage !== 'rejected' && applicant.stage !== 'hired' && (
-              <button
-                onClick={() => setShowRejectionModal(true)}
-                className="btn btn-secondary"
-              >
-                Send Rejection Letter
-              </button>
-            )}
-            {(user?.role === 'admin' || user?.role === 'hiring_manager') && (
-              <button
-                onClick={() => setShowRequestReviewModal(true)}
-                className="btn btn-secondary"
-              >
-                Request Review
-              </button>
-            )}
-            {canDelete && (
-              <button
-                onClick={() => setShowDeleteModal(true)}
-                className="btn btn-secondary text-red-600 hover:text-red-700"
-              >
-                Delete Applicant
-              </button>
-            )}
           </div>
         </div>
 
@@ -281,6 +255,42 @@ export default function ApplicantDetail() {
             ))}
           </div>
         </div>
+
+        {/* Actions */}
+        <div className="mt-6 pt-6 border-t border-gray-200 flex flex-wrap gap-2">
+          {applicant.stage !== 'rejected' && applicant.stage !== 'hired' && (
+            <button
+              onClick={() => setShowRejectionModal(true)}
+              className="btn btn-secondary text-sm"
+            >
+              Send Rejection Letter
+            </button>
+          )}
+          {(user?.role === 'admin' || user?.role === 'hiring_manager') && (
+            <>
+              <button
+                onClick={() => setShowAssignJobModal(true)}
+                className="btn btn-secondary text-sm"
+              >
+                {applicant.job ? 'Reassign Job' : 'Assign to Job'}
+              </button>
+              <button
+                onClick={() => setShowRequestReviewModal(true)}
+                className="btn btn-secondary text-sm"
+              >
+                Request Review
+              </button>
+            </>
+          )}
+          {canDelete && (
+            <button
+              onClick={() => setShowDeleteModal(true)}
+              className="btn btn-secondary text-sm text-red-600 hover:text-red-700"
+            >
+              Delete Applicant
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -293,33 +303,19 @@ export default function ApplicantDetail() {
               <div>
                 <dt className="text-sm text-gray-500">Position</dt>
                 <dd className="font-medium">
-                  <Link to={`/jobs/${applicant.job.id}`} className="text-gray-900 hover:text-gray-600">
-                    {applicant.job.title}
-                  </Link>
+                  {applicant.job ? (
+                    <Link to={`/jobs/${applicant.job.id}`} className="text-gray-900 hover:text-gray-600">
+                      {applicant.job.title}
+                    </Link>
+                  ) : (
+                    <span className="text-gray-500 italic">General Application</span>
+                  )}
                 </dd>
               </div>
               <div>
                 <dt className="text-sm text-gray-500">Department</dt>
-                <dd className="font-medium">{applicant.job.department}</dd>
+                <dd className="font-medium">{applicant.job?.department || '—'}</dd>
               </div>
-              {applicant.yearsExperience && (
-                <div>
-                  <dt className="text-sm text-gray-500">Years of Experience</dt>
-                  <dd className="font-medium">{applicant.yearsExperience} years</dd>
-                </div>
-              )}
-              {applicant.currentCompany && (
-                <div>
-                  <dt className="text-sm text-gray-500">Current Company</dt>
-                  <dd className="font-medium">{applicant.currentCompany}</dd>
-                </div>
-              )}
-              {applicant.currentTitle && (
-                <div>
-                  <dt className="text-sm text-gray-500">Current Title</dt>
-                  <dd className="font-medium">{applicant.currentTitle}</dd>
-                </div>
-              )}
               {applicant.source && (
                 <div>
                   <dt className="text-sm text-gray-500">Source</dt>
@@ -604,6 +600,18 @@ export default function ApplicantDetail() {
         />
       )}
 
+      {/* Assign Job Modal */}
+      {showAssignJobModal && (
+        <AssignJobModal
+          applicant={applicant}
+          onClose={() => setShowAssignJobModal(false)}
+          onAssigned={(updated) => {
+            setShowAssignJobModal(false);
+            setApplicant(updated);
+          }}
+        />
+      )}
+
       {/* Request Review Modal */}
       {showRequestReviewModal && (
         <RequestReviewModal
@@ -832,9 +840,10 @@ function RejectionModal({
   onClose: () => void;
   onSent: (updated: Applicant) => void;
 }) {
+  const jobTitle = applicant.job?.title || 'General Application';
   const hardcodedTemplate = `Dear ${applicant.firstName},
 
-Thank you for your interest in the ${applicant.job.title} position and for taking the time to apply. We appreciate the effort you put into your application.
+Thank you for your interest in the ${jobTitle} position and for taking the time to apply. We appreciate the effort you put into your application.
 
 After careful consideration, we have decided to move forward with other candidates whose qualifications more closely align with our current needs.
 
@@ -856,7 +865,7 @@ The Hiring Team`;
         let body = res.data.body;
         body = body.replace(/\{\{firstName\}\}/g, applicant.firstName);
         body = body.replace(/\{\{lastName\}\}/g, applicant.lastName);
-        body = body.replace(/\{\{jobTitle\}\}/g, applicant.job.title);
+        body = body.replace(/\{\{jobTitle\}\}/g, applicant.job?.title || 'General Application');
         setEmailBody(body);
       } catch {
         // Fall back to hardcoded template
@@ -913,7 +922,7 @@ The Hiring Team`;
             </div>
             <div>
               <dt className="text-sm text-gray-500">Position</dt>
-              <dd className="font-medium">{applicant.job.title}</dd>
+              <dd className="font-medium">{applicant.job?.title || 'General Application'}</dd>
             </div>
           </dl>
 
@@ -1043,7 +1052,7 @@ function RequestReviewModal({
           )}
 
           <p className="text-sm text-gray-600">
-            Send a review request for <span className="font-medium">{applicant.firstName} {applicant.lastName}</span> ({applicant.job.title}) to selected users.
+            Send a review request for <span className="font-medium">{applicant.firstName} {applicant.lastName}</span> ({applicant.job?.title || 'General Application'}) to selected users.
           </p>
 
           {loading ? (
@@ -1094,6 +1103,116 @@ function RequestReviewModal({
               className="btn btn-primary"
             >
               {sending ? 'Sending...' : `Send to ${selectedIds.size} user${selectedIds.size !== 1 ? 's' : ''}`}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AssignJobModal({
+  applicant,
+  onClose,
+  onAssigned,
+}: {
+  applicant: Applicant;
+  onClose: () => void;
+  onAssigned: (updated: Applicant) => void;
+}) {
+  const [jobs, setJobs] = useState<{ id: string; title: string; department: string }[]>([]);
+  const [selectedJobId, setSelectedJobId] = useState<string>(applicant.job?.id || '');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await api.get<{ id: string; title: string; department: string }[]>('/jobs?status=open');
+        setJobs(res.data);
+      } catch {
+        setError('Failed to load jobs');
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  const handleSave = async () => {
+    setSaving(true);
+    setError('');
+    try {
+      const res = await api.patch<Applicant>(`/applicants/${applicant.id}/assign-job`, {
+        jobId: selectedJobId || null,
+      });
+      onAssigned(res.data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to assign job');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded max-w-md w-full">
+        <div className="p-6 border-b border-gray-200">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-display font-semibold uppercase tracking-wide">
+              {applicant.job ? 'Reassign Job' : 'Assign to Job'}
+            </h2>
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div className="p-6 space-y-4">
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
+              {error}
+            </div>
+          )}
+
+          <p className="text-sm text-gray-600">
+            Currently: <span className="font-medium">{applicant.job?.title || 'General Pool'}</span>
+          </p>
+
+          {loading ? (
+            <div className="flex items-center justify-center h-20">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
+            </div>
+          ) : (
+            <div>
+              <label className="label">New Assignment</label>
+              <select
+                value={selectedJobId}
+                onChange={(e) => setSelectedJobId(e.target.value)}
+                className="input"
+              >
+                <option value="">General Pool (no job)</option>
+                {jobs.map((job) => (
+                  <option key={job.id} value={job.id}>
+                    {job.title} — {job.department}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          <div className="flex justify-end gap-3 pt-4">
+            <button type="button" onClick={onClose} className="btn btn-secondary">
+              Cancel
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={saving || (selectedJobId === (applicant.job?.id || ''))}
+              className="btn btn-primary"
+            >
+              {saving ? 'Saving...' : 'Assign'}
             </button>
           </div>
         </div>

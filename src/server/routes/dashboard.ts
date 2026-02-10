@@ -8,7 +8,9 @@ const router = Router();
 router.get('/stats', authenticate, async (req: AuthRequest, res: Response) => {
   try {
     const accessibleJobIds = await getAccessibleJobIds(req.user!);
-    const jobFilter = accessibleJobIds !== null ? { id: { in: accessibleJobIds } } : {};
+    const jobFilter = accessibleJobIds !== null
+      ? { id: { in: accessibleJobIds }, archived: false }
+      : { archived: false };
     const applicantFilter = accessibleJobIds !== null ? { jobId: { in: accessibleJobIds } } : {};
 
     const [
@@ -18,6 +20,7 @@ router.get('/stats', authenticate, async (req: AuthRequest, res: Response) => {
       newApplicants,
       inReviewApplicants,
       totalReviews,
+      generalPool,
     ] = await Promise.all([
       prisma.job.count({ where: jobFilter }),
       prisma.job.count({ where: { ...jobFilter, status: 'open' } }),
@@ -25,6 +28,7 @@ router.get('/stats', authenticate, async (req: AuthRequest, res: Response) => {
       prisma.applicant.count({ where: { ...applicantFilter, stage: 'new' } }),
       prisma.applicant.count({ where: { ...applicantFilter, stage: { in: ['screening', 'interview'] } } }),
       prisma.review.count(accessibleJobIds !== null ? { where: { applicant: { jobId: { in: accessibleJobIds } } } } : undefined),
+      prisma.applicant.count({ where: { jobId: null } }),
     ]);
 
     res.json({
@@ -36,6 +40,7 @@ router.get('/stats', authenticate, async (req: AuthRequest, res: Response) => {
         total: totalApplicants,
         new: newApplicants,
         inReview: inReviewApplicants,
+        generalPool,
       },
       reviews: {
         total: totalReviews,

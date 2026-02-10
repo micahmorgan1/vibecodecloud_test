@@ -13,6 +13,7 @@ interface Job {
   status: string;
   salary: string | null;
   publishToWebsite: boolean;
+  archived: boolean;
   createdAt: string;
   createdBy: { id: string; name: string };
   _count: { applicants: number };
@@ -24,19 +25,24 @@ export default function Jobs() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('');
+  const [showArchived, setShowArchived] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
 
   const canCreateJob = user?.role === 'admin' || user?.role === 'hiring_manager';
+  const isAdmin = user?.role === 'admin';
 
   useEffect(() => {
     fetchJobs();
-  }, [statusFilter]);
+  }, [statusFilter, showArchived]);
 
   const fetchJobs = async () => {
     setLoading(true);
     try {
-      const params = statusFilter ? `?status=${statusFilter}` : '';
-      const res = await api.get<Job[]>(`/jobs${params}`);
+      const params = new URLSearchParams();
+      if (statusFilter) params.append('status', statusFilter);
+      if (showArchived) params.append('archived', 'true');
+      const queryString = params.toString();
+      const res = await api.get<Job[]>(`/jobs${queryString ? `?${queryString}` : ''}`);
       setJobs(res.data);
     } finally {
       setLoading(false);
@@ -81,8 +87,8 @@ export default function Jobs() {
       </div>
 
       {/* Filters */}
-      <div className="flex gap-2 flex-wrap">
-        {['', 'open', 'closed', 'on-hold'].map((status) => (
+      <div className="flex gap-2 flex-wrap items-center">
+        {!showArchived && ['', 'open', 'closed', 'on-hold'].map((status) => (
           <button
             key={status}
             onClick={() => setStatusFilter(status)}
@@ -95,6 +101,21 @@ export default function Jobs() {
             {status === '' ? 'All' : status.charAt(0).toUpperCase() + status.slice(1)}
           </button>
         ))}
+        {isAdmin && (
+          <button
+            onClick={() => {
+              setShowArchived(!showArchived);
+              setStatusFilter('');
+            }}
+            className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
+              showArchived
+                ? 'bg-gray-700 text-white'
+                : 'bg-white text-gray-500 hover:bg-gray-100 border border-gray-200'
+            }`}
+          >
+            {showArchived ? 'Hide Archived' : 'Show Archived'}
+          </button>
+        )}
       </div>
 
       {/* Jobs Grid */}
@@ -120,13 +141,17 @@ export default function Jobs() {
             <Link
               key={job.id}
               to={`/jobs/${job.id}`}
-              className="card hover:shadow-md transition-shadow"
+              className={`card hover:shadow-md transition-shadow ${job.archived ? 'opacity-60' : ''}`}
             >
               <div className="flex items-start justify-between mb-3">
                 <div className="flex gap-2">
-                  <span className={`badge ${statusBadge(job.status)}`}>
-                    {job.status}
-                  </span>
+                  {job.archived ? (
+                    <span className="badge bg-gray-300 text-gray-600">Archived</span>
+                  ) : (
+                    <span className={`badge ${statusBadge(job.status)}`}>
+                      {job.status}
+                    </span>
+                  )}
                   {job.publishToWebsite && (
                     <span className="badge bg-green-100 text-green-800 border border-green-200">
                       Website
@@ -186,6 +211,13 @@ export default function Jobs() {
   );
 }
 
+interface Office {
+  id: string;
+  name: string;
+  city: string;
+  state: string;
+}
+
 function CreateJobModal({
   onClose,
   onCreated,
@@ -203,13 +235,19 @@ function CreateJobModal({
     requirements: '',
     salary: '',
     publishToWebsite: false,
+    officeId: '',
   });
   const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
+  const [offices, setOffices] = useState<Office[]>([]);
 
   const toSlug = (text: string) =>
     text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    api.get<Office[]>('/offices').then((res) => setOffices(res.data));
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -220,6 +258,7 @@ function CreateJobModal({
       const payload = {
         ...formData,
         slug: formData.slug || undefined, // let backend auto-generate if empty
+        officeId: formData.officeId || undefined,
       };
       await api.post('/jobs', payload);
       onCreated();
@@ -285,6 +324,27 @@ function CreateJobModal({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
+              <label className="label">Office</label>
+              <select
+                value={formData.officeId}
+                onChange={(e) => {
+                  const officeId = e.target.value;
+                  const office = offices.find((o) => o.id === officeId);
+                  setFormData({
+                    ...formData,
+                    officeId,
+                    location: office ? `${office.city}, ${office.state}` : formData.location,
+                  });
+                }}
+                className="input"
+              >
+                <option value="">No office</option>
+                {offices.map((o) => (
+                  <option key={o.id} value={o.id}>{o.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
               <label className="label">Location</label>
               <input
                 type="text"
@@ -295,6 +355,9 @@ function CreateJobModal({
                 required
               />
             </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="label">Employment Type</label>
               <select

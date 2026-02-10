@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { LinkedInPostModal } from '../components/LinkedInPostModal';
@@ -18,6 +18,14 @@ interface Applicant {
   }>;
 }
 
+interface Office {
+  id: string;
+  name: string;
+  city: string;
+  state: string;
+  phone: string;
+}
+
 interface Job {
   id: string;
   title: string;
@@ -30,26 +38,34 @@ interface Job {
   salary: string | null;
   status: string;
   publishToWebsite: boolean;
+  archived: boolean;
+  archivedAt: string | null;
   createdAt: string;
   createdBy: { id: string; name: string; email: string };
   applicants: Applicant[];
   postedToLinkedIn: boolean;
   linkedInPostDate: string | null;
   linkedInPostUrl: string | null;
+  officeId: string | null;
+  office: Office | null;
 }
 
 export default function JobDetail() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [job, setJob] = useState<Job | null>(null);
   const [loading, setLoading] = useState(true);
   const [linkedInModalOpen, setLinkedInModalOpen] = useState(false);
   const [copiedAppLink, setCopiedAppLink] = useState(false);
+  const [offices, setOffices] = useState<Office[]>([]);
 
   const canEdit = user?.role === 'admin' || user?.role === 'hiring_manager';
+  const isAdmin = user?.role === 'admin';
 
   useEffect(() => {
     loadJob();
+    api.get<Office[]>('/offices').then((res) => setOffices(res.data));
   }, [id]);
 
   const loadJob = () => {
@@ -63,10 +79,31 @@ export default function JobDetail() {
   const updateStatus = async (status: string) => {
     if (!id) return;
     try {
-      const res = await api.put<Job>(`/jobs/${id}`, { status });
-      setJob(res.data);
+      await api.put(`/jobs/${id}`, { status });
+      loadJob();
     } catch (err) {
       console.error('Failed to update status:', err);
+    }
+  };
+
+  const archiveJob = async () => {
+    if (!id) return;
+    if (!confirm('Are you sure you want to archive this job? It will be hidden from the jobs list but all data will be preserved.')) return;
+    try {
+      await api.delete(`/jobs/${id}`);
+      navigate('/jobs');
+    } catch (err) {
+      console.error('Failed to archive job:', err);
+    }
+  };
+
+  const unarchiveJob = async () => {
+    if (!id) return;
+    try {
+      await api.patch(`/jobs/${id}/unarchive`, {});
+      loadJob();
+    } catch (err) {
+      console.error('Failed to unarchive job:', err);
     }
   };
 
@@ -129,6 +166,24 @@ export default function JobDetail() {
         <span className="mx-2">/</span>
         <span className="text-gray-900">{job.title}</span>
       </nav>
+
+      {/* Archived Banner */}
+      {job.archived && (
+        <div className="bg-gray-200 border border-gray-300 rounded p-4 flex items-center justify-between">
+          <div>
+            <p className="font-display font-semibold text-gray-700 uppercase tracking-wide">This job is archived</p>
+            <p className="text-sm text-gray-500">
+              Archived on {job.archivedAt ? new Date(job.archivedAt).toLocaleDateString() : 'unknown date'}.
+              All applicant data has been preserved.
+            </p>
+          </div>
+          {isAdmin && (
+            <button onClick={unarchiveJob} className="btn btn-primary">
+              Unarchive
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Header */}
       <div className="card">
@@ -229,6 +284,14 @@ export default function JobDetail() {
                   </>
                 )}
               </div>
+              {isAdmin && !job.archived && (
+                <button
+                  onClick={archiveJob}
+                  className="text-sm text-gray-500 hover:text-gray-700 underline"
+                >
+                  Archive Job
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -366,6 +429,33 @@ export default function JobDetail() {
           <div className="card">
             <h2 className="text-lg font-display font-semibold text-gray-900 mb-4 uppercase tracking-wide">Details</h2>
             <dl className="space-y-3 text-sm">
+              <div>
+                <dt className="text-gray-500">Office</dt>
+                <dd className="font-medium text-gray-900">
+                  {canEdit ? (
+                    <select
+                      value={job.officeId || ''}
+                      onChange={async (e) => {
+                        const officeId = e.target.value || null;
+                        try {
+                          await api.put(`/jobs/${id}`, { officeId });
+                          loadJob();
+                        } catch (err) {
+                          console.error('Failed to update office:', err);
+                        }
+                      }}
+                      className="input text-sm py-1"
+                    >
+                      <option value="">None</option>
+                      {offices.map((o) => (
+                        <option key={o.id} value={o.id}>{o.name}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    job.office?.name || 'None'
+                  )}
+                </dd>
+              </div>
               <div>
                 <dt className="text-gray-500">Posted by</dt>
                 <dd className="font-medium text-gray-900">{job.createdBy.name}</dd>

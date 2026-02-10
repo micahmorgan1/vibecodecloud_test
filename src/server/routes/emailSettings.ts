@@ -275,7 +275,7 @@ router.post(
           to: recipient.email,
           recipientName: recipient.name,
           applicantName,
-          jobTitle: applicant.job.title,
+          jobTitle: applicant.job?.title || 'General Application',
           senderName: sender?.name || 'A manager',
           message,
         });

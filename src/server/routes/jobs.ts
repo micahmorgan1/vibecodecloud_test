@@ -10,9 +10,15 @@ const router = Router();
 // Get all jobs (with optional filters)
 router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
   try {
-    const { status, department, type } = req.query;
+    const { status, department, type, archived } = req.query;
 
     const where: Record<string, unknown> = {};
+    // Show archived jobs only if admin requests ?archived=true
+    if (archived === 'true' && req.user!.role === 'admin') {
+      where.archived = true;
+    } else {
+      where.archived = false;
+    }
     if (status) where.status = status as string;
     if (department) where.department = department as string;
     if (type) where.type = type as string;
@@ -32,6 +38,7 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
         createdBy: {
           select: { id: true, name: true, email: true },
         },
+        office: true,
         _count: {
           select: { applicants: true },
         },
@@ -53,6 +60,7 @@ router.get('/public', async (req, res) => {
 
     const where: Record<string, unknown> = {
       status: 'open',
+      archived: false,
     };
 
     if (department) where.department = department as string;
@@ -88,6 +96,7 @@ router.get('/website', async (_req, res) => {
       where: {
         status: 'open',
         publishToWebsite: true,
+        archived: false,
       },
       select: {
         id: true,
@@ -99,6 +108,7 @@ router.get('/website', async (_req, res) => {
         description: true,
         salary: true,
         createdAt: true,
+        office: true,
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -128,12 +138,14 @@ router.get('/website/:slug', async (req, res) => {
         requirements: true,
         salary: true,
         status: true,
+        archived: true,
         createdAt: true,
         publishToWebsite: true,
+        office: true,
       },
     });
 
-    if (!job || job.status !== 'open' || !job.publishToWebsite) {
+    if (!job || job.status !== 'open' || !job.publishToWebsite || job.archived) {
       return res.status(404).json({ error: 'Job not found' });
     }
 
@@ -192,6 +204,7 @@ router.get('/:id', authenticate, async (req: AuthRequest, res: Response) => {
         createdBy: {
           select: { id: true, name: true, email: true },
         },
+        office: true,
         applicants: {
           include: {
             reviews: {
@@ -225,9 +238,18 @@ router.post(
   requireRole('admin', 'hiring_manager'),
   async (req: AuthRequest, res: Response) => {
     try {
-      const { title, department, location, type, description, requirements, salary, slug: providedSlug, publishToWebsite } = req.body;
+      const { title, department, location, type, description, requirements, salary, slug: providedSlug, publishToWebsite, officeId } = req.body;
 
-      if (!title || !department || !location || !type || !description || !requirements) {
+      // Auto-populate location from office if not explicitly provided
+      let resolvedLocation = location;
+      if (!resolvedLocation && officeId) {
+        const office = await prisma.office.findUnique({ where: { id: officeId } });
+        if (office) {
+          resolvedLocation = `${office.city}, ${office.state}`;
+        }
+      }
+
+      if (!title || !department || !resolvedLocation || !type || !description || !requirements) {
         return res.status(400).json({ error: 'Missing required fields' });
       }
 
@@ -240,18 +262,20 @@ router.post(
           title,
           slug,
           department,
-          location,
+          location: resolvedLocation,
           type,
           description,
           requirements,
           salary,
           publishToWebsite: publishToWebsite ?? false,
+          officeId: officeId || null,
           createdById: req.user!.id,
         },
         include: {
           createdBy: {
             select: { id: true, name: true, email: true },
           },
+          office: true,
         },
       });
 
@@ -271,7 +295,7 @@ router.put(
   async (req: AuthRequest, res: Response) => {
     try {
       const { id } = req.params;
-      const { title, department, location, type, description, requirements, salary, status, slug, publishToWebsite } = req.body;
+      const { title, department, location, type, description, requirements, salary, status, slug, publishToWebsite, officeId } = req.body;
 
       const existingJob = await prisma.job.findUnique({ where: { id } });
       if (!existingJob) {
@@ -288,6 +312,16 @@ router.put(
       if (salary !== undefined) updateData.salary = salary;
       if (slug !== undefined) updateData.slug = slug;
       if (publishToWebsite !== undefined) updateData.publishToWebsite = publishToWebsite;
+      if (officeId !== undefined) {
+        updateData.officeId = officeId || null;
+        // Auto-update location if office changed and location not explicitly provided
+        if (officeId && !location) {
+          const office = await prisma.office.findUnique({ where: { id: officeId } });
+          if (office) {
+            updateData.location = `${office.city}, ${office.state}`;
+          }
+        }
+      }
       if (status) {
         updateData.status = status;
         if (status === 'closed') {
@@ -302,6 +336,7 @@ router.put(
           createdBy: {
             select: { id: true, name: true, email: true },
           },
+          office: true,
         },
       });
 
@@ -313,7 +348,7 @@ router.put(
   }
 );
 
-// Delete a job (admin only)
+// Archive a job (admin only) — replaces hard delete
 router.delete(
   '/:id',
   authenticate,
@@ -327,14 +362,55 @@ router.delete(
         return res.status(404).json({ error: 'Job not found' });
       }
 
-      // Delete associated applicants first (cascade)
-      await prisma.applicant.deleteMany({ where: { jobId: id } });
-      await prisma.job.delete({ where: { id } });
+      await prisma.job.update({
+        where: { id },
+        data: {
+          archived: true,
+          archivedAt: new Date(),
+          publishToWebsite: false,
+        },
+      });
 
-      res.json({ message: 'Job deleted successfully' });
+      res.json({ message: 'Job archived successfully' });
     } catch (error) {
-      console.error('Delete job error:', error);
-      res.status(500).json({ error: 'Failed to delete job' });
+      console.error('Archive job error:', error);
+      res.status(500).json({ error: 'Failed to archive job' });
+    }
+  }
+);
+
+// Unarchive a job (admin only)
+router.patch(
+  '/:id/unarchive',
+  authenticate,
+  requireRole('admin'),
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const { id } = req.params;
+
+      const existingJob = await prisma.job.findUnique({ where: { id } });
+      if (!existingJob) {
+        return res.status(404).json({ error: 'Job not found' });
+      }
+
+      const job = await prisma.job.update({
+        where: { id },
+        data: {
+          archived: false,
+          archivedAt: null,
+        },
+        include: {
+          createdBy: {
+            select: { id: true, name: true, email: true },
+          },
+          office: true,
+        },
+      });
+
+      res.json(job);
+    } catch (error) {
+      console.error('Unarchive job error:', error);
+      res.status(500).json({ error: 'Failed to unarchive job' });
     }
   }
 );

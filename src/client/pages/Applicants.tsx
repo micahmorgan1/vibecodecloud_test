@@ -11,7 +11,7 @@ interface Applicant {
   phone: string | null;
   stage: string;
   createdAt: string;
-  job: { id: string; title: string; department: string };
+  job: { id: string; title: string; department: string; archived: boolean } | null;
   reviews: Array<{ rating: number }>;
   _count: { reviews: number; notes: number };
 }
@@ -32,9 +32,6 @@ interface ApplicantFormData {
   linkedIn: string;
   website: string;
   portfolioUrl: string;
-  yearsExperience: string;
-  currentCompany: string;
-  currentTitle: string;
   source: string;
 }
 
@@ -47,9 +44,6 @@ const emptyForm: ApplicantFormData = {
   linkedIn: '',
   website: '',
   portfolioUrl: '',
-  yearsExperience: '',
-  currentCompany: '',
-  currentTitle: '',
   source: 'manual',
 };
 
@@ -267,13 +261,22 @@ export default function Applicants() {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <Link
-                        to={`/jobs/${applicant.job.id}`}
-                        className="text-gray-900 hover:text-gray-600 font-medium"
-                      >
-                        {applicant.job.title}
-                      </Link>
-                      <p className="text-sm text-gray-500">{applicant.job.department}</p>
+                      {applicant.job ? (
+                        <>
+                          <Link
+                            to={`/jobs/${applicant.job.id}`}
+                            className="text-gray-900 hover:text-gray-600 font-medium"
+                          >
+                            {applicant.job.title}
+                          </Link>
+                          {applicant.job.archived && (
+                            <span className="text-gray-400 text-xs ml-1">(Archived)</span>
+                          )}
+                          <p className="text-sm text-gray-500">{applicant.job.department}</p>
+                        </>
+                      ) : (
+                        <span className="text-gray-500 italic">General Application</span>
+                      )}
                     </td>
                     <td className="px-6 py-4">
                       <span className={`badge ${stageBadge(applicant.stage)}`}>
@@ -338,9 +341,8 @@ export default function Applicants() {
                   value={formData.jobId}
                   onChange={(e) => setFormData({ ...formData, jobId: e.target.value })}
                   className="input"
-                  required
                 >
-                  <option value="">Select a job...</option>
+                  <option value="">General Application (no specific job)</option>
                   {jobs.map((job) => (
                     <option key={job.id} value={job.id}>
                       {job.title} — {job.department}
@@ -395,37 +397,6 @@ export default function Applicants() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="label">Current Title</label>
-                  <input
-                    type="text"
-                    value={formData.currentTitle}
-                    onChange={(e) => setFormData({ ...formData, currentTitle: e.target.value })}
-                    className="input"
-                  />
-                </div>
-                <div>
-                  <label className="label">Current Company</label>
-                  <input
-                    type="text"
-                    value={formData.currentCompany}
-                    onChange={(e) => setFormData({ ...formData, currentCompany: e.target.value })}
-                    className="input"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="label">Years of Experience</label>
-                  <input
-                    type="number"
-                    value={formData.yearsExperience}
-                    onChange={(e) => setFormData({ ...formData, yearsExperience: e.target.value })}
-                    className="input"
-                    min="0"
-                  />
-                </div>
                 <div>
                   <label className="label">Source</label>
                   <select
