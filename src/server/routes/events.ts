@@ -1,6 +1,8 @@
 import { Router, Response } from 'express';
 import prisma from '../db.js';
-import { authenticate, requireRole, AuthRequest, getAccessibleEventIds, getAccessibleApplicantFilter } from '../middleware/auth.js';
+import { authenticate, requireRole, AuthRequest, getAccessibleEventIds } from '../middleware/auth.js';
+import { validateBody } from '../middleware/validateBody.js';
+import { eventCreateSchema, eventUpdateSchema, fairIntakeSchema, attendeesSchema } from '../schemas/index.js';
 
 const router = Router();
 
@@ -74,13 +76,10 @@ router.post(
   '/',
   authenticate,
   requireRole('admin', 'hiring_manager'),
+  validateBody(eventCreateSchema),
   async (req: AuthRequest, res: Response) => {
     try {
       const { name, type, location, date, notes, attendeeIds } = req.body;
-
-      if (!name || !date) {
-        return res.status(400).json({ error: 'Name and date are required' });
-      }
 
       const event = await prisma.recruitmentEvent.create({
         data: {
@@ -129,6 +128,7 @@ router.put(
   '/:id',
   authenticate,
   requireRole('admin', 'hiring_manager'),
+  validateBody(eventUpdateSchema),
   async (req: AuthRequest, res: Response) => {
     try {
       const { id } = req.params;
@@ -203,6 +203,7 @@ router.put(
   '/:id/attendees',
   authenticate,
   requireRole('admin', 'hiring_manager'),
+  validateBody(attendeesSchema),
   async (req: AuthRequest, res: Response) => {
     try {
       const { id } = req.params;
@@ -246,7 +247,7 @@ router.put(
 );
 
 // Fair Intake — create applicant + review atomically
-router.post('/:id/intake', authenticate, async (req: AuthRequest, res: Response) => {
+router.post('/:id/intake', authenticate, validateBody(fairIntakeSchema), async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
 
@@ -262,13 +263,6 @@ router.post('/:id/intake', authenticate, async (req: AuthRequest, res: Response)
     }
 
     const { firstName, lastName, email, phone, jobId, rating, recommendation, comments, source } = req.body;
-
-    if (!firstName || !lastName || !email) {
-      return res.status(400).json({ error: 'First name, last name, and email are required' });
-    }
-    if (!rating || rating < 1 || rating > 5) {
-      return res.status(400).json({ error: 'Rating is required (1-5)' });
-    }
 
     // Validate job if provided
     if (jobId) {

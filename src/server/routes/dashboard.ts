@@ -10,6 +10,9 @@ router.get('/stats', authenticate, async (req: AuthRequest, res: Response) => {
     const applicantFilter = await getAccessibleApplicantFilter(req.user!);
     const isReviewer = req.user!.role === 'reviewer';
 
+    // Exclude spam from all stats
+    const nonSpamFilter = { ...applicantFilter, spam: false };
+
     const [
       totalJobs,
       openJobs,
@@ -20,18 +23,20 @@ router.get('/stats', authenticate, async (req: AuthRequest, res: Response) => {
       generalPool,
       totalEvents,
       upcomingEvents,
+      spamCount,
     ] = await Promise.all([
       prisma.job.count({ where: { archived: false } }),
       prisma.job.count({ where: { archived: false, status: 'open' } }),
-      prisma.applicant.count({ where: applicantFilter }),
-      prisma.applicant.count({ where: { ...applicantFilter, stage: 'new' } }),
-      prisma.applicant.count({ where: { ...applicantFilter, stage: { in: ['screening', 'interview'] } } }),
+      prisma.applicant.count({ where: nonSpamFilter }),
+      prisma.applicant.count({ where: { ...nonSpamFilter, stage: 'new' } }),
+      prisma.applicant.count({ where: { ...nonSpamFilter, stage: { in: ['screening', 'interview'] } } }),
       isReviewer
-        ? prisma.review.count({ where: { applicant: applicantFilter } })
-        : prisma.review.count(),
-      prisma.applicant.count({ where: { jobId: null } }),
+        ? prisma.review.count({ where: { applicant: nonSpamFilter } })
+        : prisma.review.count({ where: { applicant: { spam: false } } }),
+      prisma.applicant.count({ where: { jobId: null, spam: false } }),
       prisma.recruitmentEvent.count(),
       prisma.recruitmentEvent.count({ where: { date: { gte: new Date() } } }),
+      prisma.applicant.count({ where: { spam: true } }),
     ]);
 
     res.json({
@@ -52,6 +57,7 @@ router.get('/stats', authenticate, async (req: AuthRequest, res: Response) => {
         total: totalEvents,
         upcoming: upcomingEvents,
       },
+      spamCount,
     });
   } catch (error) {
     console.error('Get dashboard stats error:', error);
@@ -67,7 +73,7 @@ router.get('/pipeline', authenticate, async (req: AuthRequest, res: Response) =>
 
     const pipeline = await Promise.all(
       stages.map(async (stage) => {
-        const where = { ...applicantFilter, stage };
+        const where = { ...applicantFilter, stage, spam: false };
         const count = await prisma.applicant.count({ where });
         const applicants = await prisma.applicant.findMany({
           where,
@@ -97,11 +103,12 @@ router.get('/pipeline', authenticate, async (req: AuthRequest, res: Response) =>
 router.get('/activity', authenticate, async (req: AuthRequest, res: Response) => {
   try {
     const applicantFilter = await getAccessibleApplicantFilter(req.user!);
-    const reviewFilter = Object.keys(applicantFilter).length > 0 ? { applicant: applicantFilter } : {};
+    const nonSpamFilter = { ...applicantFilter, spam: false };
+    const reviewFilter = Object.keys(applicantFilter).length > 0 ? { applicant: nonSpamFilter } : { applicant: { spam: false } };
 
     const [recentApplicants, recentReviews] = await Promise.all([
       prisma.applicant.findMany({
-        where: applicantFilter,
+        where: nonSpamFilter,
         take: 10,
         orderBy: { createdAt: 'desc' },
         include: {
@@ -142,22 +149,23 @@ router.get('/funnel', authenticate, async (req: AuthRequest, res: Response) => {
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
     const applicantFilter = await getAccessibleApplicantFilter(req.user!);
+    const nonSpamFilter = { ...applicantFilter, spam: false };
 
     const applicantsByStage = await prisma.applicant.groupBy({
       by: ['stage'],
-      where: applicantFilter,
+      where: nonSpamFilter,
       _count: { id: true },
     });
 
     const applicantsLast30Days = await prisma.applicant.count({
-      where: { ...applicantFilter, createdAt: { gte: thirtyDaysAgo } },
+      where: { ...nonSpamFilter, createdAt: { gte: thirtyDaysAgo } },
     });
 
     const hiredCount = await prisma.applicant.count({
-      where: { ...applicantFilter, stage: 'hired' },
+      where: { ...nonSpamFilter, stage: 'hired' },
     });
 
-    const totalApplicants = await prisma.applicant.count({ where: applicantFilter });
+    const totalApplicants = await prisma.applicant.count({ where: nonSpamFilter });
 
     res.json({
       stages: applicantsByStage.reduce((acc, item) => {
@@ -181,6 +189,7 @@ router.get('/top-applicants', authenticate, async (req: AuthRequest, res: Respon
     const applicantsWithReviews = await prisma.applicant.findMany({
       where: {
         ...applicantFilter,
+        spam: false,
         stage: { notIn: ['rejected', 'hired'] },
         reviews: { some: {} },
       },
@@ -219,7 +228,7 @@ router.get('/sources', authenticate, async (req: AuthRequest, res: Response) => 
     const { startDate, endDate } = req.query;
 
     const applicantAccessFilter = await getAccessibleApplicantFilter(req.user!);
-    const where: Record<string, unknown> = { ...applicantAccessFilter };
+    const where: Record<string, unknown> = { ...applicantAccessFilter, spam: false };
     if (startDate || endDate) {
       where.createdAt = {};
       if (startDate) {

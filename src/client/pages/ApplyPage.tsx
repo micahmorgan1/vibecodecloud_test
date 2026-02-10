@@ -42,9 +42,6 @@ export default function ApplyPage() {
     website: '',
     portfolioUrl: '',
     coverLetter: '',
-    yearsExperience: '',
-    currentCompany: '',
-    currentTitle: '',
   });
   const [resume, setResume] = useState<File | null>(null);
   const [portfolio, setPortfolio] = useState<File | null>(null);
@@ -143,10 +140,6 @@ export default function ApplyPage() {
       if (formData.website) data.append('website', formData.website);
       if (formData.portfolioUrl) data.append('portfolioUrl', formData.portfolioUrl);
       if (formData.coverLetter) data.append('coverLetter', formData.coverLetter);
-      if (formData.yearsExperience) data.append('yearsExperience', formData.yearsExperience);
-      if (formData.currentCompany) data.append('currentCompany', formData.currentCompany);
-      if (formData.currentTitle) data.append('currentTitle', formData.currentTitle);
-
       // Add source tracking fields
       if (sourceTracking.source) data.append('source', sourceTracking.source);
       if (sourceTracking.sourceDetails) data.append('sourceDetails', sourceTracking.sourceDetails);
@@ -155,6 +148,10 @@ export default function ApplyPage() {
       if (sourceTracking.utmMedium) data.append('utmMedium', sourceTracking.utmMedium);
       if (sourceTracking.utmCampaign) data.append('utmCampaign', sourceTracking.utmCampaign);
       if (sourceTracking.utmContent) data.append('utmContent', sourceTracking.utmContent);
+
+      // Honeypot field
+      const honeypot = (document.getElementById('website2') as HTMLInputElement)?.value || '';
+      if (honeypot) data.append('website2', honeypot);
 
       if (resume) data.append('resume', resume);
       if (portfolio) data.append('portfolio', portfolio);
@@ -319,39 +316,10 @@ export default function ApplyPage() {
               </div>
             </div>
 
-            {/* Professional Info */}
+            {/* Online Profiles */}
             <div>
-              <h3 className="text-sm font-medium text-gray-700 mb-4 uppercase tracking-wider">Professional Background</h3>
+              <h3 className="text-sm font-medium text-gray-700 mb-4 uppercase tracking-wider">Online Profiles</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="label">Current/Recent Title</label>
-                  <input
-                    type="text"
-                    value={formData.currentTitle}
-                    onChange={(e) => setFormData({ ...formData, currentTitle: e.target.value })}
-                    className="input"
-                    placeholder="e.g., Project Architect"
-                  />
-                </div>
-                <div>
-                  <label className="label">Current/Recent Company</label>
-                  <input
-                    type="text"
-                    value={formData.currentCompany}
-                    onChange={(e) => setFormData({ ...formData, currentCompany: e.target.value })}
-                    className="input"
-                  />
-                </div>
-                <div>
-                  <label className="label">Years of Experience</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={formData.yearsExperience}
-                    onChange={(e) => setFormData({ ...formData, yearsExperience: e.target.value })}
-                    className="input"
-                  />
-                </div>
                 <div>
                   <label className="label">LinkedIn Profile</label>
                   <input
@@ -425,6 +393,18 @@ export default function ApplyPage() {
                 onChange={(e) => setFormData({ ...formData, coverLetter: e.target.value })}
                 className="input min-h-[150px]"
                 placeholder="Tell us why you're interested in this position and what makes you a great fit..."
+              />
+            </div>
+
+            {/* Honeypot - hidden from humans */}
+            <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }} aria-hidden="true">
+              <label htmlFor="website2">Website</label>
+              <input
+                type="text"
+                id="website2"
+                name="website2"
+                tabIndex={-1}
+                autoComplete="off"
               />
             </div>
 

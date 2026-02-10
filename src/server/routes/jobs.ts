@@ -4,6 +4,8 @@ import { authenticate, requireRole, AuthRequest, getAccessibleJobIds } from '../
 import { formatJobForLinkedIn } from '../services/linkedInFormatter.js';
 import { JOB_BOARD_PLATFORMS, getPlatformById, generateTrackingUrl } from '../services/jobBoardPlatforms.js';
 import { generateUniqueSlug } from '../utils/slugify.js';
+import { validateBody } from '../middleware/validateBody.js';
+import { jobCreateSchema, jobUpdateSchema, linkedInStatusSchema, platformStatusSchema } from '../schemas/index.js';
 
 const router = Router();
 
@@ -236,6 +238,7 @@ router.post(
   '/',
   authenticate,
   requireRole('admin', 'hiring_manager'),
+  validateBody(jobCreateSchema),
   async (req: AuthRequest, res: Response) => {
     try {
       const { title, department, location, type, description, requirements, salary, slug: providedSlug, publishToWebsite, officeId } = req.body;
@@ -249,8 +252,8 @@ router.post(
         }
       }
 
-      if (!title || !department || !resolvedLocation || !type || !description || !requirements) {
-        return res.status(400).json({ error: 'Missing required fields' });
+      if (!resolvedLocation) {
+        return res.status(400).json({ error: 'Location is required (provide directly or via office)' });
       }
 
       const slug = providedSlug
@@ -292,6 +295,7 @@ router.put(
   '/:id',
   authenticate,
   requireRole('admin', 'hiring_manager'),
+  validateBody(jobUpdateSchema),
   async (req: AuthRequest, res: Response) => {
     try {
       const { id } = req.params;
@@ -486,6 +490,7 @@ router.patch(
   '/:id/linkedin-status',
   authenticate,
   requireRole('admin', 'hiring_manager'),
+  validateBody(linkedInStatusSchema),
   async (req: AuthRequest, res: Response) => {
     try {
       const { id } = req.params;
@@ -546,6 +551,7 @@ router.patch(
   '/:id/platform-status',
   authenticate,
   requireRole('admin', 'hiring_manager'),
+  validateBody(platformStatusSchema),
   async (req: AuthRequest, res: Response) => {
     try {
       const { id } = req.params;

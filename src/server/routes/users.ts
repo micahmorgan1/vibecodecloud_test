@@ -2,6 +2,8 @@ import { Router, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import prisma from '../db.js';
 import { authenticate, requireRole, AuthRequest } from '../middleware/auth.js';
+import { validateBody } from '../middleware/validateBody.js';
+import { userCreateSchema, userUpdateSchema } from '../schemas/index.js';
 
 const router = Router();
 
@@ -39,18 +41,9 @@ router.get('/', authenticate, requireRole('admin'), async (req: AuthRequest, res
 });
 
 // Create a new user
-router.post('/', authenticate, requireRole('admin'), async (req: AuthRequest, res: Response) => {
+router.post('/', authenticate, requireRole('admin'), validateBody(userCreateSchema), async (req: AuthRequest, res: Response) => {
   try {
     const { email, name, password, role } = req.body;
-
-    if (!email || !name || !password || !role) {
-      return res.status(400).json({ error: 'Missing required fields' });
-    }
-
-    const validRoles = ['admin', 'hiring_manager', 'reviewer'];
-    if (!validRoles.includes(role)) {
-      return res.status(400).json({ error: 'Invalid role' });
-    }
 
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
@@ -78,7 +71,7 @@ router.post('/', authenticate, requireRole('admin'), async (req: AuthRequest, re
 });
 
 // Update a user
-router.put('/:id', authenticate, requireRole('admin'), async (req: AuthRequest, res: Response) => {
+router.put('/:id', authenticate, requireRole('admin'), validateBody(userUpdateSchema), async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const { name, email, role, password } = req.body;
@@ -86,11 +79,6 @@ router.put('/:id', authenticate, requireRole('admin'), async (req: AuthRequest, 
     const existing = await prisma.user.findUnique({ where: { id } });
     if (!existing) {
       return res.status(404).json({ error: 'User not found' });
-    }
-
-    const validRoles = ['admin', 'hiring_manager', 'reviewer'];
-    if (role && !validRoles.includes(role)) {
-      return res.status(400).json({ error: 'Invalid role' });
     }
 
     if (email && email !== existing.email) {

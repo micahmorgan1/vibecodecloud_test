@@ -2,14 +2,27 @@ import { Router, Response, Request } from 'express';
 import prisma from '../db.js';
 import { authenticate, requireRole, AuthRequest, getAccessibleJobIds, getAccessibleApplicantFilter } from '../middleware/auth.js';
 import { uploadApplicationFiles } from '../middleware/upload.js';
+import { validateUploadedFiles } from '../middleware/validateFiles.js';
 import { sendRejectionEmail, getTemplate, resolveTemplate, sendThankYouEmail, sendReviewerNotification } from '../services/email.js';
+import { checkSpam } from '../services/spamDetection.js';
+import { checkApplicantUrls } from '../services/urlSafety.js';
+import { validateBody } from '../middleware/validateBody.js';
+import {
+  publicApplicantSchema,
+  manualApplicantSchema,
+  applicantUpdateSchema,
+  stageUpdateSchema,
+  rejectionEmailSchema,
+  assignJobSchema,
+  noteSchema,
+} from '../schemas/index.js';
 
 const router = Router();
 
 // Get all applicants (with filters)
 router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
   try {
-    const { jobId, stage, search, eventId } = req.query;
+    const { jobId, stage, search, eventId, spam } = req.query;
 
     // Access control: compound filter for job + event access
     const accessFilter = await getAccessibleApplicantFilter(req.user!);
@@ -19,6 +32,16 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
 
     const conditions: Record<string, unknown>[] = [];
     if (accessFilter.OR) conditions.push(accessFilter);
+
+    // Spam filter: default to non-spam
+    if (spam === 'true') {
+      conditions.push({ spam: true });
+    } else if (spam === 'all') {
+      // no spam filter
+    } else {
+      conditions.push({ spam: false });
+    }
+
     if (jobId) conditions.push({ jobId: jobId as string });
     if (eventId) conditions.push({ eventId: eventId as string });
     if (stage) conditions.push({ stage: stage as string });
@@ -110,7 +133,7 @@ router.get('/:id', authenticate, async (req: AuthRequest, res: Response) => {
 });
 
 // Create applicant (public endpoint for job applications)
-router.post('/', uploadApplicationFiles, async (req: Request, res: Response) => {
+router.post('/', uploadApplicationFiles, validateUploadedFiles, validateBody(publicApplicantSchema), async (req: Request, res: Response) => {
   try {
     const {
       jobId,
@@ -129,11 +152,11 @@ router.post('/', uploadApplicationFiles, async (req: Request, res: Response) => 
       utmMedium,
       utmCampaign,
       utmContent,
+      website2,
     } = req.body;
 
-    if (!firstName || !lastName || !email) {
-      return res.status(400).json({ error: 'First name, last name, and email are required' });
-    }
+    // Spam detection
+    const spamResult = checkSpam({ firstName, lastName, email, coverLetter, website2 }, req);
 
     let job: { id: string; title: string; status: string } | null = null;
 
@@ -181,6 +204,8 @@ router.post('/', uploadApplicationFiles, async (req: Request, res: Response) => 
         utmContent,
         resumePath,
         portfolioPath,
+        spam: spamResult.isSpam,
+        spamReason: spamResult.isSpam ? spamResult.reasons.join('; ') : null,
       },
       include: {
         job: {
@@ -191,39 +216,48 @@ router.post('/', uploadApplicationFiles, async (req: Request, res: Response) => 
 
     const jobTitle = job?.title || 'General Application';
 
-    // Fire-and-forget: thank-you auto-responder
-    (async () => {
-      try {
-        const template = await getTemplate('thank_you');
-        const variables = { firstName, lastName, jobTitle };
-        const subject = resolveTemplate(template.subject, variables);
-        const body = resolveTemplate(template.body, variables);
-        await sendThankYouEmail({ to: email, applicantName: `${firstName} ${lastName}`, subject, body });
-      } catch (err) {
-        console.error('Thank-you email failed:', err);
-      }
-    })();
-
-    // Fire-and-forget: notify users subscribed to this job's notifications (skip for general pool)
-    if (jobId) {
+    // Only send emails for non-spam submissions
+    if (!spamResult.isSpam) {
+      // Fire-and-forget: thank-you auto-responder
       (async () => {
         try {
-          const subscribers = await prisma.jobNotificationSub.findMany({
-            where: { jobId },
-            include: { user: { select: { name: true, email: true } } },
-          });
-          for (const sub of subscribers) {
-            await sendReviewerNotification({
-              to: sub.user.email,
-              reviewerName: sub.user.name,
-              applicantName: `${firstName} ${lastName}`,
-              jobTitle,
-            });
-          }
+          const template = await getTemplate('thank_you');
+          const variables = { firstName, lastName, jobTitle };
+          const subject = resolveTemplate(template.subject, variables);
+          const body = resolveTemplate(template.body, variables);
+          await sendThankYouEmail({ to: email, applicantName: `${firstName} ${lastName}`, subject, body });
         } catch (err) {
-          console.error('Subscriber notification failed:', err);
+          console.error('Thank-you email failed:', err);
         }
       })();
+
+      // Fire-and-forget: notify users subscribed to this job's notifications (skip for general pool)
+      if (jobId) {
+        (async () => {
+          try {
+            const subscribers = await prisma.jobNotificationSub.findMany({
+              where: { jobId },
+              include: { user: { select: { name: true, email: true } } },
+            });
+            for (const sub of subscribers) {
+              await sendReviewerNotification({
+                to: sub.user.email,
+                reviewerName: sub.user.name,
+                applicantName: `${firstName} ${lastName}`,
+                jobTitle,
+              });
+            }
+          } catch (err) {
+            console.error('Subscriber notification failed:', err);
+          }
+        })();
+      }
+    }
+
+    // Fire-and-forget: URL safety check
+    const urls = [linkedIn, website, portfolioUrl].filter(Boolean) as string[];
+    if (urls.length > 0) {
+      checkApplicantUrls(applicant.id, urls);
     }
 
     res.status(201).json(applicant);
@@ -237,6 +271,7 @@ router.post('/', uploadApplicationFiles, async (req: Request, res: Response) => 
 router.post(
   '/manual',
   authenticate,
+  validateBody(manualApplicantSchema),
   async (req: AuthRequest, res: Response) => {
     try {
       const {
@@ -251,10 +286,6 @@ router.post(
         coverLetter,
         source,
       } = req.body;
-
-      if (!firstName || !lastName || !email) {
-        return res.status(400).json({ error: 'First name, last name, and email are required' });
-      }
 
       // Check permissions: admin/hiring_manager always allowed, reviewer only if assigned to job or event
       if (req.user!.role === 'reviewer') {
@@ -303,6 +334,12 @@ router.post(
         },
       });
 
+      // Fire-and-forget: URL safety check
+      const urls = [linkedIn, website, portfolioUrl].filter(Boolean) as string[];
+      if (urls.length > 0) {
+        checkApplicantUrls(applicant.id, urls);
+      }
+
       res.status(201).json(applicant);
     } catch (error) {
       console.error('Manual add applicant error:', error);
@@ -312,15 +349,10 @@ router.post(
 );
 
 // Update applicant stage (workflow)
-router.patch('/:id/stage', authenticate, async (req: AuthRequest, res: Response) => {
+router.patch('/:id/stage', authenticate, validateBody(stageUpdateSchema), async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const { stage } = req.body;
-
-    const validStages = ['new', 'screening', 'interview', 'offer', 'hired', 'rejected', 'holding'];
-    if (!stage || !validStages.includes(stage)) {
-      return res.status(400).json({ error: 'Invalid stage. Valid stages: ' + validStages.join(', ') });
-    }
 
     // Access control
     const accessFilter = await getAccessibleApplicantFilter(req.user!);
@@ -347,7 +379,7 @@ router.patch('/:id/stage', authenticate, async (req: AuthRequest, res: Response)
 });
 
 // Update applicant details
-router.put('/:id', authenticate, async (req: AuthRequest, res: Response) => {
+router.put('/:id', authenticate, validateBody(applicantUpdateSchema), async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const {
@@ -383,6 +415,12 @@ router.put('/:id', authenticate, async (req: AuthRequest, res: Response) => {
       data: updateData,
     });
 
+    // Fire-and-forget: URL safety check on updated URLs
+    const urls = [linkedIn, website, portfolioUrl].filter(Boolean) as string[];
+    if (urls.length > 0) {
+      checkApplicantUrls(id, urls);
+    }
+
     res.json(applicant);
   } catch (error) {
     console.error('Update applicant error:', error);
@@ -391,14 +429,10 @@ router.put('/:id', authenticate, async (req: AuthRequest, res: Response) => {
 });
 
 // Add note to applicant
-router.post('/:id/notes', authenticate, async (req: AuthRequest, res: Response) => {
+router.post('/:id/notes', authenticate, validateBody(noteSchema), async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const { content } = req.body;
-
-    if (!content) {
-      return res.status(400).json({ error: 'Note content is required' });
-    }
 
     // Access control
     const accessFilter = await getAccessibleApplicantFilter(req.user!);
@@ -446,14 +480,10 @@ router.get('/:id/notes', authenticate, async (req: AuthRequest, res: Response) =
 });
 
 // Send rejection email
-router.post('/:id/send-rejection', authenticate, async (req: AuthRequest, res: Response) => {
+router.post('/:id/send-rejection', authenticate, validateBody(rejectionEmailSchema), async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const { emailBody } = req.body;
-
-    if (!emailBody) {
-      return res.status(400).json({ error: 'Email body is required' });
-    }
 
     // Access control
     const accessFilter = await getAccessibleApplicantFilter(req.user!);
@@ -543,6 +573,7 @@ router.patch(
   '/:id/assign-job',
   authenticate,
   requireRole('admin', 'hiring_manager'),
+  validateBody(assignJobSchema),
   async (req: AuthRequest, res: Response) => {
     try {
       const { id } = req.params;
@@ -632,6 +663,140 @@ router.patch(
     } catch (error) {
       console.error('Assign job error:', error);
       res.status(500).json({ error: 'Failed to assign job' });
+    }
+  }
+);
+
+// Mark applicant as not spam
+router.patch(
+  '/:id/mark-not-spam',
+  authenticate,
+  requireRole('admin', 'hiring_manager'),
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const { id } = req.params;
+
+      const existing = await prisma.applicant.findUnique({
+        where: { id },
+        include: { job: { select: { id: true, title: true } } },
+      });
+      if (!existing) {
+        return res.status(404).json({ error: 'Applicant not found' });
+      }
+
+      const applicant = await prisma.applicant.update({
+        where: { id },
+        data: { spam: false, spamReason: null },
+        include: {
+          job: { select: { id: true, title: true, department: true, location: true } },
+          event: { select: { id: true, name: true } },
+          reviews: {
+            include: { reviewer: { select: { id: true, name: true, email: true } } },
+            orderBy: { createdAt: 'desc' },
+          },
+          notes: { orderBy: { createdAt: 'desc' } },
+        },
+      });
+
+      await prisma.note.create({
+        data: { applicantId: id, content: `Marked as not spam by ${req.user!.email}` },
+      });
+
+      const jobTitle = existing.job?.title || 'General Application';
+      const { firstName, lastName, email } = existing;
+
+      // Fire-and-forget: send previously-suppressed thank-you email
+      (async () => {
+        try {
+          const template = await getTemplate('thank_you');
+          const variables = { firstName, lastName, jobTitle };
+          const subject = resolveTemplate(template.subject, variables);
+          const body = resolveTemplate(template.body, variables);
+          await sendThankYouEmail({ to: email, applicantName: `${firstName} ${lastName}`, subject, body });
+        } catch (err) {
+          console.error('Thank-you email failed:', err);
+        }
+      })();
+
+      // Fire-and-forget: send previously-suppressed subscriber notifications
+      if (existing.jobId) {
+        (async () => {
+          try {
+            const subscribers = await prisma.jobNotificationSub.findMany({
+              where: { jobId: existing.jobId! },
+              include: { user: { select: { name: true, email: true } } },
+            });
+            for (const sub of subscribers) {
+              await sendReviewerNotification({
+                to: sub.user.email,
+                reviewerName: sub.user.name,
+                applicantName: `${firstName} ${lastName}`,
+                jobTitle,
+              });
+            }
+          } catch (err) {
+            console.error('Subscriber notification failed:', err);
+          }
+        })();
+      }
+
+      // Re-fetch to include the new note
+      const updated = await prisma.applicant.findUnique({
+        where: { id },
+        include: {
+          job: { select: { id: true, title: true, department: true, location: true } },
+          event: { select: { id: true, name: true } },
+          reviews: {
+            include: { reviewer: { select: { id: true, name: true, email: true } } },
+            orderBy: { createdAt: 'desc' },
+          },
+          notes: { orderBy: { createdAt: 'desc' } },
+        },
+      });
+
+      res.json(updated);
+    } catch (error) {
+      console.error('Mark not spam error:', error);
+      res.status(500).json({ error: 'Failed to update applicant' });
+    }
+  }
+);
+
+// Confirm applicant as spam
+router.patch(
+  '/:id/confirm-spam',
+  authenticate,
+  requireRole('admin', 'hiring_manager'),
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const { id } = req.params;
+
+      const existing = await prisma.applicant.findUnique({ where: { id } });
+      if (!existing) {
+        return res.status(404).json({ error: 'Applicant not found' });
+      }
+
+      await prisma.note.create({
+        data: { applicantId: id, content: `Confirmed as spam by ${req.user!.email}` },
+      });
+
+      const applicant = await prisma.applicant.findUnique({
+        where: { id },
+        include: {
+          job: { select: { id: true, title: true, department: true, location: true } },
+          event: { select: { id: true, name: true } },
+          reviews: {
+            include: { reviewer: { select: { id: true, name: true, email: true } } },
+            orderBy: { createdAt: 'desc' },
+          },
+          notes: { orderBy: { createdAt: 'desc' } },
+        },
+      });
+
+      res.json(applicant);
+    } catch (error) {
+      console.error('Confirm spam error:', error);
+      res.status(500).json({ error: 'Failed to update applicant' });
     }
   }
 );

@@ -1,6 +1,8 @@
 import { Router, Response } from 'express';
 import prisma from '../db.js';
 import { authenticate, AuthRequest, getAccessibleApplicantFilter } from '../middleware/auth.js';
+import { validateBody } from '../middleware/validateBody.js';
+import { reviewCreateSchema } from '../schemas/index.js';
 
 const router = Router();
 
@@ -127,7 +129,7 @@ router.get('/applicant/:applicantId/summary', authenticate, async (req: AuthRequ
 });
 
 // Create or update a review
-router.post('/applicant/:applicantId', authenticate, async (req: AuthRequest, res: Response) => {
+router.post('/applicant/:applicantId', authenticate, validateBody(reviewCreateSchema), async (req: AuthRequest, res: Response) => {
   try {
     const { applicantId } = req.params;
     const {
@@ -140,24 +142,6 @@ router.post('/applicant/:applicantId', authenticate, async (req: AuthRequest, re
       recommendation,
       comments,
     } = req.body;
-
-    if (!rating || rating < 1 || rating > 5) {
-      return res.status(400).json({ error: 'Rating is required and must be between 1 and 5' });
-    }
-
-    // Validate other ratings if provided
-    const ratingFields = { technicalSkills, designAbility, portfolioQuality, communication, cultureFit };
-    for (const [field, value] of Object.entries(ratingFields)) {
-      if (value !== undefined && value !== null && (value < 1 || value > 5)) {
-        return res.status(400).json({ error: `${field} must be between 1 and 5` });
-      }
-    }
-
-    // Validate recommendation
-    const validRecommendations = ['strong_yes', 'yes', 'maybe', 'no', 'strong_no'];
-    if (recommendation && !validRecommendations.includes(recommendation)) {
-      return res.status(400).json({ error: 'Invalid recommendation value' });
-    }
 
     // Access control
     const accessFilter = await getAccessibleApplicantFilter(req.user!);

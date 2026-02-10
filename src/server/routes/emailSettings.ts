@@ -2,6 +2,8 @@ import { Router, Response } from 'express';
 import prisma from '../db.js';
 import { authenticate, requireRole, AuthRequest } from '../middleware/auth.js';
 import { getTemplate, sendReviewRequest } from '../services/email.js';
+import { validateBody } from '../middleware/validateBody.js';
+import { templateUpdateSchema, reviewerAssignmentSchema, subscriberSchema, requestReviewSchema } from '../schemas/index.js';
 
 const router = Router();
 
@@ -38,14 +40,11 @@ router.put(
   '/templates/:type',
   authenticate,
   requireRole('admin', 'hiring_manager'),
+  validateBody(templateUpdateSchema),
   async (req: AuthRequest, res: Response) => {
     try {
       const { type } = req.params;
       const { subject, body } = req.body;
-
-      if (!subject || !body) {
-        return res.status(400).json({ error: 'Subject and body are required' });
-      }
 
       const validTypes = ['thank_you', 'rejection'];
       if (!validTypes.includes(type)) {
@@ -131,20 +130,17 @@ router.put(
   '/jobs/:jobId/reviewers',
   authenticate,
   requireRole('admin', 'hiring_manager'),
+  validateBody(reviewerAssignmentSchema),
   async (req: AuthRequest, res: Response) => {
     try {
       const { jobId } = req.params;
-      const { userIds } = req.body as { userIds: string[] };
-
-      if (!Array.isArray(userIds)) {
-        return res.status(400).json({ error: 'userIds array is required' });
-      }
+      const { userIds } = req.body;
 
       await prisma.jobReviewer.deleteMany({ where: { jobId } });
 
       if (userIds.length > 0) {
         await prisma.jobReviewer.createMany({
-          data: userIds.map((userId) => ({ userId, jobId })),
+          data: userIds.map((userId: string) => ({ userId, jobId })),
         });
       }
 
@@ -190,20 +186,17 @@ router.put(
   '/jobs/:jobId/subscribers',
   authenticate,
   requireRole('admin', 'hiring_manager'),
+  validateBody(subscriberSchema),
   async (req: AuthRequest, res: Response) => {
     try {
       const { jobId } = req.params;
-      const { userIds } = req.body as { userIds: string[] };
-
-      if (!Array.isArray(userIds)) {
-        return res.status(400).json({ error: 'userIds array is required' });
-      }
+      const { userIds } = req.body;
 
       await prisma.jobNotificationSub.deleteMany({ where: { jobId } });
 
       if (userIds.length > 0) {
         await prisma.jobNotificationSub.createMany({
-          data: userIds.map((userId) => ({ userId, jobId })),
+          data: userIds.map((userId: string) => ({ userId, jobId })),
         });
       }
 
@@ -241,14 +234,11 @@ router.post(
   '/request-review/:applicantId',
   authenticate,
   requireRole('admin', 'hiring_manager'),
+  validateBody(requestReviewSchema),
   async (req: AuthRequest, res: Response) => {
     try {
       const { applicantId } = req.params;
-      const { userIds, message } = req.body as { userIds: string[]; message?: string };
-
-      if (!Array.isArray(userIds) || userIds.length === 0) {
-        return res.status(400).json({ error: 'At least one user must be selected' });
-      }
+      const { userIds, message } = req.body;
 
       const applicant = await prisma.applicant.findUnique({
         where: { id: applicantId },

@@ -10,6 +10,8 @@ interface Applicant {
   email: string;
   phone: string | null;
   stage: string;
+  spam: boolean;
+  spamReason: string | null;
   createdAt: string;
   job: { id: string; title: string; department: string; archived: boolean } | null;
   event: { id: string; name: string } | null;
@@ -60,6 +62,8 @@ export default function Applicants() {
   const [formData, setFormData] = useState<ApplicantFormData>(emptyForm);
   const [formError, setFormError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [showSpam, setShowSpam] = useState(false);
+  const [spamCount, setSpamCount] = useState(0);
 
   const canAdd = currentUser?.role === 'admin' || currentUser?.role === 'hiring_manager';
 
@@ -67,7 +71,14 @@ export default function Applicants() {
 
   useEffect(() => {
     fetchApplicants();
-  }, [stageFilter]);
+  }, [stageFilter, showSpam]);
+
+  useEffect(() => {
+    // Fetch spam count from dashboard stats
+    api.get<{ spamCount: number }>('/dashboard/stats').then((res) => {
+      setSpamCount(res.data.spamCount);
+    }).catch(() => {});
+  }, []);
 
   const fetchApplicants = async () => {
     setLoading(true);
@@ -75,6 +86,7 @@ export default function Applicants() {
       const params = new URLSearchParams();
       if (stageFilter) params.append('stage', stageFilter);
       if (search) params.append('search', search);
+      params.append('spam', showSpam ? 'true' : 'false');
       const queryString = params.toString();
       const res = await api.get<Applicant[]>(`/applicants${queryString ? `?${queryString}` : ''}`);
       setApplicants(res.data);
@@ -193,11 +205,11 @@ export default function Applicants() {
           </form>
         </div>
 
-        <div className="flex gap-2 flex-wrap mt-4">
+        <div className="flex gap-2 flex-wrap mt-4 items-center">
           <button
             onClick={() => handleStageChange('')}
             className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
-              stageFilter === ''
+              stageFilter === '' && !showSpam
                 ? 'bg-black text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
@@ -209,7 +221,7 @@ export default function Applicants() {
               key={stage}
               onClick={() => handleStageChange(stage)}
               className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
-                stageFilter === stage
+                stageFilter === stage && !showSpam
                   ? 'bg-black text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
@@ -217,6 +229,21 @@ export default function Applicants() {
               {stageLabels[stage]}
             </button>
           ))}
+          {canAdd && spamCount > 0 && (
+            <>
+              <span className="text-gray-300 mx-1">|</span>
+              <button
+                onClick={() => { setShowSpam(!showSpam); setStageFilter(''); }}
+                className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
+                  showSpam
+                    ? 'bg-red-600 text-white'
+                    : 'bg-red-50 text-red-700 hover:bg-red-100'
+                }`}
+              >
+                Spam ({spamCount})
+              </button>
+            </>
+          )}
         </div>
       </div>
 
@@ -256,6 +283,9 @@ export default function Applicants() {
                         <div>
                           <p className="font-medium text-gray-900">
                             {applicant.firstName} {applicant.lastName}
+                            {applicant.spam && (
+                              <span className="badge badge-spam ml-2">Spam</span>
+                            )}
                           </p>
                           <p className="text-sm text-gray-500">{applicant.email}</p>
                         </div>

@@ -38,6 +38,8 @@ interface Applicant {
   coverLetter: string | null;
   stage: string;
   source: string | null;
+  spam: boolean;
+  spamReason: string | null;
   createdAt: string;
   job: { id: string; title: string; department: string; location: string } | null;
   event: { id: string; name: string } | null;
@@ -72,6 +74,7 @@ export default function ApplicantDetail() {
   const [newNote, setNewNote] = useState('');
   const [addingNote, setAddingNote] = useState(false);
   const [viewingDocument, setViewingDocument] = useState<{ url: string; title: string } | null>(null);
+  const [spamActionLoading, setSpamActionLoading] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -140,6 +143,32 @@ export default function ApplicantDetail() {
     }
   };
 
+  const markNotSpam = async () => {
+    if (!id) return;
+    setSpamActionLoading(true);
+    try {
+      const res = await api.patch<Applicant>(`/applicants/${id}/mark-not-spam`);
+      setApplicant(res.data);
+    } catch (err) {
+      console.error('Failed to mark as not spam:', err);
+    } finally {
+      setSpamActionLoading(false);
+    }
+  };
+
+  const confirmSpam = async () => {
+    if (!id) return;
+    setSpamActionLoading(true);
+    try {
+      const res = await api.patch<Applicant>(`/applicants/${id}/confirm-spam`);
+      setApplicant(res.data);
+    } catch (err) {
+      console.error('Failed to confirm spam:', err);
+    } finally {
+      setSpamActionLoading(false);
+    }
+  };
+
   const canDelete = user?.role === 'admin' || user?.role === 'hiring_manager';
 
   if (loading) {
@@ -185,6 +214,36 @@ export default function ApplicantDetail() {
         <span className="mx-2">/</span>
         <span className="text-gray-900">{applicant.firstName} {applicant.lastName}</span>
       </nav>
+
+      {/* Spam Banner */}
+      {applicant.spam && canDelete && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="font-medium text-red-800">This applicant was flagged as spam</p>
+              {applicant.spamReason && (
+                <p className="text-sm text-red-600 mt-1">Reason: {applicant.spamReason}</p>
+              )}
+            </div>
+            <div className="flex gap-2 shrink-0">
+              <button
+                onClick={markNotSpam}
+                disabled={spamActionLoading}
+                className="px-3 py-1.5 bg-white border border-gray-300 rounded text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                {spamActionLoading ? 'Updating...' : 'Not Spam'}
+              </button>
+              <button
+                onClick={confirmSpam}
+                disabled={spamActionLoading}
+                className="px-3 py-1.5 bg-red-600 text-white rounded text-sm font-medium hover:bg-red-700 transition-colors"
+              >
+                Confirm Spam
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Header */}
       <div className="card">

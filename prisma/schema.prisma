@@ -104,6 +104,15 @@ model Applicant {
   utmCampaign     String?
   utmContent      String?
 
+  // Spam detection
+  spam            Boolean  @default(false)
+  spamReason      String?
+
+  // URL safety checking
+  urlSafe         Boolean   @default(true)
+  urlFlags        String?
+  urlCheckedAt    DateTime?
+
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 

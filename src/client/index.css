@@ -70,6 +70,10 @@ h1, h2, h3, h4, h5, h6 {
   .badge-holding {
     @apply bg-yellow-100 text-yellow-700;
   }
+
+  .badge-spam {
+    @apply bg-red-100 text-red-700;
+  }
 }
 
 /* DOCX viewer - preserve original document formatting */

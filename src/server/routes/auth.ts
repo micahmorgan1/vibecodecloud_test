@@ -2,18 +2,15 @@ import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import prisma from '../db.js';
 import { generateToken, authenticate, AuthRequest } from '../middleware/auth.js';
+import { validateBody } from '../middleware/validateBody.js';
+import { loginSchema, registerSchema, passwordChangeSchema } from '../schemas/index.js';
 
 const router = Router();
 
 // Register a new user
-router.post('/register', async (req: Request, res: Response) => {
+router.post('/register', validateBody(registerSchema), async (req: Request, res: Response) => {
   try {
-    const { email, password, name, role = 'reviewer' } = req.body;
-
-    // Validate input
-    if (!email || !password || !name) {
-      return res.status(400).json({ error: 'Email, password, and name are required' });
-    }
+    const { email, password, name, role } = req.body;
 
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({ where: { email } });
@@ -51,13 +48,9 @@ router.post('/register', async (req: Request, res: Response) => {
 });
 
 // Login
-router.post('/login', async (req: Request, res: Response) => {
+router.post('/login', validateBody(loginSchema), async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
-
-    if (!email || !password) {
-      return res.status(400).json({ error: 'Email and password are required' });
-    }
 
     // Find user
     const user = await prisma.user.findUnique({ where: { email } });
@@ -119,13 +112,9 @@ router.get('/me', authenticate, async (req: AuthRequest, res: Response) => {
 });
 
 // Update password
-router.put('/password', authenticate, async (req: AuthRequest, res: Response) => {
+router.put('/password', authenticate, validateBody(passwordChangeSchema), async (req: AuthRequest, res: Response) => {
   try {
     const { currentPassword, newPassword } = req.body;
-
-    if (!currentPassword || !newPassword) {
-      return res.status(400).json({ error: 'Current and new password are required' });
-    }
 
     const user = await prisma.user.findUnique({ where: { id: req.user!.id } });
     if (!user) {

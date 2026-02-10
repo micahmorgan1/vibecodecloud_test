@@ -18,6 +18,9 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3005;
 
+// Trust proxy for correct client IP behind reverse proxies
+app.set('trust proxy', true);
+
 // Middleware
 app.use(cors());
 app.use(express.json());
