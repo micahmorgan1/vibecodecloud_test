@@ -28,6 +28,8 @@ model User {
   blockedEmails     BlockedEmail[]
   activityLogs      ActivityLog[]
   notifications     Notification[]
+  createdInterviews     Interview[]            @relation("InterviewCreator")
+  interviewParticipants InterviewParticipant[] @relation("InterviewParticipant")
 }
 
 // Job postings
@@ -135,6 +137,7 @@ model Applicant {
   reviews         Review[]
   notes           Note[]
   activityLogs    ActivityLog[]
+  interviews      Interview[]
 
   @@index([jobId])
   @@index([eventId])
@@ -307,6 +310,50 @@ model Notification {
 
   @@index([userId, read])
   @@index([userId, createdAt])
+}
+
+// Scheduled interviews for applicants
+model Interview {
+  id          String   @id @default(uuid())
+  scheduledAt DateTime
+  location    String?
+  type        String   @default("in_person") // in_person, video, phone
+  notes       String?  // prep notes
+  status      String   @default("scheduled") // scheduled, completed, cancelled, no_show
+  feedback    String?  // post-interview summary
+  outcome     String?  // advance, hold, reject
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  applicantId String
+  applicant   Applicant @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+
+  createdById String
+  createdBy   User @relation("InterviewCreator", fields: [createdById], references: [id])
+
+  participants InterviewParticipant[]
+
+  @@index([applicantId])
+  @@index([scheduledAt])
+  @@index([status])
+}
+
+// Interview panel members with individual feedback
+model InterviewParticipant {
+  id        String   @id @default(uuid())
+  feedback  String?
+  rating    Int?     // 1-5
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  interviewId String
+  interview   Interview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User @relation("InterviewParticipant", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([interviewId, userId])
+  @@index([userId])
 }
 
 // Office locations

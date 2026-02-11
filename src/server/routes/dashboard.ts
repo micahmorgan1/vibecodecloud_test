@@ -25,6 +25,7 @@ router.get('/stats', authenticate, async (req: AuthRequest, res: Response) => {
       totalEvents,
       upcomingEvents,
       spamCount,
+      upcomingInterviews,
     ] = await Promise.all([
       prisma.job.count({ where: { archived: false } }),
       prisma.job.count({ where: { archived: false, status: 'open' } }),
@@ -38,6 +39,13 @@ router.get('/stats', authenticate, async (req: AuthRequest, res: Response) => {
       prisma.recruitmentEvent.count(),
       prisma.recruitmentEvent.count({ where: { date: { gte: new Date() } } }),
       prisma.applicant.count({ where: { spam: true } }),
+      prisma.interview.count({
+        where: {
+          status: 'scheduled',
+          scheduledAt: { gte: new Date() },
+          applicant: { spam: false },
+        },
+      }),
     ]);
 
     res.json({
@@ -59,6 +67,7 @@ router.get('/stats', authenticate, async (req: AuthRequest, res: Response) => {
         upcoming: upcomingEvents,
       },
       spamCount,
+      upcomingInterviews,
     });
   } catch (error) {
     logger.error({ err: error }, 'Get dashboard stats error');

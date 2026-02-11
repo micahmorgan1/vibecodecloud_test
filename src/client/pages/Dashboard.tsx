@@ -9,6 +9,7 @@ interface DashboardStats {
   applicants: { total: number; new: number; inReview: number; generalPool: number };
   reviews: { total: number };
   events?: { total: number; upcoming: number };
+  upcomingInterviews?: number;
 }
 
 interface UpcomingEvent {
@@ -124,7 +125,7 @@ export default function Dashboard() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
         <div className="card">
           <div className="flex items-center justify-between">
             <div>
@@ -189,6 +190,23 @@ export default function Dashboard() {
             </div>
           </div>
           <p className="text-sm text-gray-500 mt-4">{stats?.reviews.total} total reviews</p>
+        </div>
+
+        <div className="card">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-500">Upcoming Interviews</p>
+              <p className="text-3xl font-display font-bold text-gray-900 mt-1">{stats?.upcomingInterviews ?? 0}</p>
+            </div>
+            <div className="w-12 h-12 bg-gray-100 rounded flex items-center justify-center">
+              <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </div>
+          </div>
+          <Link to="/applicants?stage=interview" className="text-sm text-gray-900 hover:text-gray-600 mt-4 inline-block font-medium">
+            View interviews &rarr;
+          </Link>
         </div>
       </div>
 

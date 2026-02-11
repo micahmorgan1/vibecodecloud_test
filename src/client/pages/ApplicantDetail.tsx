@@ -26,6 +26,27 @@ interface Note {
   createdAt: string;
 }
 
+interface InterviewParticipant {
+  id: string;
+  feedback: string | null;
+  rating: number | null;
+  user: { id: string; name: string; email: string };
+}
+
+interface Interview {
+  id: string;
+  scheduledAt: string;
+  location: string | null;
+  type: string;
+  notes: string | null;
+  status: string;
+  feedback: string | null;
+  outcome: string | null;
+  createdAt: string;
+  participants: InterviewParticipant[];
+  createdBy: { id: string; name: string };
+}
+
 interface DuplicateApplicant {
   id: string;
   firstName: string;
@@ -64,6 +85,7 @@ interface Applicant {
   event: { id: string; name: string } | null;
   reviews: Review[];
   notes: Note[];
+  interviews: Interview[];
 }
 
 const stages = ['fair_intake', 'new', 'screening', 'interview', 'offer', 'hired', 'rejected', 'holding'];
@@ -99,6 +121,10 @@ export default function ApplicantDetail() {
   const [showConfirmSpamModal, setShowConfirmSpamModal] = useState(false);
   const [activityLogs, setActivityLogs] = useState<ActivityLogEntry[]>([]);
   const [duplicates, setDuplicates] = useState<DuplicateApplicant[]>([]);
+  const [showScheduleInterviewModal, setShowScheduleInterviewModal] = useState(false);
+  const [editingInterview, setEditingInterview] = useState<Interview | null>(null);
+  const [feedbackInterview, setFeedbackInterview] = useState<Interview | null>(null);
+  const [detailInterview, setDetailInterview] = useState<Interview | null>(null);
 
   useEffect(() => {
     if (id) {
@@ -504,6 +530,102 @@ export default function ApplicantDetail() {
             )}
           </div>
 
+          {/* Interviews */}
+          <div className="card">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-display font-semibold text-gray-900 uppercase tracking-wide">
+                Interviews ({applicant.interviews?.length || 0})
+              </h2>
+              {(user?.role === 'admin' || user?.role === 'hiring_manager') && (
+                <button
+                  onClick={() => setShowScheduleInterviewModal(true)}
+                  className="btn btn-primary text-sm"
+                >
+                  Schedule Interview
+                </button>
+              )}
+            </div>
+            {(!applicant.interviews || applicant.interviews.length === 0) ? (
+              <p className="text-gray-500 text-center py-4">No interviews scheduled</p>
+            ) : (
+              <div className="space-y-3">
+                {applicant.interviews.map((interview) => {
+                  const isParticipant = interview.participants.some(p => p.user.id === user?.id);
+                  const myParticipant = interview.participants.find(p => p.user.id === user?.id);
+                  const typeLabel: Record<string, string> = { in_person: 'In Person', video: 'Video', phone: 'Phone' };
+                  const statusColors: Record<string, string> = {
+                    scheduled: 'bg-blue-100 text-blue-800',
+                    completed: 'bg-green-100 text-green-800',
+                    cancelled: 'bg-gray-100 text-gray-500',
+                    no_show: 'bg-red-100 text-red-800',
+                  };
+                  const outcomeColors: Record<string, string> = {
+                    advance: 'bg-green-100 text-green-800',
+                    hold: 'bg-yellow-100 text-yellow-800',
+                    reject: 'bg-red-100 text-red-800',
+                  };
+                  return (
+                    <div key={interview.id} className="p-4 bg-gray-50 rounded border border-gray-100">
+                      <div className="flex items-start justify-between mb-2">
+                        <div>
+                          <p className="font-medium text-gray-900">
+                            {new Date(interview.scheduledAt).toLocaleString(undefined, {
+                              dateStyle: 'medium',
+                              timeStyle: 'short',
+                            })}
+                          </p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-200 text-gray-700">
+                              {typeLabel[interview.type] || interview.type}
+                            </span>
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${statusColors[interview.status] || 'bg-gray-100 text-gray-700'}`}>
+                              {interview.status.replace('_', ' ')}
+                            </span>
+                            {interview.outcome && (
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${outcomeColors[interview.outcome] || 'bg-gray-100 text-gray-700'}`}>
+                                {interview.outcome}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex gap-1">
+                          {isParticipant && interview.status === 'completed' && !myParticipant?.feedback && (
+                            <button
+                              onClick={() => setFeedbackInterview(interview)}
+                              className="text-xs px-2 py-1 bg-gray-900 text-white rounded hover:bg-gray-700 transition-colors"
+                            >
+                              Add Feedback
+                            </button>
+                          )}
+                          {(user?.role === 'admin' || user?.role === 'hiring_manager') && interview.status !== 'cancelled' && (
+                            <button
+                              onClick={() => setEditingInterview(interview)}
+                              className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
+                            >
+                              Edit
+                            </button>
+                          )}
+                          <button
+                            onClick={() => setDetailInterview(interview)}
+                            className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
+                          >
+                            Details
+                          </button>
+                        </div>
+                      </div>
+                      {interview.location && (
+                        <p className="text-sm text-gray-500">{interview.location}</p>
+                      )}
+                      <p className="text-xs text-gray-400 mt-1">
+                        Participants: {interview.participants.map(p => p.user.name).join(', ')}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
           {/* Reviews */}
           <div className="card">
             <h2 className="text-lg font-display font-semibold text-gray-900 mb-4 uppercase tracking-wide">
@@ -835,6 +957,45 @@ export default function ApplicantDetail() {
         />
       )}
 
+      {/* Schedule Interview Modal */}
+      {(showScheduleInterviewModal || editingInterview) && (
+        <ScheduleInterviewModal
+          applicantId={applicant.id}
+          existingInterview={editingInterview || undefined}
+          onClose={() => {
+            setShowScheduleInterviewModal(false);
+            setEditingInterview(null);
+          }}
+          onSaved={() => {
+            setShowScheduleInterviewModal(false);
+            setEditingInterview(null);
+            fetchApplicant();
+            fetchActivity();
+          }}
+        />
+      )}
+
+      {/* Interview Feedback Modal */}
+      {feedbackInterview && (
+        <InterviewFeedbackModal
+          interview={feedbackInterview}
+          onClose={() => setFeedbackInterview(null)}
+          onSaved={() => {
+            setFeedbackInterview(null);
+            fetchApplicant();
+            fetchActivity();
+          }}
+        />
+      )}
+
+      {/* Interview Detail Modal */}
+      {detailInterview && (
+        <InterviewDetailModal
+          interview={detailInterview}
+          onClose={() => setDetailInterview(null)}
+        />
+      )}
+
       {/* Document Viewer */}
       {viewingDocument && (
         <DocumentViewer
@@ -874,6 +1035,14 @@ function formatActivityMessage(action: string, meta: Record<string, unknown>): s
       return 'Note added';
     case 'review_added':
       return `Review added (${meta.rating}/5)`;
+    case 'interview_scheduled':
+      return `Interview scheduled (${meta.type ? String(meta.type).replace('_', ' ') : 'interview'})`;
+    case 'interview_status_changed':
+      return `Interview status changed from ${meta.from} to ${meta.to}`;
+    case 'interview_cancelled':
+      return 'Interview cancelled';
+    case 'interview_feedback_added':
+      return `Interview feedback added${meta.rating ? ` (${meta.rating}/5)` : ''}`;
     default:
       return action.replace(/_/g, ' ');
   }
@@ -1793,6 +1962,506 @@ function AssignJobModal({
               className="btn btn-primary"
             >
               {saving ? 'Saving...' : 'Assign'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ScheduleInterviewModal({
+  applicantId,
+  existingInterview,
+  onClose,
+  onSaved,
+}: {
+  applicantId: string;
+  existingInterview?: Interview;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const isEdit = !!existingInterview;
+  const [scheduledAt, setScheduledAt] = useState(() => {
+    if (existingInterview) {
+      const d = new Date(existingInterview.scheduledAt);
+      return d.toISOString().slice(0, 16);
+    }
+    return '';
+  });
+  const [type, setType] = useState(existingInterview?.type || 'in_person');
+  const [location, setLocation] = useState(existingInterview?.location || '');
+  const [notes, setNotes] = useState(existingInterview?.notes || '');
+  const [status, setStatus] = useState(existingInterview?.status || 'scheduled');
+  const [outcome, setOutcome] = useState(existingInterview?.outcome || '');
+  const [feedback, setFeedback] = useState(existingInterview?.feedback || '');
+  const [participantIds, setParticipantIds] = useState<Set<string>>(
+    new Set(existingInterview?.participants.map(p => p.user.id) || [])
+  );
+  const [users, setUsers] = useState<{ id: string; name: string; email: string; role: string }[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await api.get<{ id: string; name: string; email: string; role: string }[]>('/email-settings/users');
+        setUsers(res.data);
+      } catch {
+        setError('Failed to load users');
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  const toggleParticipant = (userId: string) => {
+    setParticipantIds(prev => {
+      const next = new Set(prev);
+      if (next.has(userId)) next.delete(userId);
+      else next.add(userId);
+      return next;
+    });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (participantIds.size === 0) {
+      setError('Select at least one participant');
+      return;
+    }
+    setSaving(true);
+    setError('');
+    try {
+      if (isEdit) {
+        await api.put(`/interviews/${existingInterview!.id}`, {
+          scheduledAt: new Date(scheduledAt).toISOString(),
+          type,
+          location: location || null,
+          notes: notes || null,
+          status,
+          outcome: outcome || null,
+          feedback: feedback || null,
+          participantIds: Array.from(participantIds),
+        });
+      } else {
+        await api.post(`/interviews/applicant/${applicantId}`, {
+          applicantId,
+          scheduledAt: new Date(scheduledAt).toISOString(),
+          type,
+          location: location || null,
+          notes: notes || null,
+          participantIds: Array.from(participantIds),
+        });
+      }
+      onSaved();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save interview');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!existingInterview) return;
+    setDeleting(true);
+    try {
+      await api.delete(`/interviews/${existingInterview.id}`);
+      onSaved();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to cancel interview');
+      setDeleting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded max-w-lg w-full max-h-[90vh] overflow-y-auto">
+        <div className="p-6 border-b border-gray-200 sticky top-0 bg-white">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-display font-semibold uppercase tracking-wide">
+              {isEdit ? 'Edit Interview' : 'Schedule Interview'}
+            </h2>
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
+              {error}
+            </div>
+          )}
+
+          <div>
+            <label className="label">Date & Time *</label>
+            <input
+              type="datetime-local"
+              value={scheduledAt}
+              onChange={(e) => setScheduledAt(e.target.value)}
+              className="input"
+              required
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="label">Type</label>
+              <select value={type} onChange={(e) => setType(e.target.value)} className="input">
+                <option value="in_person">In Person</option>
+                <option value="video">Video</option>
+                <option value="phone">Phone</option>
+              </select>
+            </div>
+            <div>
+              <label className="label">Location</label>
+              <input
+                type="text"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                className="input"
+                placeholder="Office, Zoom link, etc."
+              />
+            </div>
+          </div>
+
+          {isEdit && (
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="label">Status</label>
+                <select value={status} onChange={(e) => setStatus(e.target.value)} className="input">
+                  <option value="scheduled">Scheduled</option>
+                  <option value="completed">Completed</option>
+                  <option value="cancelled">Cancelled</option>
+                  <option value="no_show">No Show</option>
+                </select>
+              </div>
+              <div>
+                <label className="label">Outcome</label>
+                <select value={outcome} onChange={(e) => setOutcome(e.target.value)} className="input">
+                  <option value="">Not set</option>
+                  <option value="advance">Advance</option>
+                  <option value="hold">Hold</option>
+                  <option value="reject">Reject</option>
+                </select>
+              </div>
+            </div>
+          )}
+
+          <div>
+            <label className="label">Participants *</label>
+            {loading ? (
+              <div className="flex items-center justify-center h-16">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-black"></div>
+              </div>
+            ) : (
+              <div className="border rounded divide-y max-h-[200px] overflow-y-auto">
+                {users.map((u) => (
+                  <label key={u.id} className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={participantIds.has(u.id)}
+                      onChange={() => toggleParticipant(u.id)}
+                      className="h-4 w-4 rounded border-gray-300"
+                    />
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{u.name}</p>
+                      <p className="text-xs text-gray-500">{u.email}</p>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div>
+            <label className="label">Prep Notes</label>
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              className="input min-h-[80px]"
+              placeholder="Topics to discuss, questions to ask..."
+            />
+          </div>
+
+          {isEdit && (
+            <div>
+              <label className="label">Summary Feedback</label>
+              <textarea
+                value={feedback}
+                onChange={(e) => setFeedback(e.target.value)}
+                className="input min-h-[80px]"
+                placeholder="Post-interview summary..."
+              />
+            </div>
+          )}
+
+          <div className="flex items-center justify-between pt-4">
+            <div>
+              {isEdit && (
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  disabled={deleting || saving}
+                  className="text-sm text-red-600 hover:text-red-700 font-medium"
+                >
+                  {deleting ? 'Cancelling...' : 'Cancel Interview'}
+                </button>
+              )}
+            </div>
+            <div className="flex gap-3">
+              <button type="button" onClick={onClose} className="btn btn-secondary">
+                Close
+              </button>
+              <button type="submit" disabled={saving || participantIds.size === 0} className="btn btn-primary">
+                {saving ? 'Saving...' : isEdit ? 'Update Interview' : 'Schedule Interview'}
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function InterviewFeedbackModal({
+  interview,
+  onClose,
+  onSaved,
+}: {
+  interview: Interview;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [rating, setRating] = useState<number | null>(null);
+  const [feedback, setFeedback] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    setError('');
+    try {
+      await api.patch(`/interviews/${interview.id}/feedback`, {
+        feedback: feedback || null,
+        rating,
+      });
+      onSaved();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save feedback');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded max-w-md w-full">
+        <div className="p-6 border-b border-gray-200">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-display font-semibold uppercase tracking-wide">
+              Interview Feedback
+            </h2>
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
+              {error}
+            </div>
+          )}
+
+          <p className="text-sm text-gray-600">
+            Interview on {new Date(interview.scheduledAt).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}
+          </p>
+
+          <div>
+            <p className="text-sm font-medium text-gray-700 mb-2">Rating</p>
+            <div className="flex gap-2">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <button
+                  key={star}
+                  type="button"
+                  onClick={() => setRating(rating === star ? null : star)}
+                  className={`text-3xl transition-colors ${
+                    rating && star <= rating ? 'text-gray-900' : 'text-gray-300 hover:text-gray-500'
+                  }`}
+                >
+                  ★
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="label">Feedback</label>
+            <textarea
+              value={feedback}
+              onChange={(e) => setFeedback(e.target.value)}
+              className="input min-h-[120px]"
+              placeholder="Your assessment of the candidate..."
+            />
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4">
+            <button type="button" onClick={onClose} className="btn btn-secondary">
+              Cancel
+            </button>
+            <button type="submit" disabled={saving} className="btn btn-primary">
+              {saving ? 'Saving...' : 'Submit Feedback'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function InterviewDetailModal({
+  interview,
+  onClose,
+}: {
+  interview: Interview;
+  onClose: () => void;
+}) {
+  const typeLabel: Record<string, string> = { in_person: 'In Person', video: 'Video', phone: 'Phone' };
+  const statusColors: Record<string, string> = {
+    scheduled: 'bg-blue-100 text-blue-800',
+    completed: 'bg-green-100 text-green-800',
+    cancelled: 'bg-gray-100 text-gray-500',
+    no_show: 'bg-red-100 text-red-800',
+  };
+  const outcomeColors: Record<string, string> = {
+    advance: 'bg-green-100 text-green-800',
+    hold: 'bg-yellow-100 text-yellow-800',
+    reject: 'bg-red-100 text-red-800',
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded max-w-lg w-full max-h-[90vh] overflow-y-auto">
+        <div className="p-6 border-b border-gray-200 sticky top-0 bg-white">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-display font-semibold uppercase tracking-wide">
+              Interview Details
+            </h2>
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div className="p-6 space-y-4">
+          <dl className="grid grid-cols-2 gap-4">
+            <div>
+              <dt className="text-sm text-gray-500">Date & Time</dt>
+              <dd className="font-medium">
+                {new Date(interview.scheduledAt).toLocaleString(undefined, {
+                  dateStyle: 'medium',
+                  timeStyle: 'short',
+                })}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-sm text-gray-500">Type</dt>
+              <dd className="font-medium">{typeLabel[interview.type] || interview.type}</dd>
+            </div>
+            <div>
+              <dt className="text-sm text-gray-500">Status</dt>
+              <dd>
+                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${statusColors[interview.status] || 'bg-gray-100 text-gray-700'}`}>
+                  {interview.status.replace('_', ' ')}
+                </span>
+              </dd>
+            </div>
+            {interview.outcome && (
+              <div>
+                <dt className="text-sm text-gray-500">Outcome</dt>
+                <dd>
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${outcomeColors[interview.outcome] || 'bg-gray-100 text-gray-700'}`}>
+                    {interview.outcome}
+                  </span>
+                </dd>
+              </div>
+            )}
+            {interview.location && (
+              <div className="col-span-2">
+                <dt className="text-sm text-gray-500">Location</dt>
+                <dd className="font-medium">{interview.location}</dd>
+              </div>
+            )}
+            <div className="col-span-2">
+              <dt className="text-sm text-gray-500">Scheduled by</dt>
+              <dd className="font-medium">{interview.createdBy.name}</dd>
+            </div>
+          </dl>
+
+          {interview.notes && (
+            <div>
+              <h3 className="text-sm font-medium text-gray-900 mb-1">Prep Notes</h3>
+              <p className="text-sm text-gray-600 whitespace-pre-wrap">{interview.notes}</p>
+            </div>
+          )}
+
+          {interview.feedback && (
+            <div>
+              <h3 className="text-sm font-medium text-gray-900 mb-1">Summary Feedback</h3>
+              <p className="text-sm text-gray-600 whitespace-pre-wrap">{interview.feedback}</p>
+            </div>
+          )}
+
+          <div>
+            <h3 className="text-sm font-medium text-gray-900 mb-2">Participants</h3>
+            <div className="space-y-3">
+              {interview.participants.map((p) => (
+                <div key={p.id} className="p-3 bg-gray-50 rounded border border-gray-100">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{p.user.name}</p>
+                      <p className="text-xs text-gray-500">{p.user.email}</p>
+                    </div>
+                    {p.rating && (
+                      <div className="flex">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <span
+                            key={star}
+                            className={`text-lg ${star <= p.rating! ? 'text-gray-900' : 'text-gray-300'}`}
+                          >
+                            ★
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  {p.feedback && (
+                    <p className="text-sm text-gray-600 mt-2">{p.feedback}</p>
+                  )}
+                  {!p.feedback && !p.rating && (
+                    <p className="text-xs text-gray-400 mt-1 italic">No feedback yet</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex justify-end pt-4">
+            <button onClick={onClose} className="btn btn-secondary">
+              Close
             </button>
           </div>
         </div>

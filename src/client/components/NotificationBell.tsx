@@ -31,6 +31,8 @@ const typeIcons: Record<string, string> = {
   review_added: '\u{2B50}',
   stage_changed: '\u{27A1}\u{FE0F}',
   review_request: '\u{1F4CB}',
+  interview_scheduled: '\u{1F4C5}',
+  interview_cancelled: '\u{274C}',
 };
 
 export default function NotificationBell() {

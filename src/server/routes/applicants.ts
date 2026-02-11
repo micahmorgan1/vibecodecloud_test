@@ -332,6 +332,15 @@ router.get('/:id', authenticate, async (req: AuthRequest, res: Response) => {
         notes: {
           orderBy: { createdAt: 'desc' },
         },
+        interviews: {
+          include: {
+            participants: {
+              include: { user: { select: { id: true, name: true, email: true } } },
+            },
+            createdBy: { select: { id: true, name: true } },
+          },
+          orderBy: { scheduledAt: 'desc' },
+        },
       },
     });
 
@@ -728,6 +737,8 @@ router.delete(
 
       await prisma.$transaction(async (tx) => {
         await tx.activityLog.deleteMany({ where: { applicantId: { in: ids } } });
+        await tx.interviewParticipant.deleteMany({ where: { interview: { applicantId: { in: ids } } } });
+        await tx.interview.deleteMany({ where: { applicantId: { in: ids } } });
         await tx.review.deleteMany({ where: { applicantId: { in: ids } } });
         await tx.note.deleteMany({ where: { applicantId: { in: ids } } });
         await tx.applicant.deleteMany({ where: { id: { in: ids } } });
@@ -764,6 +775,8 @@ router.post(
 
       await prisma.$transaction(async (tx) => {
         await tx.activityLog.deleteMany({ where: { applicantId: { in: foundIds } } });
+        await tx.interviewParticipant.deleteMany({ where: { interview: { applicantId: { in: foundIds } } } });
+        await tx.interview.deleteMany({ where: { applicantId: { in: foundIds } } });
         await tx.review.deleteMany({ where: { applicantId: { in: foundIds } } });
         await tx.note.deleteMany({ where: { applicantId: { in: foundIds } } });
         await tx.applicant.deleteMany({ where: { id: { in: foundIds } } });
@@ -1322,6 +1335,8 @@ router.delete('/:id', authenticate, requireRole('admin', 'hiring_manager'), asyn
 
     // Delete related records first
     await prisma.activityLog.deleteMany({ where: { applicantId: id } });
+    await prisma.interviewParticipant.deleteMany({ where: { interview: { applicantId: id } } });
+    await prisma.interview.deleteMany({ where: { applicantId: id } });
     await prisma.review.deleteMany({ where: { applicantId: id } });
     await prisma.note.deleteMany({ where: { applicantId: id } });
     await prisma.applicant.delete({ where: { id } });
