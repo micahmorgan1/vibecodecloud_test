@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { isValidEmail, isValidPhone } from '../utils/validation';
+import Avatar from '../components/Avatar';
 import DocumentViewer from '../components/DocumentViewer';
 
 interface Review {
@@ -253,11 +254,7 @@ export default function ApplicantDetail() {
       <div className="card">
         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
           <div className="flex items-start gap-4">
-            <div className="w-16 h-16 bg-gray-900 rounded-full flex items-center justify-center">
-              <span className="text-white text-2xl font-medium">
-                {applicant.firstName[0]}{applicant.lastName[0]}
-              </span>
-            </div>
+            <Avatar name={`${applicant.firstName} ${applicant.lastName}`} email={applicant.email} size={64} />
             <div>
               <h1 className="text-2xl font-display font-bold text-gray-900 uppercase tracking-wide">
                 {applicant.firstName} {applicant.lastName}

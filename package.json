@@ -24,6 +24,7 @@
     "@tiptap/react": "^3.19.0",
     "@tiptap/starter-kit": "^3.19.0",
     "bcryptjs": "^2.4.3",
+    "boring-avatars": "^2.0.4",
     "clamscan": "^2.4.0",
     "cors": "^2.8.5",
     "express": "^4.18.2",

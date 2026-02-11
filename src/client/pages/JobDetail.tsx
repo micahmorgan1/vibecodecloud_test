@@ -6,6 +6,7 @@ import { LinkedInPostModal } from '../components/LinkedInPostModal';
 import { TrackingLinks } from '../components/TrackingLinks';
 import RichTextEditor from '../components/RichTextEditor';
 import { renderContent } from '../utils/formatText';
+import Avatar from '../components/Avatar';
 
 interface Applicant {
   id: string;
@@ -532,11 +533,7 @@ export default function JobDetail() {
                   <tr key={applicant.id} className="hover:bg-gray-50">
                     <td className="py-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-gray-900 rounded-full flex items-center justify-center">
-                          <span className="text-white text-sm font-medium">
-                            {applicant.firstName[0]}{applicant.lastName[0]}
-                          </span>
-                        </div>
+                        <Avatar name={`${applicant.firstName} ${applicant.lastName}`} email={applicant.email} size={32} />
                         <div>
                           <p className="font-medium text-gray-900">
                             {applicant.firstName} {applicant.lastName}

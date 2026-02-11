@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../lib/api';
 import { isValidEmail, isValidPhone } from '../utils/validation';
+import Avatar from '../components/Avatar';
 
 interface Applicant {
   id: string;
@@ -444,11 +445,7 @@ export default function Applicants() {
                     )}
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gray-900 rounded-full flex items-center justify-center">
-                          <span className="text-white font-medium">
-                            {applicant.firstName[0]}{applicant.lastName[0]}
-                          </span>
-                        </div>
+                        <Avatar name={`${applicant.firstName} ${applicant.lastName}`} email={applicant.email} size={40} />
                         <div>
                           <p className="font-medium text-gray-900">
                             {applicant.firstName} {applicant.lastName}

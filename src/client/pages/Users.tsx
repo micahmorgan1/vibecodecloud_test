@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../lib/api';
+import Avatar from '../components/Avatar';
 
 interface User {
   id: string;
@@ -237,11 +238,7 @@ export default function Users() {
                   <tr key={user.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gray-900 rounded-full flex items-center justify-center">
-                          <span className="text-white font-medium">
-                            {user.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()}
-                          </span>
-                        </div>
+                        <Avatar name={user.name} email={user.email} size={40} />
                         <span className="font-medium text-gray-900">{user.name}</span>
                       </div>
                     </td>

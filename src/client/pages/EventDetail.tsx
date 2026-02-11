@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../lib/api';
+import Avatar from '../components/Avatar';
 import { isValidEmail, isValidPhone } from '../utils/validation';
 import QRScanner from '../components/QRScanner';
 import { VCardData } from '../utils/vcardParser';
@@ -208,11 +209,7 @@ export default function EventDetail() {
           <div className="flex flex-wrap gap-2">
             {event.attendees.map((a) => (
               <div key={a.id} className="flex items-center gap-2 bg-gray-50 rounded px-3 py-1.5">
-                <div className="w-6 h-6 bg-gray-900 rounded-full flex items-center justify-center">
-                  <span className="text-white text-xs font-medium">
-                    {a.user.name.split(' ').map(n => n[0]).join('')}
-                  </span>
-                </div>
+                <Avatar name={a.user.name} email={a.user.email} size={24} />
                 <span className="text-sm">{a.user.name}</span>
               </div>
             ))}
@@ -261,11 +258,7 @@ export default function EventDetail() {
                   <tr key={applicant.id} className="hover:bg-gray-50">
                     <td className="px-6 py-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-gray-900 rounded-full flex items-center justify-center">
-                          <span className="text-white text-xs font-medium">
-                            {applicant.firstName[0]}{applicant.lastName[0]}
-                          </span>
-                        </div>
+                        <Avatar name={`${applicant.firstName} ${applicant.lastName}`} email={applicant.email} size={32} />
                         <div>
                           <p className="font-medium text-gray-900 text-sm">
                             {applicant.firstName} {applicant.lastName}

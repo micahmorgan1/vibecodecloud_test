@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../lib/api';
 import { PLATFORMS, getPlatformColorClasses, getPlatformTextColorClasses } from '../lib/platforms';
+import Avatar from '../components/Avatar';
 
 interface DashboardStats {
   jobs: { total: number; open: number };
@@ -36,6 +37,7 @@ interface Activity {
     id: string;
     firstName: string;
     lastName: string;
+    email: string;
     createdAt: string;
     job: { id: string; title: string } | null;
   }>;
@@ -216,11 +218,7 @@ export default function Dashboard() {
                 className="flex items-center justify-between p-3 hover:bg-gray-50 rounded transition-colors"
               >
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-gray-900 rounded-full flex items-center justify-center">
-                    <span className="text-white font-medium text-sm">
-                      {applicant.firstName[0]}{applicant.lastName[0]}
-                    </span>
-                  </div>
+                  <Avatar name={`${applicant.firstName} ${applicant.lastName}`} email={applicant.email} size={40} />
                   <div>
                     <p className="font-medium text-gray-900">
                       {applicant.firstName} {applicant.lastName}

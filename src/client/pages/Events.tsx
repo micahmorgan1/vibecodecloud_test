@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../lib/api';
+import Avatar from '../components/Avatar';
 
 interface EventAttendee {
   id: string;
@@ -120,14 +121,8 @@ export default function Events() {
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-1">
                         {event.attendees.slice(0, 3).map((a) => (
-                          <div
-                            key={a.id}
-                            title={a.user.name}
-                            className="w-7 h-7 bg-gray-900 rounded-full flex items-center justify-center"
-                          >
-                            <span className="text-white text-xs font-medium">
-                              {a.user.name.split(' ').map(n => n[0]).join('')}
-                            </span>
+                          <div key={a.id} title={a.user.name}>
+                            <Avatar name={a.user.name} email={a.user.email} size={28} />
                           </div>
                         ))}
                         {event.attendees.length > 3 && (
