@@ -28,7 +28,7 @@ No test framework is configured.
 
 **Server** (`src/server/`): Express on port 3001. Routes are in `src/server/routes/` (auth, jobs, applicants, reviews, users, dashboard, emailSettings, events). JWT authentication middleware is in `src/server/middleware/auth.ts`. File uploads (multer) go to `uploads/resumes/` and `uploads/portfolios/`.
 
-**Database**: SQLite (`prisma/dev.db`). Schema is in `prisma/schema.prisma`. Models: User, Job, Applicant, Review, Note, EmailTemplate, JobReviewer, JobNotificationSub, Office, RecruitmentEvent, EventAttendee. One review per reviewer per applicant (upsert pattern).
+**Database**: SQLite (`prisma/dev.db`). Schema is in `prisma/schema.prisma`. Models: User, Job, Applicant, Review, Note, EmailTemplate, JobReviewer, JobNotificationSub, Office, RecruitmentEvent, EventAttendee, BlockedEmail. One review per reviewer per applicant (upsert pattern).
 
 **Dev proxy**: Vite proxies `/api` and `/uploads` to `localhost:3001`. In production, Express serves the built client and handles SPA fallback.
 
@@ -91,3 +91,34 @@ Jobs have a `slug` (unique, auto-generated from title) and `publishToWebsite` fl
 **Routes** (`src/server/routes/events.ts`): CRUD for events, `PUT /:id/attendees` for managing attendees (delete-and-recreate pattern), `POST /:id/intake` for fair intake. Registered at `/api/events`.
 
 **Client pages**: `Events.tsx` (list + create modal), `EventDetail.tsx` (detail + fair intake form + applicants table). Events nav item visible to all roles.
+
+## Spam Protection & Blocklist
+
+**Spam detection** (`src/server/services/spamDetection.ts`): `checkSpam()` is async and checks (in order): email/domain blocklist, honeypot field, URL-in-name, disposable email domains, all-caps names, spam phrases in cover letter. Public `POST /applicants` silently flags spam (Formie pattern — saves the record, shows success to the user, but suppresses notification emails).
+
+**Blocklist** (`BlockedEmail` model): Stores blocked email addresses and domains (`type`: "email" or "domain", `value`: lowercased, `@@unique([type, value])`). When confirming spam via `PATCH /applicants/:id/confirm-spam`, the exact email is always blocked; optionally the entire domain can be blocked via `{ blockDomain: true }`. The `ConfirmSpamModal` in `ApplicantDetail.tsx` provides a checkbox for domain blocking.
+
+**Spam management routes** (admin/hiring_manager only):
+- `GET /applicants?spam=false` (default), `?spam=true`, `?spam=all` — filter by spam status
+- `PATCH /applicants/:id/mark-not-spam` — clears spam flag, sends previously-suppressed emails, creates note
+- `PATCH /applicants/:id/confirm-spam` — confirms spam, blocks email (+ optional domain), creates note
+- `PATCH /applicants/:id/mark-spam` — manually flag a non-spam applicant as spam
+- `POST /applicants/bulk-mark-spam` — bulk mark by IDs `{ ids: string[] }`
+- `DELETE /applicants/spam` — delete ALL spam applicants + their uploaded files
+- `POST /applicants/bulk-delete` — delete selected applicants by IDs `{ ids: string[] }` + files
+
+**Client UI**: `Applicants.tsx` has checkboxes with select-all and bulk action bars. In spam view: "Delete Selected" and "Delete All Spam" buttons. In normal view: "Mark Selected as Spam" button. All bulk actions have confirmation modals. `ApplicantDetail.tsx` has a "Mark as Spam" button for non-spam applicants. Dashboard excludes spam from all stats; `spamCount` is returned in `/dashboard/stats`.
+
+**Honeypot field**: `website2` on `ApplyPage.tsx` and the WHLCddev Alpine forms (`atsApplyForm`, `atsGeneralApplyForm`).
+
+## Form Validation & Security
+
+**Zod schemas** (`src/server/schemas/`): One file per domain (applicant, job, review, user, event, emailSettings, office) with a barrel `index.ts`. `validateBody(schema)` middleware in `src/server/middleware/validateBody.ts` parses and sanitizes `req.body`, returning 400 with `{ error, fields }` on failure.
+
+**Sanitization** (`src/server/utils/sanitize.ts`): `stripHtml()` for plain text fields, `sanitizeRichText()` for formatted content (allows b/i/em/strong/p/br/ul/ol/li). All Zod string fields use `.trim().max(limit).transform(stripHtml)` or `.transform(sanitizeRichText)`.
+
+**File security**: `validateUploadedFiles` middleware (`src/server/middleware/validateFiles.ts`) validates magic bytes via `file-type` after multer. `virusScan.ts` integrates ClamAV (graceful degradation if unavailable). `deleteUploadedFiles()` utility (`src/server/utils/deleteUploadedFiles.ts`) cleans up uploaded files when applicants are deleted.
+
+**URL safety**: `urlSafety.ts` uses Google Safe Browsing API (fire-and-forget) on applicant create/update. Applicant model tracks `urlSafe`, `urlFlags`, `urlCheckedAt`.
+
+**Env vars**: `CLAMAV_SOCKET` (optional), `GOOGLE_SAFE_BROWSING_KEY` (optional).
