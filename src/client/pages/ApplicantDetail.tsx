@@ -75,6 +75,7 @@ export default function ApplicantDetail() {
   const [addingNote, setAddingNote] = useState(false);
   const [viewingDocument, setViewingDocument] = useState<{ url: string; title: string } | null>(null);
   const [spamActionLoading, setSpamActionLoading] = useState(false);
+  const [showConfirmSpamModal, setShowConfirmSpamModal] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -156,14 +157,14 @@ export default function ApplicantDetail() {
     }
   };
 
-  const confirmSpam = async () => {
+  const markAsSpam = async () => {
     if (!id) return;
     setSpamActionLoading(true);
     try {
-      const res = await api.patch<Applicant>(`/applicants/${id}/confirm-spam`);
+      const res = await api.patch<Applicant>(`/applicants/${id}/mark-spam`);
       setApplicant(res.data);
     } catch (err) {
-      console.error('Failed to confirm spam:', err);
+      console.error('Failed to mark as spam:', err);
     } finally {
       setSpamActionLoading(false);
     }
@@ -234,7 +235,7 @@ export default function ApplicantDetail() {
                 {spamActionLoading ? 'Updating...' : 'Not Spam'}
               </button>
               <button
-                onClick={confirmSpam}
+                onClick={() => setShowConfirmSpamModal(true)}
                 disabled={spamActionLoading}
                 className="px-3 py-1.5 bg-red-600 text-white rounded text-sm font-medium hover:bg-red-700 transition-colors"
               >
@@ -341,6 +342,15 @@ export default function ApplicantDetail() {
                 Request Review
               </button>
             </>
+          )}
+          {canDelete && !applicant.spam && (
+            <button
+              onClick={markAsSpam}
+              disabled={spamActionLoading}
+              className="btn btn-secondary text-sm"
+            >
+              {spamActionLoading ? 'Marking...' : 'Mark as Spam'}
+            </button>
           )}
           {canDelete && (
             <button
@@ -690,6 +700,18 @@ export default function ApplicantDetail() {
           onSent={() => {
             setShowRequestReviewModal(false);
             fetchApplicant();
+          }}
+        />
+      )}
+
+      {/* Confirm Spam Modal */}
+      {showConfirmSpamModal && applicant && (
+        <ConfirmSpamModal
+          applicant={applicant}
+          onClose={() => setShowConfirmSpamModal(false)}
+          onConfirmed={(updated) => {
+            setShowConfirmSpamModal(false);
+            setApplicant(updated);
           }}
         />
       )}
@@ -1173,6 +1195,92 @@ function RequestReviewModal({
               className="btn btn-primary"
             >
               {sending ? 'Sending...' : `Send to ${selectedIds.size} user${selectedIds.size !== 1 ? 's' : ''}`}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ConfirmSpamModal({
+  applicant,
+  onClose,
+  onConfirmed,
+}: {
+  applicant: Applicant;
+  onClose: () => void;
+  onConfirmed: (updated: Applicant) => void;
+}) {
+  const [blockDomain, setBlockDomain] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const emailDomain = applicant.email.split('@')[1] || '';
+
+  const handleConfirm = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const res = await api.patch<Applicant>(`/applicants/${applicant.id}/confirm-spam`, { blockDomain });
+      onConfirmed(res.data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to confirm spam');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded max-w-md w-full">
+        <div className="p-6 border-b border-gray-200">
+          <h2 className="text-xl font-display font-semibold uppercase tracking-wide">
+            Confirm Spam & Block
+          </h2>
+        </div>
+        <div className="p-6 space-y-4">
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
+              {error}
+            </div>
+          )}
+
+          <p className="text-gray-700">
+            This will block future submissions from <span className="font-medium">{applicant.email}</span>.
+          </p>
+
+          {emailDomain && (
+            <label className="flex items-start gap-3 p-3 bg-gray-50 rounded border border-gray-200 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={blockDomain}
+                onChange={(e) => setBlockDomain(e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300 mt-0.5"
+              />
+              <div>
+                <p className="text-sm font-medium text-gray-900">Also block domain @{emailDomain}</p>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  All future submissions from any @{emailDomain} address will be auto-flagged as spam.
+                </p>
+              </div>
+            </label>
+          )}
+
+          <div className="flex justify-end gap-3 pt-4">
+            <button
+              onClick={onClose}
+              disabled={loading}
+              className="btn btn-secondary"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleConfirm}
+              disabled={loading}
+              className="btn btn-primary bg-red-600 hover:bg-red-700 border-red-600"
+            >
+              {loading ? 'Blocking...' : 'Confirm Spam & Block'}
             </button>
           </div>
         </div>

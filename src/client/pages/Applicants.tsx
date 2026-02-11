@@ -64,8 +64,14 @@ export default function Applicants() {
   const [submitting, setSubmitting] = useState(false);
   const [showSpam, setShowSpam] = useState(false);
   const [spamCount, setSpamCount] = useState(0);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkActionLoading, setBulkActionLoading] = useState(false);
+  const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
+  const [showDeleteAllSpamModal, setShowDeleteAllSpamModal] = useState(false);
+  const [showBulkMarkSpamModal, setShowBulkMarkSpamModal] = useState(false);
 
   const canAdd = currentUser?.role === 'admin' || currentUser?.role === 'hiring_manager';
+  const canManageSpam = currentUser?.role === 'admin' || currentUser?.role === 'hiring_manager';
 
   const stages = ['new', 'screening', 'interview', 'offer', 'hired', 'rejected', 'holding'];
 
@@ -74,14 +80,18 @@ export default function Applicants() {
   }, [stageFilter, showSpam]);
 
   useEffect(() => {
-    // Fetch spam count from dashboard stats
+    refreshSpamCount();
+  }, []);
+
+  const refreshSpamCount = () => {
     api.get<{ spamCount: number }>('/dashboard/stats').then((res) => {
       setSpamCount(res.data.spamCount);
     }).catch(() => {});
-  }, []);
+  };
 
   const fetchApplicants = async () => {
     setLoading(true);
+    setSelectedIds(new Set());
     try {
       const params = new URLSearchParams();
       if (stageFilter) params.append('stage', stageFilter);
@@ -159,6 +169,65 @@ export default function Applicants() {
     if (reviews.length === 0) return null;
     const avg = reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
     return avg.toFixed(1);
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === applicants.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(applicants.map((a) => a.id)));
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    setBulkActionLoading(true);
+    try {
+      await api.post('/applicants/bulk-delete', { ids: Array.from(selectedIds) });
+      setShowBulkDeleteModal(false);
+      fetchApplicants();
+      refreshSpamCount();
+    } catch (err) {
+      console.error('Bulk delete failed:', err);
+    } finally {
+      setBulkActionLoading(false);
+    }
+  };
+
+  const handleDeleteAllSpam = async () => {
+    setBulkActionLoading(true);
+    try {
+      await api.delete('/applicants/spam');
+      setShowDeleteAllSpamModal(false);
+      fetchApplicants();
+      refreshSpamCount();
+    } catch (err) {
+      console.error('Delete all spam failed:', err);
+    } finally {
+      setBulkActionLoading(false);
+    }
+  };
+
+  const handleBulkMarkSpam = async () => {
+    setBulkActionLoading(true);
+    try {
+      await api.post('/applicants/bulk-mark-spam', { ids: Array.from(selectedIds) });
+      setShowBulkMarkSpamModal(false);
+      fetchApplicants();
+      refreshSpamCount();
+    } catch (err) {
+      console.error('Bulk mark spam failed:', err);
+    } finally {
+      setBulkActionLoading(false);
+    }
   };
 
   return (
@@ -247,6 +316,41 @@ export default function Applicants() {
         </div>
       </div>
 
+      {/* Bulk Action Bar */}
+      {canManageSpam && !loading && applicants.length > 0 && (
+        <div className="flex items-center gap-3 flex-wrap">
+          {showSpam ? (
+            <>
+              {selectedIds.size > 0 && (
+                <button
+                  onClick={() => setShowBulkDeleteModal(true)}
+                  className="px-3 py-1.5 bg-red-600 text-white rounded text-sm font-medium hover:bg-red-700 transition-colors"
+                >
+                  Delete Selected ({selectedIds.size})
+                </button>
+              )}
+              <button
+                onClick={() => setShowDeleteAllSpamModal(true)}
+                className="px-3 py-1.5 bg-red-50 text-red-700 border border-red-200 rounded text-sm font-medium hover:bg-red-100 transition-colors"
+              >
+                Delete All Spam
+              </button>
+            </>
+          ) : (
+            <>
+              {selectedIds.size > 0 && (
+                <button
+                  onClick={() => setShowBulkMarkSpamModal(true)}
+                  className="px-3 py-1.5 bg-red-600 text-white rounded text-sm font-medium hover:bg-red-700 transition-colors"
+                >
+                  Mark Selected as Spam ({selectedIds.size})
+                </button>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
       {/* Applicants List */}
       {loading ? (
         <div className="flex items-center justify-center h-64">
@@ -262,6 +366,16 @@ export default function Applicants() {
             <table className="w-full">
               <thead className="bg-gray-50">
                 <tr className="text-left text-sm text-gray-500">
+                  {canManageSpam && (
+                    <th className="pl-6 py-4 w-10">
+                      <input
+                        type="checkbox"
+                        checked={applicants.length > 0 && selectedIds.size === applicants.length}
+                        onChange={toggleSelectAll}
+                        className="h-4 w-4 rounded border-gray-300"
+                      />
+                    </th>
+                  )}
                   <th className="px-6 py-4 font-medium">Applicant</th>
                   <th className="px-6 py-4 font-medium">Position</th>
                   <th className="px-6 py-4 font-medium">Stage</th>
@@ -272,7 +386,17 @@ export default function Applicants() {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {applicants.map((applicant) => (
-                  <tr key={applicant.id} className="hover:bg-gray-50">
+                  <tr key={applicant.id} className={`hover:bg-gray-50 ${selectedIds.has(applicant.id) ? 'bg-blue-50' : ''}`}>
+                    {canManageSpam && (
+                      <td className="pl-6 py-4 w-10">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.has(applicant.id)}
+                          onChange={() => toggleSelect(applicant.id)}
+                          className="h-4 w-4 rounded border-gray-300"
+                        />
+                      </td>
+                    )}
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-gray-900 rounded-full flex items-center justify-center">
@@ -350,6 +474,111 @@ export default function Applicants() {
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Delete Confirmation Modal */}
+      {showBulkDeleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded max-w-md w-full">
+            <div className="p-6 border-b border-gray-200">
+              <h2 className="text-xl font-display font-semibold uppercase tracking-wide">
+                Delete Selected Applicants
+              </h2>
+            </div>
+            <div className="p-6 space-y-4">
+              <p className="text-gray-700">
+                Are you sure you want to permanently delete <span className="font-medium">{selectedIds.size} applicant{selectedIds.size !== 1 ? 's' : ''}</span>?
+                This will remove all their data including reviews, notes, and uploaded files.
+              </p>
+              <div className="flex justify-end gap-3 pt-4">
+                <button
+                  onClick={() => setShowBulkDeleteModal(false)}
+                  disabled={bulkActionLoading}
+                  className="btn btn-secondary"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleBulkDelete}
+                  disabled={bulkActionLoading}
+                  className="btn btn-primary bg-red-600 hover:bg-red-700 border-red-600"
+                >
+                  {bulkActionLoading ? 'Deleting...' : `Delete ${selectedIds.size} Applicant${selectedIds.size !== 1 ? 's' : ''}`}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete All Spam Confirmation Modal */}
+      {showDeleteAllSpamModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded max-w-md w-full">
+            <div className="p-6 border-b border-gray-200">
+              <h2 className="text-xl font-display font-semibold uppercase tracking-wide">
+                Delete All Spam
+              </h2>
+            </div>
+            <div className="p-6 space-y-4">
+              <p className="text-gray-700">
+                Are you sure you want to permanently delete <span className="font-medium">all spam applicants</span>?
+                This will remove all their data including reviews, notes, and uploaded files. This action cannot be undone.
+              </p>
+              <div className="flex justify-end gap-3 pt-4">
+                <button
+                  onClick={() => setShowDeleteAllSpamModal(false)}
+                  disabled={bulkActionLoading}
+                  className="btn btn-secondary"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteAllSpam}
+                  disabled={bulkActionLoading}
+                  className="btn btn-primary bg-red-600 hover:bg-red-700 border-red-600"
+                >
+                  {bulkActionLoading ? 'Deleting...' : 'Delete All Spam'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Mark as Spam Confirmation Modal */}
+      {showBulkMarkSpamModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded max-w-md w-full">
+            <div className="p-6 border-b border-gray-200">
+              <h2 className="text-xl font-display font-semibold uppercase tracking-wide">
+                Mark as Spam
+              </h2>
+            </div>
+            <div className="p-6 space-y-4">
+              <p className="text-gray-700">
+                Are you sure you want to mark <span className="font-medium">{selectedIds.size} applicant{selectedIds.size !== 1 ? 's' : ''}</span> as spam?
+                They will be moved to the spam queue.
+              </p>
+              <div className="flex justify-end gap-3 pt-4">
+                <button
+                  onClick={() => setShowBulkMarkSpamModal(false)}
+                  disabled={bulkActionLoading}
+                  className="btn btn-secondary"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleBulkMarkSpam}
+                  disabled={bulkActionLoading}
+                  className="btn btn-primary bg-red-600 hover:bg-red-700 border-red-600"
+                >
+                  {bulkActionLoading ? 'Marking...' : `Mark ${selectedIds.size} as Spam`}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

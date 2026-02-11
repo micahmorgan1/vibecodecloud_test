@@ -62,3 +62,15 @@ export const assignJobSchema = z.object({
 export const noteSchema = z.object({
   content: z.string().min(1, 'Note content is required').max(5000).transform(sanitizeRichText),
 });
+
+export const confirmSpamSchema = z.object({
+  blockDomain: z.boolean().optional().default(false),
+});
+
+export const bulkDeleteSchema = z.object({
+  ids: z.array(z.string().uuid()).min(1).max(500),
+});
+
+export const bulkMarkSpamSchema = z.object({
+  ids: z.array(z.string().uuid()).min(1).max(500),
+});

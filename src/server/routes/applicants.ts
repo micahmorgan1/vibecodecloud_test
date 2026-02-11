@@ -15,7 +15,11 @@ import {
   rejectionEmailSchema,
   assignJobSchema,
   noteSchema,
+  confirmSpamSchema,
+  bulkDeleteSchema,
+  bulkMarkSpamSchema,
 } from '../schemas/index.js';
+import { deleteUploadedFiles } from '../utils/deleteUploadedFiles.js';
 
 const router = Router();
 
@@ -156,7 +160,7 @@ router.post('/', uploadApplicationFiles, validateUploadedFiles, validateBody(pub
     } = req.body;
 
     // Spam detection
-    const spamResult = checkSpam({ firstName, lastName, email, coverLetter, website2 }, req);
+    const spamResult = await checkSpam({ firstName, lastName, email, coverLetter, website2 }, req);
 
     let job: { id: string; title: string; status: string } | null = null;
 
@@ -345,6 +349,152 @@ router.post(
     } catch (error) {
       console.error('Manual add applicant error:', error);
       res.status(500).json({ error: 'Failed to add applicant' });
+    }
+  }
+);
+
+// Mark applicant as spam (admin/hiring_manager)
+router.patch(
+  '/:id/mark-spam',
+  authenticate,
+  requireRole('admin', 'hiring_manager'),
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const { id } = req.params;
+
+      const existing = await prisma.applicant.findUnique({ where: { id } });
+      if (!existing) {
+        return res.status(404).json({ error: 'Applicant not found' });
+      }
+
+      const applicant = await prisma.applicant.update({
+        where: { id },
+        data: { spam: true, spamReason: `Manually flagged by ${req.user!.email}` },
+        include: {
+          job: { select: { id: true, title: true, department: true, location: true } },
+          event: { select: { id: true, name: true } },
+          reviews: {
+            include: { reviewer: { select: { id: true, name: true, email: true } } },
+            orderBy: { createdAt: 'desc' },
+          },
+          notes: { orderBy: { createdAt: 'desc' } },
+        },
+      });
+
+      await prisma.note.create({
+        data: { applicantId: id, content: `Manually flagged as spam by ${req.user!.email}` },
+      });
+
+      res.json(applicant);
+    } catch (error) {
+      console.error('Mark spam error:', error);
+      res.status(500).json({ error: 'Failed to mark as spam' });
+    }
+  }
+);
+
+// Bulk mark applicants as spam (admin/hiring_manager)
+router.post(
+  '/bulk-mark-spam',
+  authenticate,
+  requireRole('admin', 'hiring_manager'),
+  validateBody(bulkMarkSpamSchema),
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const { ids } = req.body;
+
+      const result = await prisma.$transaction(async (tx) => {
+        const updated = await tx.applicant.updateMany({
+          where: { id: { in: ids }, spam: false },
+          data: { spam: true, spamReason: `Manually flagged by ${req.user!.email}` },
+        });
+
+        // Create notes for each applicant
+        await tx.note.createMany({
+          data: ids.map((applicantId: string) => ({
+            applicantId,
+            content: `Manually flagged as spam by ${req.user!.email}`,
+          })),
+        });
+
+        return updated;
+      });
+
+      res.json({ message: `${result.count} applicant(s) marked as spam` });
+    } catch (error) {
+      console.error('Bulk mark spam error:', error);
+      res.status(500).json({ error: 'Failed to mark applicants as spam' });
+    }
+  }
+);
+
+// Delete all spam applicants (admin/hiring_manager)
+router.delete(
+  '/spam',
+  authenticate,
+  requireRole('admin', 'hiring_manager'),
+  async (_req: AuthRequest, res: Response) => {
+    try {
+      const spamApplicants = await prisma.applicant.findMany({
+        where: { spam: true },
+        select: { id: true, resumePath: true, portfolioPath: true },
+      });
+
+      if (spamApplicants.length === 0) {
+        return res.json({ message: '0 spam applicants deleted', count: 0 });
+      }
+
+      const ids = spamApplicants.map((a) => a.id);
+
+      await prisma.$transaction(async (tx) => {
+        await tx.review.deleteMany({ where: { applicantId: { in: ids } } });
+        await tx.note.deleteMany({ where: { applicantId: { in: ids } } });
+        await tx.applicant.deleteMany({ where: { id: { in: ids } } });
+      });
+
+      // Fire-and-forget: clean up uploaded files
+      const filePaths = spamApplicants.flatMap((a) => [a.resumePath, a.portfolioPath]);
+      deleteUploadedFiles(filePaths).catch(() => {});
+
+      res.json({ message: `${spamApplicants.length} spam applicant(s) deleted`, count: spamApplicants.length });
+    } catch (error) {
+      console.error('Delete all spam error:', error);
+      res.status(500).json({ error: 'Failed to delete spam applicants' });
+    }
+  }
+);
+
+// Bulk delete applicants by IDs (admin/hiring_manager)
+router.post(
+  '/bulk-delete',
+  authenticate,
+  requireRole('admin', 'hiring_manager'),
+  validateBody(bulkDeleteSchema),
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const { ids } = req.body;
+
+      const applicants = await prisma.applicant.findMany({
+        where: { id: { in: ids } },
+        select: { id: true, resumePath: true, portfolioPath: true },
+      });
+
+      const foundIds = applicants.map((a) => a.id);
+
+      await prisma.$transaction(async (tx) => {
+        await tx.review.deleteMany({ where: { applicantId: { in: foundIds } } });
+        await tx.note.deleteMany({ where: { applicantId: { in: foundIds } } });
+        await tx.applicant.deleteMany({ where: { id: { in: foundIds } } });
+      });
+
+      // Fire-and-forget: clean up uploaded files
+      const filePaths = applicants.flatMap((a) => [a.resumePath, a.portfolioPath]);
+      deleteUploadedFiles(filePaths).catch(() => {});
+
+      res.json({ message: `${foundIds.length} applicant(s) deleted`, count: foundIds.length });
+    } catch (error) {
+      console.error('Bulk delete error:', error);
+      res.status(500).json({ error: 'Failed to delete applicants' });
     }
   }
 );
@@ -764,22 +914,46 @@ router.patch(
   }
 );
 
-// Confirm applicant as spam
+// Confirm applicant as spam (with email/domain blocklist)
 router.patch(
   '/:id/confirm-spam',
   authenticate,
   requireRole('admin', 'hiring_manager'),
+  validateBody(confirmSpamSchema),
   async (req: AuthRequest, res: Response) => {
     try {
       const { id } = req.params;
+      const { blockDomain } = req.body;
 
       const existing = await prisma.applicant.findUnique({ where: { id } });
       if (!existing) {
         return res.status(404).json({ error: 'Applicant not found' });
       }
 
+      const emailLower = existing.email.toLowerCase();
+      const domain = emailLower.split('@')[1];
+
+      // Always block the exact email address
+      await prisma.blockedEmail.upsert({
+        where: { type_value: { type: 'email', value: emailLower } },
+        update: {},
+        create: { type: 'email', value: emailLower, createdById: req.user!.id },
+      });
+
+      let noteText = `Confirmed as spam by ${req.user!.email}. Blocked email: ${emailLower}`;
+
+      // Optionally block the entire domain
+      if (blockDomain && domain) {
+        await prisma.blockedEmail.upsert({
+          where: { type_value: { type: 'domain', value: domain } },
+          update: {},
+          create: { type: 'domain', value: domain, createdById: req.user!.id },
+        });
+        noteText += `. Blocked domain: @${domain}`;
+      }
+
       await prisma.note.create({
-        data: { applicantId: id, content: `Confirmed as spam by ${req.user!.email}` },
+        data: { applicantId: id, content: noteText },
       });
 
       const applicant = await prisma.applicant.findUnique({
@@ -817,6 +991,9 @@ router.delete('/:id', authenticate, requireRole('admin', 'hiring_manager'), asyn
     await prisma.review.deleteMany({ where: { applicantId: id } });
     await prisma.note.deleteMany({ where: { applicantId: id } });
     await prisma.applicant.delete({ where: { id } });
+
+    // Fire-and-forget: clean up uploaded files
+    deleteUploadedFiles([applicant.resumePath, applicant.portfolioPath]).catch(() => {});
 
     res.json({ message: 'Applicant deleted successfully' });
   } catch (error) {

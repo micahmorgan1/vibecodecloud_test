@@ -23,6 +23,7 @@ model User {
   notificationSubs  JobNotificationSub[]
   createdEvents     RecruitmentEvent[]   @relation("EventCreator")
   eventAttendees    EventAttendee[]
+  blockedEmails     BlockedEmail[]
 }
 
 // Job postings
@@ -220,6 +221,17 @@ model EventAttendee {
   user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   event     RecruitmentEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
   @@unique([userId, eventId])
+}
+
+// Blocked emails/domains for spam prevention
+model BlockedEmail {
+  id          String   @id @default(uuid())
+  type        String   // "email" or "domain"
+  value       String   // lowercased email or domain
+  createdAt   DateTime @default(now())
+  createdById String
+  createdBy   User     @relation(fields: [createdById], references: [id])
+  @@unique([type, value])
 }
 
 // Office locations

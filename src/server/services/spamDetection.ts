@@ -1,4 +1,5 @@
 import { Request } from 'express';
+import prisma from '../db.js';
 
 interface SpamCheckData {
   firstName: string;
@@ -44,9 +45,27 @@ export function getClientIp(req: Request): string {
   return req.ip || 'unknown';
 }
 
-export function checkSpam(data: SpamCheckData, req: Request): SpamCheckResult {
+export async function checkSpam(data: SpamCheckData, req: Request): Promise<SpamCheckResult> {
   const reasons: string[] = [];
   const clientIp = getClientIp(req);
+
+  // 0. Blocklist check (email address and domain)
+  const emailLower = data.email.toLowerCase();
+  const emailDomain = emailLower.split('@')[1];
+  if (emailDomain) {
+    const blocked = await prisma.blockedEmail.findFirst({
+      where: {
+        OR: [
+          { type: 'email', value: emailLower },
+          { type: 'domain', value: emailDomain },
+        ],
+      },
+    });
+    if (blocked) {
+      const reason = blocked.type === 'email' ? 'Blocked email address' : 'Blocked email domain';
+      return { isSpam: true, reasons: [reason], clientIp };
+    }
+  }
 
   // 1. Honeypot check
   if (data.website2) {
@@ -62,7 +81,6 @@ export function checkSpam(data: SpamCheckData, req: Request): SpamCheckResult {
   }
 
   // 3. Disposable email check
-  const emailDomain = data.email.split('@')[1]?.toLowerCase();
   if (emailDomain && DISPOSABLE_DOMAINS.includes(emailDomain)) {
     return { isSpam: true, reasons: ['Disposable email domain'], clientIp };
   }
