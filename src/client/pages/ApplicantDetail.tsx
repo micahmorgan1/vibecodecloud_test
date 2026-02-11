@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
+import { isValidEmail, isValidPhone } from '../utils/validation';
 import DocumentViewer from '../components/DocumentViewer';
 
 interface Review {
@@ -47,8 +48,9 @@ interface Applicant {
   notes: Note[];
 }
 
-const stages = ['new', 'screening', 'interview', 'offer', 'hired', 'rejected', 'holding'];
+const stages = ['fair_intake', 'new', 'screening', 'interview', 'offer', 'hired', 'rejected', 'holding'];
 const stageLabels: Record<string, string> = {
+  fair_intake: 'Fair Intake',
   new: 'New',
   screening: 'Screening',
   interview: 'Interview',
@@ -69,6 +71,7 @@ export default function ApplicantDetail() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showRequestReviewModal, setShowRequestReviewModal] = useState(false);
   const [showAssignJobModal, setShowAssignJobModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [pendingStage, setPendingStage] = useState<string | null>(null);
   const [newNote, setNewNote] = useState('');
@@ -329,6 +332,12 @@ export default function ApplicantDetail() {
           )}
           {(user?.role === 'admin' || user?.role === 'hiring_manager') && (
             <>
+              <button
+                onClick={() => setShowEditModal(true)}
+                className="btn btn-secondary text-sm"
+              >
+                Edit Details
+              </button>
               <button
                 onClick={() => setShowAssignJobModal(true)}
                 className="btn btn-secondary text-sm"
@@ -700,6 +709,18 @@ export default function ApplicantDetail() {
           onSent={() => {
             setShowRequestReviewModal(false);
             fetchApplicant();
+          }}
+        />
+      )}
+
+      {/* Edit Details Modal */}
+      {showEditModal && (
+        <EditApplicantModal
+          applicant={applicant}
+          onClose={() => setShowEditModal(false)}
+          onSaved={(updated) => {
+            setShowEditModal(false);
+            setApplicant(updated);
           }}
         />
       )}
@@ -1284,6 +1305,243 @@ function ConfirmSpamModal({
             </button>
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function EditApplicantModal({
+  applicant,
+  onClose,
+  onSaved,
+}: {
+  applicant: Applicant;
+  onClose: () => void;
+  onSaved: (updated: Applicant) => void;
+}) {
+  const [firstName, setFirstName] = useState(applicant.firstName);
+  const [lastName, setLastName] = useState(applicant.lastName);
+  const [email, setEmail] = useState(applicant.email);
+  const [phone, setPhone] = useState(applicant.phone || '');
+  const [linkedIn, setLinkedIn] = useState(applicant.linkedIn || '');
+  const [website, setWebsite] = useState(applicant.website || '');
+  const [portfolioUrl, setPortfolioUrl] = useState(applicant.portfolioUrl || '');
+  const [coverLetter, setCoverLetter] = useState(applicant.coverLetter || '');
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
+  const [portfolioFile, setPortfolioFile] = useState<File | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [error, setError] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  const validateField = (field: string, value: string) => {
+    if (field === 'email' && value && !isValidEmail(value)) {
+      return 'Please enter a valid email address';
+    }
+    if (field === 'phone' && value && !isValidPhone(value)) {
+      return 'Please enter a valid phone number';
+    }
+    return '';
+  };
+
+  const handleFieldBlur = (field: string, value: string) => {
+    const err = validateField(field, value);
+    setFieldErrors((prev) => {
+      const next = { ...prev };
+      if (err) next[field] = err;
+      else delete next[field];
+      return next;
+    });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    const errors: Record<string, string> = {};
+    const emailErr = validateField('email', email);
+    if (emailErr) errors.email = emailErr;
+    const phoneErr = validateField('phone', phone);
+    if (phoneErr) errors.phone = phoneErr;
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return;
+    }
+    setFieldErrors({});
+
+    setSaving(true);
+    try {
+      const fd = new FormData();
+      fd.append('firstName', firstName);
+      fd.append('lastName', lastName);
+      fd.append('email', email);
+      if (phone) fd.append('phone', phone);
+      if (linkedIn) fd.append('linkedIn', linkedIn);
+      if (website) fd.append('website', website);
+      if (portfolioUrl) fd.append('portfolioUrl', portfolioUrl);
+      if (coverLetter) fd.append('coverLetter', coverLetter);
+      if (resumeFile) fd.append('resume', resumeFile);
+      if (portfolioFile) fd.append('portfolio', portfolioFile);
+
+      const res = await api.upload<Applicant>(`/applicants/${applicant.id}`, fd, 'PUT');
+      onSaved(res.data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update applicant');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
+          <h2 className="text-xl font-display font-bold uppercase tracking-wide">Edit Applicant Details</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
+              {error}
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="label">First Name</label>
+              <input
+                type="text"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                className="input"
+                required
+              />
+            </div>
+            <div>
+              <label className="label">Last Name</label>
+              <input
+                type="text"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                className="input"
+                required
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="label">Email</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                onBlur={(e) => handleFieldBlur('email', e.target.value)}
+                className={`input ${fieldErrors.email ? 'border-red-400' : ''}`}
+                required
+              />
+              {fieldErrors.email && (
+                <p className="text-red-600 text-xs mt-1">{fieldErrors.email}</p>
+              )}
+            </div>
+            <div>
+              <label className="label">Phone</label>
+              <input
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                onBlur={(e) => handleFieldBlur('phone', e.target.value)}
+                className={`input ${fieldErrors.phone ? 'border-red-400' : ''}`}
+              />
+              {fieldErrors.phone && (
+                <p className="text-red-600 text-xs mt-1">{fieldErrors.phone}</p>
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="label">LinkedIn URL</label>
+              <input
+                type="url"
+                value={linkedIn}
+                onChange={(e) => setLinkedIn(e.target.value)}
+                className="input"
+                placeholder="https://linkedin.com/in/..."
+              />
+            </div>
+            <div>
+              <label className="label">Website</label>
+              <input
+                type="url"
+                value={website}
+                onChange={(e) => setWebsite(e.target.value)}
+                className="input"
+                placeholder="https://..."
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="label">Portfolio URL</label>
+            <input
+              type="url"
+              value={portfolioUrl}
+              onChange={(e) => setPortfolioUrl(e.target.value)}
+              className="input"
+              placeholder="https://..."
+            />
+          </div>
+
+          <div>
+            <label className="label">Cover Letter</label>
+            <textarea
+              value={coverLetter}
+              onChange={(e) => setCoverLetter(e.target.value)}
+              className="input min-h-[100px]"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="label">
+                Resume {applicant.resumePath && <span className="text-xs text-gray-400 font-normal">(replace existing)</span>}
+              </label>
+              <input
+                type="file"
+                accept=".pdf,.doc,.docx"
+                onChange={(e) => setResumeFile(e.target.files?.[0] || null)}
+                className="input text-sm file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:bg-gray-100 file:text-gray-700 file:font-medium file:cursor-pointer"
+              />
+              <p className="text-xs text-gray-400 mt-1">PDF, DOC, or DOCX</p>
+            </div>
+            <div>
+              <label className="label">
+                Portfolio File {applicant.portfolioPath && <span className="text-xs text-gray-400 font-normal">(replace existing)</span>}
+              </label>
+              <input
+                type="file"
+                accept=".pdf,.jpg,.jpeg,.png,.zip"
+                onChange={(e) => setPortfolioFile(e.target.files?.[0] || null)}
+                className="input text-sm file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:bg-gray-100 file:text-gray-700 file:font-medium file:cursor-pointer"
+              />
+              <p className="text-xs text-gray-400 mt-1">PDF, JPG, PNG, or ZIP</p>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4">
+            <button type="button" onClick={onClose} className="btn btn-secondary">
+              Cancel
+            </button>
+            <button type="submit" disabled={saving} className="btn btn-primary">
+              {saving ? 'Saving...' : 'Save Changes'}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

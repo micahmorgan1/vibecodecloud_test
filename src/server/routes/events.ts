@@ -2,6 +2,8 @@ import { Router, Response } from 'express';
 import prisma from '../db.js';
 import { authenticate, requireRole, AuthRequest, getAccessibleEventIds } from '../middleware/auth.js';
 import { validateBody } from '../middleware/validateBody.js';
+import { uploadApplicationFiles } from '../middleware/upload.js';
+import { validateUploadedFiles } from '../middleware/validateFiles.js';
 import { eventCreateSchema, eventUpdateSchema, fairIntakeSchema, attendeesSchema } from '../schemas/index.js';
 
 const router = Router();
@@ -247,7 +249,7 @@ router.put(
 );
 
 // Fair Intake — create applicant + review atomically
-router.post('/:id/intake', authenticate, validateBody(fairIntakeSchema), async (req: AuthRequest, res: Response) => {
+router.post('/:id/intake', authenticate, uploadApplicationFiles, validateUploadedFiles, validateBody(fairIntakeSchema), async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
 
@@ -262,7 +264,11 @@ router.post('/:id/intake', authenticate, validateBody(fairIntakeSchema), async (
       return res.status(404).json({ error: 'Event not found' });
     }
 
-    const { firstName, lastName, email, phone, jobId, rating, recommendation, comments, source } = req.body;
+    const { firstName, lastName, email, phone, portfolioUrl, jobId, rating, recommendation, comments, source } = req.body;
+
+    // Get uploaded file paths
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
+    const resumePath = files?.resume?.[0]?.filename ? `/uploads/resumes/${files.resume[0].filename}` : null;
 
     // Validate job if provided
     if (jobId) {
@@ -280,10 +286,12 @@ router.post('/:id/intake', authenticate, validateBody(fairIntakeSchema), async (
           lastName,
           email,
           phone: phone || null,
+          portfolioUrl: portfolioUrl || null,
+          resumePath,
           jobId: jobId || null,
           eventId: id,
           source: source || event.name,
-          stage: 'new',
+          stage: 'fair_intake',
         },
       });
 

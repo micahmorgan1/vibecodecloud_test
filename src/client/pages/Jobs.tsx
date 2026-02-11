@@ -18,6 +18,7 @@ interface Job {
   createdBy: { id: string; name: string };
   _count: { applicants: number };
   postedToLinkedIn: boolean;
+  office: { id: string; name: string; city: string; state: string } | null;
 }
 
 export default function Jobs() {
@@ -176,7 +177,7 @@ export default function Jobs() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
-                {job.location}
+                {job.office ? `${job.office.name} — ${job.office.city}, ${job.office.state}` : job.location}
               </div>
 
               {job.salary && (
@@ -229,7 +230,6 @@ function CreateJobModal({
     title: '',
     slug: '',
     department: '',
-    location: '',
     type: 'full-time',
     description: '',
     requirements: '',
@@ -327,37 +327,16 @@ function CreateJobModal({
               <label className="label">Office</label>
               <select
                 value={formData.officeId}
-                onChange={(e) => {
-                  const officeId = e.target.value;
-                  const office = offices.find((o) => o.id === officeId);
-                  setFormData({
-                    ...formData,
-                    officeId,
-                    location: office ? `${office.city}, ${office.state}` : formData.location,
-                  });
-                }}
+                onChange={(e) => setFormData({ ...formData, officeId: e.target.value })}
                 className="input"
+                required
               >
-                <option value="">No office</option>
+                <option value="">Select an office</option>
                 {offices.map((o) => (
-                  <option key={o.id} value={o.id}>{o.name}</option>
+                  <option key={o.id} value={o.id}>{o.name} — {o.city}, {o.state}</option>
                 ))}
               </select>
             </div>
-            <div>
-              <label className="label">Location</label>
-              <input
-                type="text"
-                value={formData.location}
-                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                className="input"
-                placeholder="e.g., Baton Rouge, LA"
-                required
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="label">Employment Type</label>
               <select

@@ -43,6 +43,10 @@ h1, h2, h3, h4, h5, h6 {
     @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
   }
 
+  .badge-fair_intake {
+    @apply bg-teal-100 text-teal-800;
+  }
+
   .badge-new {
     @apply bg-gray-200 text-gray-800;
   }

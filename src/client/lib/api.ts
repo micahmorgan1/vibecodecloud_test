@@ -57,7 +57,7 @@ class ApiClient {
     return this.request<T>('DELETE', endpoint);
   }
 
-  async upload<T>(endpoint: string, formData: FormData): Promise<{ data: T }> {
+  async upload<T>(endpoint: string, formData: FormData, method: 'POST' | 'PUT' = 'POST'): Promise<{ data: T }> {
     const headers: HeadersInit = {};
     const token = localStorage.getItem('token');
     if (token) {
@@ -65,7 +65,7 @@ class ApiClient {
     }
 
     const response = await fetch(`${API_BASE}${endpoint}`, {
-      method: 'POST',
+      method,
       headers,
       body: formData,
     });

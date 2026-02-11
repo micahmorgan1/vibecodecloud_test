@@ -276,6 +276,8 @@ router.post('/', uploadApplicationFiles, validateUploadedFiles, validateBody(pub
 router.post(
   '/manual',
   authenticate,
+  uploadApplicationFiles,
+  validateUploadedFiles,
   validateBody(manualApplicantSchema),
   async (req: AuthRequest, res: Response) => {
     try {
@@ -291,6 +293,11 @@ router.post(
         coverLetter,
         source,
       } = req.body;
+
+      // Get uploaded file paths
+      const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
+      const resumePath = files?.resume?.[0]?.filename ? `/uploads/resumes/${files.resume[0].filename}` : null;
+      const portfolioPath = files?.portfolio?.[0]?.filename ? `/uploads/portfolios/${files.portfolio[0].filename}` : null;
 
       // Check permissions: admin/hiring_manager always allowed, reviewer only if assigned to job or event
       if (req.user!.role === 'reviewer') {
@@ -331,6 +338,8 @@ router.post(
           portfolioUrl: portfolioUrl || null,
           coverLetter: coverLetter || null,
           source: source || 'manual',
+          resumePath,
+          portfolioPath,
         },
         include: {
           job: {
@@ -530,7 +539,7 @@ router.patch('/:id/stage', authenticate, validateBody(stageUpdateSchema), async 
 });
 
 // Update applicant details
-router.put('/:id', authenticate, validateBody(applicantUpdateSchema), async (req: AuthRequest, res: Response) => {
+router.put('/:id', authenticate, uploadApplicationFiles, validateUploadedFiles, validateBody(applicantUpdateSchema), async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const {
@@ -561,9 +570,27 @@ router.put('/:id', authenticate, validateBody(applicantUpdateSchema), async (req
     if (portfolioUrl !== undefined) updateData.portfolioUrl = portfolioUrl;
     if (coverLetter !== undefined) updateData.coverLetter = coverLetter;
 
+    // Handle uploaded files
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
+    if (files?.resume?.[0]?.filename) {
+      updateData.resumePath = `/uploads/resumes/${files.resume[0].filename}`;
+    }
+    if (files?.portfolio?.[0]?.filename) {
+      updateData.portfolioPath = `/uploads/portfolios/${files.portfolio[0].filename}`;
+    }
+
     const applicant = await prisma.applicant.update({
       where: { id },
       data: updateData,
+      include: {
+        job: { select: { id: true, title: true, department: true, location: true } },
+        event: { select: { id: true, name: true } },
+        reviews: {
+          include: { reviewer: { select: { id: true, name: true, email: true } } },
+          orderBy: { createdAt: 'desc' },
+        },
+        notes: { orderBy: { createdAt: 'desc' } },
+      },
     });
 
     // Fire-and-forget: URL safety check on updated URLs

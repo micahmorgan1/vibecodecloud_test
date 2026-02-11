@@ -68,7 +68,7 @@ router.get('/stats', authenticate, async (req: AuthRequest, res: Response) => {
 // Get applicants by stage (pipeline view)
 router.get('/pipeline', authenticate, async (req: AuthRequest, res: Response) => {
   try {
-    const stages = ['new', 'screening', 'interview', 'offer', 'hired', 'rejected', 'holding'];
+    const stages = ['fair_intake', 'new', 'screening', 'interview', 'offer', 'hired', 'rejected', 'holding'];
     const applicantFilter = await getAccessibleApplicantFilter(req.user!);
 
     const pipeline = await Promise.all(

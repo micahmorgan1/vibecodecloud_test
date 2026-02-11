@@ -91,6 +91,7 @@ export default function Dashboard() {
   }
 
   const stageLabels: Record<string, string> = {
+    fair_intake: 'Fair Intake',
     new: 'New',
     screening: 'Screening',
     interview: 'Interview',
@@ -101,6 +102,7 @@ export default function Dashboard() {
   };
 
   const stageColors: Record<string, string> = {
+    fair_intake: 'bg-teal-400',
     new: 'bg-gray-300',
     screening: 'bg-gray-400',
     interview: 'bg-gray-500',
@@ -190,7 +192,7 @@ export default function Dashboard() {
       {/* Pipeline Overview */}
       <div className="card">
         <h2 className="text-lg font-display font-semibold text-gray-900 mb-4 uppercase tracking-wide">Hiring Pipeline</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
           {pipeline.map((stage) => (
             <div key={stage.stage} className="text-center">
               <div className={`w-full h-2 ${stageColors[stage.stage]} rounded-full mb-2`}></div>

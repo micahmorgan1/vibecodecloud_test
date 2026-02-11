@@ -57,6 +57,7 @@ export default function JobDetail() {
   const [job, setJob] = useState<Job | null>(null);
   const [loading, setLoading] = useState(true);
   const [linkedInModalOpen, setLinkedInModalOpen] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [copiedAppLink, setCopiedAppLink] = useState(false);
   const [offices, setOffices] = useState<Office[]>([]);
 
@@ -128,6 +129,7 @@ export default function JobDetail() {
 
   const stageBadge = (stage: string) => {
     const styles: Record<string, string> = {
+      fair_intake: 'badge-fair_intake',
       new: 'badge-new',
       screening: 'badge-screening',
       interview: 'badge-interview',
@@ -140,6 +142,7 @@ export default function JobDetail() {
   };
 
   const stageLabels: Record<string, string> = {
+    fair_intake: 'Fair Intake',
     new: 'New',
     screening: 'Screening',
     interview: 'Interview',
@@ -211,7 +214,7 @@ export default function JobDetail() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
-                {job.location}
+                {job.office ? `${job.office.name} — ${job.office.city}, ${job.office.state}` : job.location}
               </span>
               <span className="flex items-center">
                 <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -232,16 +235,24 @@ export default function JobDetail() {
 
           {canEdit && (
             <div className="flex flex-col gap-2">
-              <button
-                onClick={() => setLinkedInModalOpen(true)}
-                className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
-                  job.postedToLinkedIn
-                    ? 'bg-blue-100 text-blue-800 hover:bg-blue-200'
-                    : 'bg-blue-600 text-white hover:bg-blue-700'
-                }`}
-              >
-                {job.postedToLinkedIn ? '✓ Posted to LinkedIn' : 'Post to LinkedIn'}
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowEditModal(true)}
+                  className="btn btn-secondary text-sm"
+                >
+                  Edit Job
+                </button>
+                <button
+                  onClick={() => setLinkedInModalOpen(true)}
+                  className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
+                    job.postedToLinkedIn
+                      ? 'bg-blue-100 text-blue-800 hover:bg-blue-200'
+                      : 'bg-blue-600 text-white hover:bg-blue-700'
+                  }`}
+                >
+                  {job.postedToLinkedIn ? '✓ Posted to LinkedIn' : 'Post to LinkedIn'}
+                </button>
+              </div>
               <div className="flex gap-2">
                 {job.status === 'open' && (
                   <>
@@ -557,6 +568,19 @@ export default function JobDetail() {
         )}
       </div>
 
+      {/* Edit Job Modal */}
+      {showEditModal && (
+        <EditJobModal
+          job={job}
+          offices={offices}
+          onClose={() => setShowEditModal(false)}
+          onSaved={() => {
+            setShowEditModal(false);
+            loadJob();
+          }}
+        />
+      )}
+
       {/* LinkedIn Post Modal */}
       <LinkedInPostModal
         jobId={id || ''}
@@ -564,6 +588,163 @@ export default function JobDetail() {
         onClose={() => setLinkedInModalOpen(false)}
         onPosted={loadJob}
       />
+    </div>
+  );
+}
+
+function EditJobModal({
+  job,
+  offices,
+  onClose,
+  onSaved,
+}: {
+  job: Job;
+  offices: Office[];
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [formData, setFormData] = useState({
+    title: job.title,
+    department: job.department,
+    type: job.type,
+    description: job.description,
+    requirements: job.requirements,
+    salary: job.salary || '',
+    officeId: job.officeId || '',
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    try {
+      await api.put(`/jobs/${job.id}`, {
+        ...formData,
+        salary: formData.salary || null,
+        officeId: formData.officeId || null,
+      });
+      onSaved();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update job');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
+          <h2 className="text-xl font-display font-bold uppercase tracking-wide">Edit Job</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
+              {error}
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="label">Job Title</label>
+              <input
+                type="text"
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                className="input"
+                required
+              />
+            </div>
+            <div>
+              <label className="label">Department</label>
+              <input
+                type="text"
+                value={formData.department}
+                onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                className="input"
+                required
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="label">Office</label>
+              <select
+                value={formData.officeId}
+                onChange={(e) => setFormData({ ...formData, officeId: e.target.value })}
+                className="input"
+                required
+              >
+                <option value="">Select an office</option>
+                {offices.map((o) => (
+                  <option key={o.id} value={o.id}>{o.name} — {o.city}, {o.state}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="label">Employment Type</label>
+              <select
+                value={formData.type}
+                onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                className="input"
+              >
+                <option value="full-time">Full-time</option>
+                <option value="part-time">Part-time</option>
+                <option value="contract">Contract</option>
+                <option value="internship">Internship</option>
+              </select>
+            </div>
+            <div>
+              <label className="label">Salary Range</label>
+              <input
+                type="text"
+                value={formData.salary}
+                onChange={(e) => setFormData({ ...formData, salary: e.target.value })}
+                className="input"
+                placeholder="e.g., $80,000 - $100,000"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="label">Job Description</label>
+            <textarea
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              className="input min-h-[120px]"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="label">Requirements</label>
+            <textarea
+              value={formData.requirements}
+              onChange={(e) => setFormData({ ...formData, requirements: e.target.value })}
+              className="input min-h-[120px]"
+              required
+            />
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4">
+            <button type="button" onClick={onClose} className="btn btn-secondary">
+              Cancel
+            </button>
+            <button type="submit" disabled={loading} className="btn btn-primary">
+              {loading ? 'Saving...' : 'Save Changes'}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

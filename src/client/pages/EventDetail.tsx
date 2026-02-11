@@ -2,6 +2,9 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../lib/api';
+import { isValidEmail, isValidPhone } from '../utils/validation';
+import QRScanner from '../components/QRScanner';
+import { VCardData } from '../utils/vcardParser';
 import { EventFormModal } from './Events';
 
 interface EventAttendee {
@@ -61,6 +64,7 @@ const typeBadgeStyles: Record<string, string> = {
 };
 
 const stageLabels: Record<string, string> = {
+  fair_intake: 'Fair Intake',
   new: 'New',
   screening: 'Screening',
   interview: 'Interview',
@@ -72,6 +76,7 @@ const stageLabels: Record<string, string> = {
 
 const stageBadge = (stage: string) => {
   const styles: Record<string, string> = {
+    fair_intake: 'badge-fair_intake',
     new: 'badge-new',
     screening: 'badge-screening',
     interview: 'badge-interview',
@@ -348,16 +353,20 @@ function IntakeForm({
   onApplicantAdded: () => void;
 }) {
   const firstNameRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [sessionCount, setSessionCount] = useState(0);
   const [successMessage, setSuccessMessage] = useState('');
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
 
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [portfolioUrl, setPortfolioUrl] = useState('');
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [jobId, setJobId] = useState('');
   const [rating, setRating] = useState(0);
   const [recommendation, setRecommendation] = useState('');
@@ -368,17 +377,49 @@ function IntakeForm({
     firstNameRef.current?.focus();
   }, []);
 
+  const validateField = (field: string, value: string) => {
+    if (field === 'email' && value && !isValidEmail(value)) {
+      return 'Please enter a valid email address';
+    }
+    if (field === 'phone' && value && !isValidPhone(value)) {
+      return 'Please enter a valid phone number';
+    }
+    return '';
+  };
+
+  const handleFieldBlur = (field: string, value: string) => {
+    const err = validateField(field, value);
+    setFieldErrors((prev) => {
+      const next = { ...prev };
+      if (err) next[field] = err;
+      else delete next[field];
+      return next;
+    });
+  };
+
   const resetForm = (keepJob = true) => {
     setFirstName('');
     setLastName('');
     setEmail('');
     setPhone('');
+    setPortfolioUrl('');
+    setResumeFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
     if (!keepJob) setJobId('');
     setRating(0);
     setRecommendation('');
     setComments('');
     setError('');
+    setFieldErrors({});
     setTimeout(() => firstNameRef.current?.focus(), 50);
+  };
+
+  const handleQRScan = (data: Partial<VCardData>) => {
+    if (data.firstName) setFirstName(data.firstName);
+    if (data.lastName) setLastName(data.lastName);
+    if (data.email) setEmail(data.email);
+    if (data.phone) setPhone(data.phone);
+    if (data.portfolioUrl) setPortfolioUrl(data.portfolioUrl);
   };
 
   const handleSubmit = async (action: 'another' | 'done') => {
@@ -386,21 +427,33 @@ function IntakeForm({
       setError('First name, last name, email, and rating are required');
       return;
     }
+    const errors: Record<string, string> = {};
+    const emailErr = validateField('email', email);
+    if (emailErr) errors.email = emailErr;
+    const phoneErr = validateField('phone', phone);
+    if (phoneErr) errors.phone = phoneErr;
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return;
+    }
 
     setSubmitting(true);
     setError('');
+    setFieldErrors({});
     try {
-      await api.post(`/events/${eventId}/intake`, {
-        firstName,
-        lastName,
-        email,
-        phone: phone || undefined,
-        jobId: jobId || undefined,
-        rating,
-        recommendation: recommendation || undefined,
-        comments: comments || undefined,
-        source: eventName,
-      });
+      const fd = new FormData();
+      fd.append('firstName', firstName);
+      fd.append('lastName', lastName);
+      fd.append('email', email);
+      if (phone) fd.append('phone', phone);
+      if (portfolioUrl) fd.append('portfolioUrl', portfolioUrl);
+      if (jobId) fd.append('jobId', jobId);
+      fd.append('rating', String(rating));
+      if (recommendation) fd.append('recommendation', recommendation);
+      if (comments) fd.append('comments', comments);
+      fd.append('source', eventName);
+      if (resumeFile) fd.append('resume', resumeFile);
+      await api.upload(`/events/${eventId}/intake`, fd);
 
       setSessionCount(prev => prev + 1);
       onApplicantAdded();
@@ -444,6 +497,8 @@ function IntakeForm({
         </div>
       )}
 
+      <QRScanner onScan={handleQRScan} />
+
       <div className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
@@ -473,20 +528,38 @@ function IntakeForm({
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="input"
+              onBlur={(e) => handleFieldBlur('email', e.target.value)}
+              className={`input ${fieldErrors.email ? 'border-red-400' : ''}`}
               required
             />
+            {fieldErrors.email && (
+              <p className="text-red-600 text-xs mt-1">{fieldErrors.email}</p>
+            )}
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="label">Phone</label>
             <input
               type="tel"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
+              onBlur={(e) => handleFieldBlur('phone', e.target.value)}
+              className={`input ${fieldErrors.phone ? 'border-red-400' : ''}`}
+            />
+            {fieldErrors.phone && (
+              <p className="text-red-600 text-xs mt-1">{fieldErrors.phone}</p>
+            )}
+          </div>
+          <div>
+            <label className="label">Portfolio URL</label>
+            <input
+              type="url"
+              value={portfolioUrl}
+              onChange={(e) => setPortfolioUrl(e.target.value)}
               className="input"
+              placeholder="https://..."
             />
           </div>
           <div>
@@ -545,6 +618,55 @@ function IntakeForm({
             className="input min-h-[60px]"
             placeholder="First impressions, area of interest, notable skills..."
           />
+        </div>
+
+        {/* Resume Upload / Camera Capture */}
+        <div>
+          <label className="label">Resume</label>
+          <div className="flex items-center gap-3">
+            <div className="flex-1">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                onChange={(e) => setResumeFile(e.target.files?.[0] || null)}
+                className="input text-sm file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:bg-gray-100 file:text-gray-700 file:font-medium file:cursor-pointer"
+              />
+            </div>
+            <label className="btn btn-secondary text-sm cursor-pointer flex items-center gap-1.5 shrink-0">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              Camera
+              <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    setResumeFile(file);
+                    if (fileInputRef.current) fileInputRef.current.value = '';
+                  }
+                }}
+              />
+            </label>
+          </div>
+          {resumeFile && (
+            <div className="flex items-center gap-2 mt-1.5">
+              <span className="text-xs text-gray-500">{resumeFile.name}</span>
+              <button
+                type="button"
+                onClick={() => { setResumeFile(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
+                className="text-xs text-red-500 hover:text-red-700"
+              >
+                Remove
+              </button>
+            </div>
+          )}
+          <p className="text-xs text-gray-400 mt-1">PDF, DOC, DOCX, or photo (JPG/PNG)</p>
         </div>
 
         <div className="flex items-center gap-3 pt-2">

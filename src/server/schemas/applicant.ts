@@ -46,8 +46,8 @@ export const applicantUpdateSchema = z.object({
 });
 
 export const stageUpdateSchema = z.object({
-  stage: z.enum(['new', 'screening', 'interview', 'offer', 'hired', 'rejected', 'holding'], {
-    errorMap: () => ({ message: 'Invalid stage. Valid stages: new, screening, interview, offer, hired, rejected, holding' }),
+  stage: z.enum(['fair_intake', 'new', 'screening', 'interview', 'offer', 'hired', 'rejected', 'holding'], {
+    errorMap: () => ({ message: 'Invalid stage. Valid stages: fair_intake, new, screening, interview, offer, hired, rejected, holding' }),
   }),
 });
 

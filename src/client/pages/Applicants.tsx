@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../lib/api';
+import { isValidEmail, isValidPhone } from '../utils/validation';
 
 interface Applicant {
   id: string;
@@ -61,6 +62,9 @@ export default function Applicants() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [formData, setFormData] = useState<ApplicantFormData>(emptyForm);
   const [formError, setFormError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
+  const [portfolioFile, setPortfolioFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [showSpam, setShowSpam] = useState(false);
   const [spamCount, setSpamCount] = useState(0);
@@ -73,7 +77,7 @@ export default function Applicants() {
   const canAdd = currentUser?.role === 'admin' || currentUser?.role === 'hiring_manager';
   const canManageSpam = currentUser?.role === 'admin' || currentUser?.role === 'hiring_manager';
 
-  const stages = ['new', 'screening', 'interview', 'offer', 'hired', 'rejected', 'holding'];
+  const stages = ['fair_intake', 'new', 'screening', 'interview', 'offer', 'hired', 'rejected', 'holding'];
 
   useEffect(() => {
     fetchApplicants();
@@ -118,6 +122,9 @@ export default function Applicants() {
   const openAddModal = async () => {
     setFormData(emptyForm);
     setFormError('');
+    setFieldErrors({});
+    setResumeFile(null);
+    setPortfolioFile(null);
     try {
       const res = await api.get<Job[]>('/jobs?status=open');
       setJobs(res.data);
@@ -127,12 +134,48 @@ export default function Applicants() {
     setShowAddModal(true);
   };
 
+  const validateField = (field: string, value: string) => {
+    if (field === 'email' && value && !isValidEmail(value)) {
+      return 'Please enter a valid email address';
+    }
+    if (field === 'phone' && value && !isValidPhone(value)) {
+      return 'Please enter a valid phone number';
+    }
+    return '';
+  };
+
+  const handleFieldBlur = (field: string, value: string) => {
+    const error = validateField(field, value);
+    setFieldErrors((prev) => {
+      const next = { ...prev };
+      if (error) next[field] = error;
+      else delete next[field];
+      return next;
+    });
+  };
+
   const handleAddSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError('');
+    const errors: Record<string, string> = {};
+    const emailErr = validateField('email', formData.email);
+    if (emailErr) errors.email = emailErr;
+    const phoneErr = validateField('phone', formData.phone);
+    if (phoneErr) errors.phone = phoneErr;
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return;
+    }
+    setFieldErrors({});
     setSubmitting(true);
     try {
-      await api.post('/applicants/manual', formData);
+      const fd = new FormData();
+      Object.entries(formData).forEach(([key, val]) => {
+        if (val) fd.append(key, val);
+      });
+      if (resumeFile) fd.append('resume', resumeFile);
+      if (portfolioFile) fd.append('portfolio', portfolioFile);
+      await api.upload('/applicants/manual', fd);
       setShowAddModal(false);
       fetchApplicants();
     } catch (err) {
@@ -144,6 +187,7 @@ export default function Applicants() {
 
   const stageBadge = (stage: string) => {
     const styles: Record<string, string> = {
+      fair_intake: 'badge-fair_intake',
       new: 'badge-new',
       screening: 'badge-screening',
       interview: 'badge-interview',
@@ -156,6 +200,7 @@ export default function Applicants() {
   };
 
   const stageLabels: Record<string, string> = {
+    fair_intake: 'Fair Intake',
     new: 'New',
     screening: 'Screening',
     interview: 'Interview',
@@ -649,9 +694,13 @@ export default function Applicants() {
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="input"
+                    onBlur={(e) => handleFieldBlur('email', e.target.value)}
+                    className={`input ${fieldErrors.email ? 'border-red-400' : ''}`}
                     required
                   />
+                  {fieldErrors.email && (
+                    <p className="text-red-600 text-xs mt-1">{fieldErrors.email}</p>
+                  )}
                 </div>
                 <div>
                   <label className="label">Phone</label>
@@ -659,8 +708,12 @@ export default function Applicants() {
                     type="tel"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="input"
+                    onBlur={(e) => handleFieldBlur('phone', e.target.value)}
+                    className={`input ${fieldErrors.phone ? 'border-red-400' : ''}`}
                   />
+                  {fieldErrors.phone && (
+                    <p className="text-red-600 text-xs mt-1">{fieldErrors.phone}</p>
+                  )}
                 </div>
               </div>
 
@@ -702,6 +755,29 @@ export default function Applicants() {
                     className="input"
                     placeholder="https://..."
                   />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="label">Resume</label>
+                  <input
+                    type="file"
+                    accept=".pdf,.doc,.docx"
+                    onChange={(e) => setResumeFile(e.target.files?.[0] || null)}
+                    className="input text-sm file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:bg-gray-100 file:text-gray-700 file:font-medium file:cursor-pointer"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">PDF, DOC, or DOCX</p>
+                </div>
+                <div>
+                  <label className="label">Portfolio File</label>
+                  <input
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png,.zip"
+                    onChange={(e) => setPortfolioFile(e.target.files?.[0] || null)}
+                    className="input text-sm file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:bg-gray-100 file:text-gray-700 file:font-medium file:cursor-pointer"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">PDF, JPG, PNG, or ZIP</p>
                 </div>
               </div>
 
