@@ -1,13 +1,14 @@
 import NodeClam from 'clamscan';
 import logger from '../lib/logger.js';
 
+type InitializedScanner = Awaited<ReturnType<NodeClam['init']>>;
+
 interface ScanResult {
   clean: boolean;
   viruses?: string[];
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let clamav: any = null;
+let clamav: InitializedScanner | null = null;
 let initAttempted = false;
 let available = false;
 
