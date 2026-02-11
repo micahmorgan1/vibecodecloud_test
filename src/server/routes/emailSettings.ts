@@ -265,6 +265,7 @@ router.post(
           to: recipient.email,
           recipientName: recipient.name,
           applicantName,
+          applicantId,
           jobTitle: applicant.job?.title || 'General Application',
           senderName: sender?.name || 'A manager',
           message,

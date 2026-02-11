@@ -27,7 +27,8 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (!user) {
-    return <Navigate to="/login" />;
+    const redirect = window.location.pathname + window.location.search;
+    return <Navigate to={`/login?redirect=${encodeURIComponent(redirect)}`} />;
   }
 
   return <>{children}</>;

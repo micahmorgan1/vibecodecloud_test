@@ -244,6 +244,7 @@ router.post('/', uploadApplicationFiles, validateUploadedFiles, validateBody(pub
                 to: sub.user.email,
                 reviewerName: sub.user.name,
                 applicantName: `${firstName} ${lastName}`,
+                applicantId: applicant.id,
                 jobTitle,
               });
             }
@@ -731,6 +732,7 @@ router.patch(
                 to: sub.user.email,
                 reviewerName: sub.user.name,
                 applicantName: `${firstName} ${lastName}`,
+                applicantId: id,
                 jobTitle,
               });
             }
