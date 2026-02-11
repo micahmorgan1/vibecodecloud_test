@@ -14,6 +14,7 @@ import emailSettingsRoutes from './routes/emailSettings.js';
 import officeRoutes from './routes/offices.js';
 import eventRoutes from './routes/events.js';
 import siteSettingsRoutes from './routes/siteSettings.js';
+import notificationRoutes from './routes/notifications.js';
 import logger from './lib/logger.js';
 import { requestLogger } from './middleware/requestLogger.js';
 
@@ -105,6 +106,7 @@ app.use('/api/email-settings', emailSettingsRoutes);
 app.use('/api/offices', officeRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/settings', siteSettingsRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Health check
 app.get('/api/health', (_req, res) => {

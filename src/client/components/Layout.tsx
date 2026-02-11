@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { WhlcMark, WhlcWordmark } from './WhlcLogo';
+import NotificationBell from './NotificationBell';
 
 export default function Layout() {
   const { user, logout } = useAuth();
@@ -64,6 +65,7 @@ export default function Layout() {
 
             {/* User Menu */}
             <div className="flex items-center space-x-4">
+              <NotificationBell />
               <div className="hidden sm:block text-right">
                 <p className="text-sm font-medium">{user?.name}</p>
                 <p className="text-xs text-gray-400 capitalize">{user?.role?.replace('_', ' ')}</p>

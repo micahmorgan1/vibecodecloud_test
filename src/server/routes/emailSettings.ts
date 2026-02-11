@@ -5,6 +5,7 @@ import { getTemplate, sendReviewRequest } from '../services/email.js';
 import { validateBody } from '../middleware/validateBody.js';
 import { templateUpdateSchema, reviewerAssignmentSchema, subscriberSchema, requestReviewSchema } from '../schemas/index.js';
 import logger from '../lib/logger.js';
+import { notifyUsers } from '../services/notifications.js';
 
 const router = Router();
 
@@ -280,6 +281,15 @@ router.post(
           applicantId,
           content: `Review requested from ${recipientNames} by ${sender?.name || 'a manager'}${message ? `: "${message}"` : ''}`,
         },
+      });
+
+      // Fire-and-forget: in-app notifications for review request
+      notifyUsers({
+        userIds: recipients.map(r => r.id),
+        type: 'review_request',
+        title: 'Review Requested',
+        message: `${sender?.name || 'A manager'} wants you to review ${applicantName}`,
+        link: `/applicants/${applicantId}`,
       });
 
       res.json({ success: true, notified: recipients.length });

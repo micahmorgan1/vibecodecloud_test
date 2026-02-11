@@ -25,6 +25,7 @@ import { formatCsvRow } from '../utils/csv.js';
 import { parsePagination, prismaSkipTake, paginatedResponse } from '../utils/pagination.js';
 import logger from '../lib/logger.js';
 import { logActivity } from '../services/activityLog.js';
+import { notifyJobSubscribers } from '../services/notifications.js';
 
 const router = Router();
 
@@ -467,6 +468,15 @@ router.post('/', uploadApplicationFiles, validateUploadedFiles, validateBody(pub
           }
         })();
       }
+
+      // Fire-and-forget: in-app notifications for job subscribers
+      notifyJobSubscribers({
+        jobId: jobId || null,
+        type: 'new_application',
+        title: 'New Application',
+        message: `${firstName} ${lastName} applied for ${jobTitle}`,
+        link: `/applicants/${applicant.id}`,
+      });
     }
 
     // Fire-and-forget: URL safety check
@@ -798,6 +808,16 @@ router.patch('/:id/stage', authenticate, validateBody(stageUpdateSchema), async 
       applicantId: id,
       userId: req.user!.id,
       metadata: { from: existing.stage, to: stage },
+    });
+
+    // Fire-and-forget: in-app notification for stage change
+    notifyJobSubscribers({
+      jobId: applicant.job?.id || null,
+      type: 'stage_changed',
+      title: 'Stage Changed',
+      message: `${applicant.firstName} ${applicant.lastName} moved to ${stage}`,
+      link: `/applicants/${id}`,
+      excludeUserId: req.user!.id,
     });
 
     res.json(applicant);

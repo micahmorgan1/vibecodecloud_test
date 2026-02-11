@@ -5,6 +5,7 @@ import { validateBody } from '../middleware/validateBody.js';
 import { reviewCreateSchema } from '../schemas/index.js';
 import logger from '../lib/logger.js';
 import { logActivity } from '../services/activityLog.js';
+import { notifyJobSubscribers } from '../services/notifications.js';
 
 const router = Router();
 
@@ -193,6 +194,16 @@ router.post('/applicant/:applicantId', authenticate, validateBody(reviewCreateSc
       applicantId,
       userId: req.user!.id,
       metadata: { rating },
+    });
+
+    // Fire-and-forget: in-app notification for review
+    notifyJobSubscribers({
+      jobId: applicant.jobId,
+      type: 'review_added',
+      title: 'New Review',
+      message: `${review.reviewer.name} reviewed ${applicant.firstName} ${applicant.lastName} (${rating}\u2605)`,
+      link: `/applicants/${applicantId}`,
+      excludeUserId: req.user!.id,
     });
 
     res.status(201).json(review);

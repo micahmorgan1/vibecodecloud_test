@@ -65,6 +65,7 @@ export default function Dashboard() {
   const [sourceAnalytics, setSourceAnalytics] = useState<SourceAnalytics | null>(null);
   const [upcomingEvents, setUpcomingEvents] = useState<UpcomingEvent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [expandedStage, setExpandedStage] = useState<string | null>(null);
 
   useEffect(() => {
     Promise.all([
@@ -196,13 +197,67 @@ export default function Dashboard() {
         <h2 className="text-lg font-display font-semibold text-gray-900 mb-4 uppercase tracking-wide">Hiring Pipeline</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
           {pipeline.map((stage) => (
-            <div key={stage.stage} className="text-center">
+            <div
+              key={stage.stage}
+              className={`text-center cursor-pointer rounded-lg p-2 transition-all ${
+                expandedStage === stage.stage
+                  ? 'ring-2 ring-black bg-gray-50'
+                  : 'hover:bg-gray-50'
+              }`}
+              onClick={() => setExpandedStage(expandedStage === stage.stage ? null : stage.stage)}
+            >
               <div className={`w-full h-2 ${stageColors[stage.stage]} rounded-full mb-2`}></div>
               <p className="text-2xl font-display font-bold text-gray-900">{stage.count}</p>
               <p className="text-sm text-gray-500">{stageLabels[stage.stage]}</p>
             </div>
           ))}
         </div>
+
+        {/* Expanded stage applicant preview */}
+        {expandedStage && (() => {
+          const stageData = pipeline.find(s => s.stage === expandedStage);
+          if (!stageData) return null;
+          return (
+            <div className="mt-4 pt-4 border-t">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-display font-semibold text-gray-900 uppercase tracking-wide">
+                  {stageLabels[expandedStage]} — Top {Math.min(stageData.applicants.length, 5)} of {stageData.count}
+                </h3>
+                <Link
+                  to={`/applicants?stage=${expandedStage}`}
+                  className="text-sm text-gray-900 hover:text-gray-600 font-medium"
+                >
+                  View all &rarr;
+                </Link>
+              </div>
+              {stageData.applicants.length === 0 ? (
+                <p className="text-sm text-gray-500 py-2">No applicants in this stage</p>
+              ) : (
+                <div className="space-y-2">
+                  {stageData.applicants.map((applicant) => (
+                    <Link
+                      key={applicant.id}
+                      to={`/applicants/${applicant.id}`}
+                      className="flex items-center justify-between p-3 hover:bg-gray-50 rounded transition-colors"
+                    >
+                      <div>
+                        <p className="font-medium text-gray-900">
+                          {applicant.firstName} {applicant.lastName}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          {applicant.job?.title || 'General Application'}
+                        </p>
+                      </div>
+                      <p className="text-sm text-gray-400">
+                        {applicant._count.reviews} review{applicant._count.reviews !== 1 ? 's' : ''}
+                      </p>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })()}
       </div>
 
       {/* Recent Activity */}
