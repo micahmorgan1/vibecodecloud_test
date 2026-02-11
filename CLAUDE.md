@@ -111,6 +111,8 @@ Jobs have a `slug` (unique, auto-generated from title) and `publishToWebsite` fl
 
 **Honeypot field**: `website2` on `ApplyPage.tsx` and the WHLCddev Alpine forms (`atsApplyForm`, `atsGeneralApplyForm`).
 
+**Future consideration — external spam API**: If the built-in heuristics prove insufficient, consider adding a third-party content analysis API to `checkSpam()`. Top candidates evaluated: **OOPSpam** ($23/mo, 25K checks, no-logs privacy, score 0-6 JSON response, no npm package — raw fetch) or **Akismet** ($10-50/mo, `akismet-api` npm package with TypeScript, binary spam/ham response, most established). CleanTalk ($12/year unlimited) is cheapest but has a weak npm package. The `checkSpam()` architecture is designed so an external API can be added as an additional check step with a "fail open" pattern (if API unreachable, don't flag).
+
 ## Form Validation & Security
 
 **Zod schemas** (`src/server/schemas/`): One file per domain (applicant, job, review, user, event, emailSettings, office) with a barrel `index.ts`. `validateBody(schema)` middleware in `src/server/middleware/validateBody.ts` parses and sanitizes `req.body`, returning 400 with `{ error, fields }` on failure.
