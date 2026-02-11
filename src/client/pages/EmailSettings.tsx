@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '../lib/api';
+import RichTextEditor from '../components/RichTextEditor';
 
 interface Job {
   id: string;
@@ -129,10 +130,10 @@ function TemplateSection({
 
         <div>
           <label className="label">Body</label>
-          <textarea
+          <RichTextEditor
             value={body}
-            onChange={(e) => setBody(e.target.value)}
-            className="input min-h-[200px]"
+            onChange={setBody}
+            minHeight="200px"
           />
         </div>
 
@@ -476,13 +477,99 @@ function NotificationSubscriptions() {
   );
 }
 
+function SiteSettings() {
+  const [aboutWhlc, setAboutWhlc] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await api.get<{ key: string; value: string }>('/settings/about_whlc');
+        setAboutWhlc(res.data.value || '');
+      } catch {
+        // Setting doesn't exist yet, that's fine
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  const handleSave = async () => {
+    setSaving(true);
+    setError('');
+    setSaved(false);
+    try {
+      await api.put('/settings/about_whlc', { value: aboutWhlc });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="card">
+        <h2 className="text-lg font-display font-semibold uppercase tracking-wide mb-2">About WHLC</h2>
+        <div className="flex items-center justify-center h-32">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="card">
+      <h2 className="text-lg font-display font-semibold uppercase tracking-wide mb-1">About WHLC</h2>
+      <p className="text-sm text-gray-500 mb-4">
+        This text appears on job listing pages and the apply page. Use it to describe the firm, culture, and benefits of working at WHLC.
+      </p>
+
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm mb-4">
+          {error}
+        </div>
+      )}
+      {saved && (
+        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded text-sm mb-4">
+          About WHLC saved successfully.
+        </div>
+      )}
+
+      <div className="space-y-4">
+        <RichTextEditor
+          value={aboutWhlc}
+          onChange={setAboutWhlc}
+          minHeight="200px"
+        />
+        <div className="flex justify-end">
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="btn btn-primary"
+          >
+            {saving ? 'Saving...' : 'Save'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function EmailSettings() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-display font-bold text-gray-900 uppercase tracking-wide">Notifications</h1>
-        <p className="text-gray-500 mt-1">Manage email templates, reviewer access, and notification preferences</p>
+        <h1 className="text-3xl font-display font-bold text-gray-900 uppercase tracking-wide">Settings</h1>
+        <p className="text-gray-500 mt-1">Manage site content, email templates, reviewer access, and notification preferences</p>
       </div>
+
+      <SiteSettings />
 
       <TemplateSection
         title="Thank You Auto-Responder"

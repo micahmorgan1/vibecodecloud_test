@@ -233,3 +233,33 @@ h1, h2, h3, h4, h5, h6 {
 /* Superscript / subscript */
 .docx-content sup { vertical-align: super; font-size: 0.8em; }
 .docx-content sub { vertical-align: sub; font-size: 0.8em; }
+
+/* Rich text content — TipTap editor + rendered display */
+.ProseMirror ul,
+.prose ul {
+  list-style-type: disc !important;
+  padding-left: 1.5em !important;
+  margin: 0.5em 0;
+}
+
+.ProseMirror ol,
+.prose ol {
+  list-style-type: decimal !important;
+  padding-left: 1.5em !important;
+  margin: 0.5em 0;
+}
+
+.ProseMirror li,
+.prose li {
+  margin-bottom: 0.25em;
+  display: list-item;
+}
+
+.ProseMirror li p,
+.prose li p {
+  margin: 0;
+}
+
+.ProseMirror p {
+  margin: 0.25em 0;
+}

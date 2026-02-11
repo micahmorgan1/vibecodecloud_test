@@ -108,6 +108,9 @@ router.get('/website', async (_req, res) => {
         location: true,
         type: true,
         description: true,
+        responsibilities: true,
+        requirements: true,
+        benefits: true,
         salary: true,
         createdAt: true,
         office: true,
@@ -137,7 +140,9 @@ router.get('/website/:slug', async (req, res) => {
         location: true,
         type: true,
         description: true,
+        responsibilities: true,
         requirements: true,
+        benefits: true,
         salary: true,
         status: true,
         archived: true,
@@ -172,7 +177,9 @@ router.get('/:id/public', async (req, res) => {
         location: true,
         type: true,
         description: true,
+        responsibilities: true,
         requirements: true,
+        benefits: true,
         salary: true,
         status: true,
       },
@@ -241,7 +248,7 @@ router.post(
   validateBody(jobCreateSchema),
   async (req: AuthRequest, res: Response) => {
     try {
-      const { title, department, location, type, description, requirements, salary, slug: providedSlug, publishToWebsite, officeId } = req.body;
+      const { title, department, location, type, description, responsibilities, requirements, benefits, salary, slug: providedSlug, publishToWebsite, officeId } = req.body;
 
       // Auto-populate location from office if not explicitly provided
       let resolvedLocation = location;
@@ -268,7 +275,9 @@ router.post(
           location: resolvedLocation,
           type,
           description,
+          responsibilities: responsibilities || null,
           requirements,
+          benefits: benefits || null,
           salary,
           publishToWebsite: publishToWebsite ?? false,
           officeId: officeId || null,
@@ -299,7 +308,7 @@ router.put(
   async (req: AuthRequest, res: Response) => {
     try {
       const { id } = req.params;
-      const { title, department, location, type, description, requirements, salary, status, slug, publishToWebsite, officeId } = req.body;
+      const { title, department, location, type, description, responsibilities, requirements, benefits, salary, status, slug, publishToWebsite, officeId } = req.body;
 
       const existingJob = await prisma.job.findUnique({ where: { id } });
       if (!existingJob) {
@@ -312,7 +321,9 @@ router.put(
       if (location) updateData.location = location;
       if (type) updateData.type = type;
       if (description) updateData.description = description;
+      if (responsibilities !== undefined) updateData.responsibilities = responsibilities || null;
       if (requirements) updateData.requirements = requirements;
+      if (benefits !== undefined) updateData.benefits = benefits || null;
       if (salary !== undefined) updateData.salary = salary;
       if (slug !== undefined) updateData.slug = slug;
       if (publishToWebsite !== undefined) updateData.publishToWebsite = publishToWebsite;

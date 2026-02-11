@@ -124,3 +124,23 @@ Jobs have a `slug` (unique, auto-generated from title) and `publishToWebsite` fl
 **URL safety**: `urlSafety.ts` uses Google Safe Browsing API (fire-and-forget) on applicant create/update. Applicant model tracks `urlSafe`, `urlFlags`, `urlCheckedAt`.
 
 **Env vars**: `CLAMAV_SOCKET` (optional), `GOOGLE_SAFE_BROWSING_KEY` (optional).
+
+## Rich Text Editor & Content Formatting
+
+**TipTap editor** (`src/client/components/RichTextEditor.tsx`): Headless rich text editor wrapping `@tiptap/react` with `StarterKit` + `Underline` extension. Toolbar: Bold, Italic, Underline, Bullet List, Ordered List. Used in job create/edit modals (description, requirements, benefits) and email template editing. Styled to match the existing `.input` class with black/white active states.
+
+**Legacy text formatter** (`src/client/utils/formatText.ts`): `isHtml()` detects existing HTML content, `formatTextToHtml()` converts plain text with `- ` prefixed lines into `<ul><li>` HTML, `renderContent()` dispatches between the two. Used in display components to handle both old plain-text data and new TipTap HTML via `dangerouslySetInnerHTML`.
+
+**Display rendering**: `JobDetail.tsx`, `ApplyPage.tsx` use `dangerouslySetInnerHTML={{ __html: renderContent(...) }}` instead of `whitespace-pre-wrap`. WHLC website (`atsJobs.js`) has equivalent `formatTextToHtml()` + `isHtml()` functions that transform job fields on fetch.
+
+## Job Benefits
+
+`Job.benefits` is an optional rich text field (nullable `String?`). Included in create/update routes and all public select clauses. Conditionally displayed on `JobDetail.tsx`, `ApplyPage.tsx`, and WHLC `jobDetail.twig`.
+
+## Site Settings (About WHLC)
+
+**`SiteSetting` model**: Key-value store (`key` unique, `value` text, `updatedAt`). Routes at `/api/settings`: `GET /public/:key` (no auth, whitelisted keys), `GET /:key` and `PUT /:key` (admin/HM, upsert). Schema in `src/server/schemas/siteSettings.ts`.
+
+**"About WHLC" setting** (`key: about_whlc`): Editable in the Settings page (`EmailSettings.tsx`) via `SiteSettings` component with `RichTextEditor`. Displayed on ATS `ApplyPage.tsx` and WHLC website (`jobDetail.twig`, `careerOpportunities.twig`) via public API fetch.
+
+**Nav rename**: "Notifications" → "Settings" in Layout.tsx for the `/email-settings` page.

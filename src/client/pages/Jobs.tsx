@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
+import RichTextEditor from '../components/RichTextEditor';
 
 interface Job {
   id: string;
@@ -232,7 +233,9 @@ function CreateJobModal({
     department: '',
     type: 'full-time',
     description: '',
+    responsibilities: '',
     requirements: '',
+    benefits: '',
     salary: '',
     publishToWebsite: false,
     officeId: '',
@@ -259,6 +262,8 @@ function CreateJobModal({
         ...formData,
         slug: formData.slug || undefined, // let backend auto-generate if empty
         officeId: formData.officeId || undefined,
+        responsibilities: formData.responsibilities || null,
+        benefits: formData.benefits || null,
       };
       await api.post('/jobs', payload);
       onCreated();
@@ -395,23 +400,37 @@ function CreateJobModal({
 
           <div>
             <label className="label">Job Description</label>
-            <textarea
+            <RichTextEditor
               value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="input min-h-[120px]"
-              placeholder="Describe the role and responsibilities..."
-              required
+              onChange={(html) => setFormData({ ...formData, description: html })}
+              placeholder="Describe the role..."
             />
           </div>
 
           <div>
-            <label className="label">Requirements</label>
-            <textarea
+            <label className="label">Responsibilities (optional)</label>
+            <RichTextEditor
+              value={formData.responsibilities}
+              onChange={(html) => setFormData({ ...formData, responsibilities: html })}
+              placeholder="List key responsibilities..."
+            />
+          </div>
+
+          <div>
+            <label className="label">Desired Qualifications</label>
+            <RichTextEditor
               value={formData.requirements}
-              onChange={(e) => setFormData({ ...formData, requirements: e.target.value })}
-              className="input min-h-[120px]"
-              placeholder="List qualifications and requirements..."
-              required
+              onChange={(html) => setFormData({ ...formData, requirements: html })}
+              placeholder="List desired qualifications..."
+            />
+          </div>
+
+          <div>
+            <label className="label">Benefits (optional)</label>
+            <RichTextEditor
+              value={formData.benefits}
+              onChange={(html) => setFormData({ ...formData, benefits: html })}
+              placeholder="List benefits and perks..."
             />
           </div>
 

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { api } from '../lib/api';
 import { WhlcMark, WhlcWordmark } from '../components/WhlcLogo';
+import { renderContent } from '../utils/formatText';
 
 interface Job {
   id: string;
@@ -10,7 +11,9 @@ interface Job {
   location: string;
   type: string;
   description: string;
+  responsibilities: string | null;
   requirements: string;
+  benefits: string | null;
   salary: string | null;
   status: string;
 }
@@ -32,6 +35,8 @@ export default function ApplyPage() {
     utmCampaign: '',
     utmContent: '',
   });
+
+  const [aboutWhlc, setAboutWhlc] = useState('');
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -110,6 +115,13 @@ export default function ApplyPage() {
       utmContent,
     });
   }, [searchParams]);
+
+  useEffect(() => {
+    fetch('/api/settings/public/about_whlc')
+      .then((res) => res.ok ? res.json() : null)
+      .then((data) => { if (data?.value) setAboutWhlc(data.value); })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (jobId) {
@@ -249,12 +261,34 @@ export default function ApplyPage() {
 
           <div className="prose prose-sm max-w-none text-gray-600">
             <h3 className="text-lg font-display font-semibold text-gray-900 mt-6 mb-2 uppercase tracking-wide">About the Role</h3>
-            <p className="whitespace-pre-wrap">{job.description}</p>
+            <div dangerouslySetInnerHTML={{ __html: renderContent(job.description) }} />
 
-            <h3 className="text-lg font-display font-semibold text-gray-900 mt-6 mb-2 uppercase tracking-wide">Requirements</h3>
-            <p className="whitespace-pre-wrap">{job.requirements}</p>
+            {job.responsibilities && (
+              <>
+                <h3 className="text-lg font-display font-semibold text-gray-900 mt-6 mb-2 uppercase tracking-wide">Responsibilities</h3>
+                <div dangerouslySetInnerHTML={{ __html: renderContent(job.responsibilities) }} />
+              </>
+            )}
+
+            <h3 className="text-lg font-display font-semibold text-gray-900 mt-6 mb-2 uppercase tracking-wide">Desired Qualifications</h3>
+            <div dangerouslySetInnerHTML={{ __html: renderContent(job.requirements) }} />
+
+            {job.benefits && (
+              <>
+                <h3 className="text-lg font-display font-semibold text-gray-900 mt-6 mb-2 uppercase tracking-wide">Benefits</h3>
+                <div dangerouslySetInnerHTML={{ __html: renderContent(job.benefits) }} />
+              </>
+            )}
           </div>
         </div>
+
+        {/* About WHLC */}
+        {aboutWhlc && (
+          <div className="card mb-8">
+            <h3 className="text-lg font-display font-semibold text-gray-900 mb-4 uppercase tracking-wide">About WHLC</h3>
+            <div className="prose prose-sm max-w-none text-gray-600" dangerouslySetInnerHTML={{ __html: renderContent(aboutWhlc) }} />
+          </div>
+        )}
 
         {/* Share Buttons */}
         <ShareButtons jobId={job.id} jobTitle={job.title} />

@@ -34,8 +34,10 @@ model Job {
   department  String   // e.g., "Design", "Project Management", "Engineering"
   location    String
   type        String   // full-time, part-time, contract, internship
-  description String
-  requirements String
+  description      String
+  responsibilities String?
+  requirements     String
+  benefits         String?
   salary      String?
   status      String   @default("open") // open, closed, on-hold
   publishToWebsite Boolean @default(false)
@@ -232,6 +234,14 @@ model BlockedEmail {
   createdById String
   createdBy   User     @relation(fields: [createdById], references: [id])
   @@unique([type, value])
+}
+
+// Site-wide settings (About WHLC, etc.)
+model SiteSetting {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
 }
 
 // Office locations

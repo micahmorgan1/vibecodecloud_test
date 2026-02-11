@@ -11,6 +11,7 @@ import userRoutes from './routes/users.js';
 import emailSettingsRoutes from './routes/emailSettings.js';
 import officeRoutes from './routes/offices.js';
 import eventRoutes from './routes/events.js';
+import siteSettingsRoutes from './routes/siteSettings.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -38,6 +39,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/email-settings', emailSettingsRoutes);
 app.use('/api/offices', officeRoutes);
 app.use('/api/events', eventRoutes);
+app.use('/api/settings', siteSettingsRoutes);
 
 // Health check
 app.get('/api/health', (_req, res) => {

@@ -4,6 +4,8 @@ import { api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { LinkedInPostModal } from '../components/LinkedInPostModal';
 import { TrackingLinks } from '../components/TrackingLinks';
+import RichTextEditor from '../components/RichTextEditor';
+import { renderContent } from '../utils/formatText';
 
 interface Applicant {
   id: string;
@@ -34,7 +36,9 @@ interface Job {
   location: string;
   type: string;
   description: string;
+  responsibilities: string | null;
   requirements: string;
+  benefits: string | null;
   salary: string | null;
   status: string;
   publishToWebsite: boolean;
@@ -423,17 +427,27 @@ export default function JobDetail() {
         <div className="lg:col-span-2 space-y-6">
           <div className="card">
             <h2 className="text-lg font-display font-semibold text-gray-900 mb-4 uppercase tracking-wide">Description</h2>
-            <div className="prose prose-sm max-w-none text-gray-600 whitespace-pre-wrap">
-              {job.description}
-            </div>
+            <div className="prose prose-sm max-w-none text-gray-600" dangerouslySetInnerHTML={{ __html: renderContent(job.description) }} />
           </div>
 
-          <div className="card">
-            <h2 className="text-lg font-display font-semibold text-gray-900 mb-4 uppercase tracking-wide">Requirements</h2>
-            <div className="prose prose-sm max-w-none text-gray-600 whitespace-pre-wrap">
-              {job.requirements}
+          {job.responsibilities && (
+            <div className="card">
+              <h2 className="text-lg font-display font-semibold text-gray-900 mb-4 uppercase tracking-wide">Responsibilities</h2>
+              <div className="prose prose-sm max-w-none text-gray-600" dangerouslySetInnerHTML={{ __html: renderContent(job.responsibilities) }} />
             </div>
+          )}
+
+          <div className="card">
+            <h2 className="text-lg font-display font-semibold text-gray-900 mb-4 uppercase tracking-wide">Desired Qualifications</h2>
+            <div className="prose prose-sm max-w-none text-gray-600" dangerouslySetInnerHTML={{ __html: renderContent(job.requirements) }} />
           </div>
+
+          {job.benefits && (
+            <div className="card">
+              <h2 className="text-lg font-display font-semibold text-gray-900 mb-4 uppercase tracking-wide">Benefits</h2>
+              <div className="prose prose-sm max-w-none text-gray-600" dangerouslySetInnerHTML={{ __html: renderContent(job.benefits) }} />
+            </div>
+          )}
         </div>
 
         <div className="space-y-6">
@@ -608,7 +622,9 @@ function EditJobModal({
     department: job.department,
     type: job.type,
     description: job.description,
+    responsibilities: job.responsibilities || '',
     requirements: job.requirements,
+    benefits: job.benefits || '',
     salary: job.salary || '',
     officeId: job.officeId || '',
   });
@@ -622,6 +638,8 @@ function EditJobModal({
     try {
       await api.put(`/jobs/${job.id}`, {
         ...formData,
+        responsibilities: formData.responsibilities || null,
+        benefits: formData.benefits || null,
         salary: formData.salary || null,
         officeId: formData.officeId || null,
       });
@@ -717,21 +735,33 @@ function EditJobModal({
 
           <div>
             <label className="label">Job Description</label>
-            <textarea
+            <RichTextEditor
               value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="input min-h-[120px]"
-              required
+              onChange={(html) => setFormData({ ...formData, description: html })}
             />
           </div>
 
           <div>
-            <label className="label">Requirements</label>
-            <textarea
+            <label className="label">Responsibilities (optional)</label>
+            <RichTextEditor
+              value={formData.responsibilities}
+              onChange={(html) => setFormData({ ...formData, responsibilities: html })}
+            />
+          </div>
+
+          <div>
+            <label className="label">Desired Qualifications</label>
+            <RichTextEditor
               value={formData.requirements}
-              onChange={(e) => setFormData({ ...formData, requirements: e.target.value })}
-              className="input min-h-[120px]"
-              required
+              onChange={(html) => setFormData({ ...formData, requirements: html })}
+            />
+          </div>
+
+          <div>
+            <label className="label">Benefits (optional)</label>
+            <RichTextEditor
+              value={formData.benefits}
+              onChange={(html) => setFormData({ ...formData, benefits: html })}
             />
           </div>
 
