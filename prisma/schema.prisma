@@ -200,18 +200,22 @@ model JobNotificationSub {
 
 // Recruitment events (job fairs, campus visits, etc.)
 model RecruitmentEvent {
-  id          String   @id @default(uuid())
-  name        String
-  type        String   @default("job_fair") // job_fair, campus_visit, info_session
-  location    String?
-  date        DateTime
-  notes       String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  createdById String
-  createdBy   User     @relation("EventCreator", fields: [createdById], references: [id])
-  applicants  Applicant[]
-  attendees   EventAttendee[]
+  id               String   @id @default(uuid())
+  name             String
+  type             String   @default("job_fair") // job_fair, campus_visit, info_session
+  location         String?
+  date             DateTime
+  notes            String?
+  description      String?  // Public-facing description (separate from internal notes)
+  eventUrl         String?  // Link to external event page
+  university       String?  // University/institution name
+  publishToWebsite Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  createdById      String
+  createdBy        User     @relation("EventCreator", fields: [createdById], references: [id])
+  applicants       Applicant[]
+  attendees        EventAttendee[]
 }
 
 // Event attendee assignments (which users attend which events)

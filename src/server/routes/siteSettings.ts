@@ -6,7 +6,7 @@ import { siteSettingUpdateSchema } from '../schemas/index.js';
 
 const router = Router();
 
-const PUBLIC_KEYS = ['about_whlc'];
+const PUBLIC_KEYS = ['about_whlc', 'events_intro', 'positions_intro'];
 
 // Get a setting by key (public, whitelisted keys only)
 router.get('/public/:key', async (req, res) => {

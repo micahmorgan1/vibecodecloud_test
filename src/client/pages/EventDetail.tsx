@@ -20,6 +20,10 @@ interface RecruitmentEvent {
   location: string | null;
   date: string;
   notes: string | null;
+  description: string | null;
+  eventUrl: string | null;
+  university: string | null;
+  publishToWebsite: boolean;
   createdBy: { id: string; name: string };
   _count: { applicants: number };
   attendees: EventAttendee[];
@@ -168,17 +172,20 @@ export default function EventDetail() {
               <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${typeBadgeStyles[event.type] || 'bg-gray-100 text-gray-800'}`}>
                 {typeLabels[event.type] || event.type}
               </span>
+              {event.publishToWebsite && (
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-100 text-emerald-700">
+                  Website
+                </span>
+              )}
             </div>
             <div className="flex items-center gap-4 text-sm text-gray-500">
               <span>{new Date(event.date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
               {event.location && <span>{event.location}</span>}
+              {event.university && <span>{event.university}</span>}
             </div>
-            {event.notes && (
-              <p className="text-sm text-gray-600 mt-3">{event.notes}</p>
-            )}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={() => setShowIntakeForm(!showIntakeForm)}
               className="btn btn-primary"
@@ -192,6 +199,18 @@ export default function EventDetail() {
             )}
           </div>
         </div>
+
+        {event.description && (
+          <p className="text-sm text-gray-600 mt-4">{event.description}</p>
+        )}
+        {event.eventUrl && (
+          <a href={event.eventUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-gray-900 hover:text-gray-600 font-medium mt-2 inline-block">
+            Event Page &rarr;
+          </a>
+        )}
+        {event.notes && (
+          <p className="text-sm text-gray-500 mt-3 italic">{event.notes}</p>
+        )}
 
         {/* Attendees */}
         <div className="mt-6 pt-6 border-t border-gray-200">

@@ -7,6 +7,10 @@ export const eventCreateSchema = z.object({
   location: z.string().trim().max(500).transform(stripHtml).optional().nullable().or(z.literal('')),
   date: z.string().min(1, 'Date is required'), // ISO date string, parsed in handler
   notes: z.string().max(5000).transform(sanitizeRichText).optional().nullable().or(z.literal('')),
+  description: z.string().max(2000).transform(sanitizeRichText).optional().nullable().or(z.literal('')),
+  eventUrl: z.string().trim().max(500).url('Invalid URL').transform(stripHtml).optional().nullable().or(z.literal('')),
+  university: z.string().trim().max(300).transform(stripHtml).optional().nullable().or(z.literal('')),
+  publishToWebsite: z.boolean().optional(),
   attendeeIds: z.array(z.string().trim()).optional(),
 });
 
@@ -16,6 +20,10 @@ export const eventUpdateSchema = z.object({
   location: z.string().trim().max(500).transform(stripHtml).optional().nullable(),
   date: z.string().optional(), // ISO date string
   notes: z.string().max(5000).transform(sanitizeRichText).optional().nullable(),
+  description: z.string().max(2000).transform(sanitizeRichText).optional().nullable(),
+  eventUrl: z.string().trim().max(500).url('Invalid URL').transform(stripHtml).optional().nullable().or(z.literal('')),
+  university: z.string().trim().max(300).transform(stripHtml).optional().nullable(),
+  publishToWebsite: z.boolean().optional(),
 });
 
 export const fairIntakeSchema = z.object({

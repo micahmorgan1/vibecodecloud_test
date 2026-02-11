@@ -21,11 +21,6 @@ interface UserWithRole {
   role: string;
 }
 
-interface TemplateData {
-  subject: string;
-  body: string;
-}
-
 const roleLabel = (role: string) => {
   const labels: Record<string, string> = {
     admin: 'Admin',
@@ -44,15 +39,142 @@ const roleBadge = (role: string) => {
   return styles[role] || 'bg-gray-100 text-gray-800';
 };
 
-function TemplateSection({
-  title,
-  description,
-  type,
-}: {
-  title: string;
-  description: string;
-  type: string;
-}) {
+// --- Site Content (dropdown selector) ---
+
+const SITE_CONTENT_OPTIONS = [
+  { key: 'about_whlc', label: 'About WHLC', description: 'Appears on job listing pages and the apply page. Describe the firm, culture, and benefits of working at WHLC.' },
+  { key: 'positions_intro', label: 'Positions Intro', description: 'Appears above the list of available positions on the careers page.' },
+  { key: 'events_intro', label: 'Events Intro', description: 'Appears above the list of upcoming events on the careers page.' },
+];
+
+function SiteContentEditor() {
+  const [selectedKey, setSelectedKey] = useState(SITE_CONTENT_OPTIONS[0].key);
+  const [value, setValue] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState('');
+
+  const selected = SITE_CONTENT_OPTIONS.find(o => o.key === selectedKey)!;
+
+  useEffect(() => {
+    setLoading(true);
+    setSaved(false);
+    setError('');
+    (async () => {
+      try {
+        const res = await api.get<{ key: string; value: string }>(`/settings/${selectedKey}`);
+        setValue(res.data.value || '');
+      } catch {
+        setValue('');
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [selectedKey]);
+
+  const handleSave = async () => {
+    setSaving(true);
+    setError('');
+    setSaved(false);
+    try {
+      await api.put(`/settings/${selectedKey}`, { value });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="card">
+      <h2 className="text-lg font-display font-semibold uppercase tracking-wide mb-1">Site Content</h2>
+      <p className="text-sm text-gray-500 mb-4">Public text blocks displayed on the careers page and job listings.</p>
+
+      <div className="space-y-4">
+        <div>
+          <label className="label">Section</label>
+          <select
+            value={selectedKey}
+            onChange={(e) => setSelectedKey(e.target.value)}
+            className="input"
+          >
+            {SITE_CONTENT_OPTIONS.map((opt) => (
+              <option key={opt.key} value={opt.key}>{opt.label}</option>
+            ))}
+          </select>
+        </div>
+
+        <p className="text-xs text-gray-400">{selected.description}</p>
+
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
+            {error}
+          </div>
+        )}
+        {saved && (
+          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded text-sm">
+            Saved successfully.
+          </div>
+        )}
+
+        {loading ? (
+          <div className="flex items-center justify-center h-32">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
+          </div>
+        ) : (
+          <>
+            <RichTextEditor
+              key={selectedKey}
+              value={value}
+              onChange={setValue}
+              minHeight="200px"
+            />
+            <div className="flex justify-end">
+              <button onClick={handleSave} disabled={saving} className="btn btn-primary">
+                {saving ? 'Saving...' : 'Save'}
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// --- Email Templates (dropdown selector) ---
+
+const TEMPLATE_OPTIONS = [
+  {
+    type: 'thank_you',
+    label: 'Thank You Auto-Responder',
+    description: 'Automatically sent when an applicant submits an application.',
+    variables: ['firstName', 'lastName', 'jobTitle'],
+  },
+  {
+    type: 'event_thank_you',
+    label: 'Event Thank You Auto-Responder',
+    description: 'Automatically sent when an applicant is added via fair intake.',
+    variables: ['firstName', 'lastName', 'eventName'],
+  },
+  {
+    type: 'review_request',
+    label: 'Review Request',
+    description: 'Sent to users when an admin or hiring manager requests their review of an applicant.',
+    variables: ['recipientName', 'applicantName', 'jobTitle', 'senderName', 'applicantUrl'],
+  },
+  {
+    type: 'rejection',
+    label: 'Default Rejection Letter',
+    description: 'Pre-fills the rejection letter when a manager rejects an applicant. Can still be edited at send time.',
+    variables: ['firstName', 'lastName', 'jobTitle'],
+  },
+];
+
+function EmailTemplateEditor() {
+  const [selectedType, setSelectedType] = useState(TEMPLATE_OPTIONS[0].type);
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
   const [loading, setLoading] = useState(true);
@@ -60,26 +182,33 @@ function TemplateSection({
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
 
+  const selected = TEMPLATE_OPTIONS.find(o => o.type === selectedType)!;
+
   useEffect(() => {
+    setLoading(true);
+    setSaved(false);
+    setError('');
     (async () => {
       try {
-        const res = await api.get<TemplateData>(`/email-settings/templates/${type}`);
+        const res = await api.get<{ subject: string; body: string }>(`/email-settings/templates/${selectedType}`);
         setSubject(res.data.subject);
         setBody(res.data.body);
       } catch {
+        setSubject('');
+        setBody('');
         setError('Failed to load template');
       } finally {
         setLoading(false);
       }
     })();
-  }, [type]);
+  }, [selectedType]);
 
   const handleSave = async () => {
     setSaving(true);
     setError('');
     setSaved(false);
     try {
-      await api.put(`/email-settings/templates/${type}`, { subject, body });
+      await api.put(`/email-settings/templates/${selectedType}`, { subject, body });
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch (err) {
@@ -89,72 +218,90 @@ function TemplateSection({
     }
   };
 
-  if (loading) {
-    return (
-      <div className="card">
-        <h2 className="text-lg font-display font-semibold uppercase tracking-wide mb-2">{title}</h2>
-        <div className="flex items-center justify-center h-32">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="card">
-      <h2 className="text-lg font-display font-semibold uppercase tracking-wide mb-1">{title}</h2>
-      <p className="text-sm text-gray-500 mb-4">{description}</p>
-
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm mb-4">
-          {error}
-        </div>
-      )}
-
-      {saved && (
-        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded text-sm mb-4">
-          Template saved successfully.
-        </div>
-      )}
+      <h2 className="text-lg font-display font-semibold uppercase tracking-wide mb-1">Email Templates</h2>
+      <p className="text-sm text-gray-500 mb-4">Auto-responders and notification emails sent to applicants.</p>
 
       <div className="space-y-4">
         <div>
-          <label className="label">Subject</label>
-          <input
-            type="text"
-            value={subject}
-            onChange={(e) => setSubject(e.target.value)}
+          <label className="label">Template</label>
+          <select
+            value={selectedType}
+            onChange={(e) => setSelectedType(e.target.value)}
             className="input"
-          />
-        </div>
-
-        <div>
-          <label className="label">Body</label>
-          <RichTextEditor
-            value={body}
-            onChange={setBody}
-            minHeight="200px"
-          />
-        </div>
-
-        <div className="flex items-center justify-between">
-          <p className="text-xs text-gray-400">
-            Available variables: <code className="bg-gray-100 px-1 rounded">{'{{firstName}}'}</code>{' '}
-            <code className="bg-gray-100 px-1 rounded">{'{{lastName}}'}</code>{' '}
-            <code className="bg-gray-100 px-1 rounded">{'{{jobTitle}}'}</code>
-          </p>
-          <button
-            onClick={handleSave}
-            disabled={saving || !subject.trim() || !body.trim()}
-            className="btn btn-primary"
           >
-            {saving ? 'Saving...' : 'Save Template'}
-          </button>
+            {TEMPLATE_OPTIONS.map((opt) => (
+              <option key={opt.type} value={opt.type}>{opt.label}</option>
+            ))}
+          </select>
         </div>
+
+        <p className="text-xs text-gray-400">{selected.description}</p>
+
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
+            {error}
+          </div>
+        )}
+        {saved && (
+          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded text-sm">
+            Template saved successfully.
+          </div>
+        )}
+
+        {loading ? (
+          <div className="flex items-center justify-center h-32">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
+          </div>
+        ) : (
+          <>
+            <div>
+              <label className="label">Subject</label>
+              <input
+                type="text"
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
+                className="input"
+              />
+            </div>
+
+            <div>
+              <label className="label">Body</label>
+              <RichTextEditor
+                key={selectedType}
+                value={body}
+                onChange={setBody}
+                minHeight="200px"
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-gray-400">
+                Variables:{' '}
+                {selected.variables.map((v, i) => (
+                  <span key={v}>
+                    {i > 0 && ' '}
+                    <code className="bg-gray-100 px-1 rounded">{`{{${v}}}`}</code>
+                  </span>
+                ))}
+              </p>
+              <button
+                onClick={handleSave}
+                disabled={saving || !subject.trim() || !body.trim()}
+                className="btn btn-primary"
+              >
+                {saving ? 'Saving...' : 'Save Template'}
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
 }
+
+// --- Reviewer Access ---
 
 function ReviewerAccess() {
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -313,6 +460,8 @@ function ReviewerAccess() {
     </div>
   );
 }
+
+// --- Notification Subscriptions ---
 
 function NotificationSubscriptions() {
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -477,89 +626,7 @@ function NotificationSubscriptions() {
   );
 }
 
-function SiteSettings() {
-  const [aboutWhlc, setAboutWhlc] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [error, setError] = useState('');
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await api.get<{ key: string; value: string }>('/settings/about_whlc');
-        setAboutWhlc(res.data.value || '');
-      } catch {
-        // Setting doesn't exist yet, that's fine
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, []);
-
-  const handleSave = async () => {
-    setSaving(true);
-    setError('');
-    setSaved(false);
-    try {
-      await api.put('/settings/about_whlc', { value: aboutWhlc });
-      setSaved(true);
-      setTimeout(() => setSaved(false), 3000);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="card">
-        <h2 className="text-lg font-display font-semibold uppercase tracking-wide mb-2">About WHLC</h2>
-        <div className="flex items-center justify-center h-32">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="card">
-      <h2 className="text-lg font-display font-semibold uppercase tracking-wide mb-1">About WHLC</h2>
-      <p className="text-sm text-gray-500 mb-4">
-        This text appears on job listing pages and the apply page. Use it to describe the firm, culture, and benefits of working at WHLC.
-      </p>
-
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm mb-4">
-          {error}
-        </div>
-      )}
-      {saved && (
-        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded text-sm mb-4">
-          About WHLC saved successfully.
-        </div>
-      )}
-
-      <div className="space-y-4">
-        <RichTextEditor
-          value={aboutWhlc}
-          onChange={setAboutWhlc}
-          minHeight="200px"
-        />
-        <div className="flex justify-end">
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="btn btn-primary"
-          >
-            {saving ? 'Saving...' : 'Save'}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
+// --- Main Page ---
 
 export default function EmailSettings() {
   return (
@@ -569,19 +636,9 @@ export default function EmailSettings() {
         <p className="text-gray-500 mt-1">Manage site content, email templates, reviewer access, and notification preferences</p>
       </div>
 
-      <SiteSettings />
+      <SiteContentEditor />
 
-      <TemplateSection
-        title="Thank You Auto-Responder"
-        description="Automatically sent when an applicant submits an application."
-        type="thank_you"
-      />
-
-      <TemplateSection
-        title="Default Rejection Letter"
-        description="Pre-fills the rejection letter when a manager rejects an applicant. Can still be edited at send time."
-        type="rejection"
-      />
+      <EmailTemplateEditor />
 
       <ReviewerAccess />
 

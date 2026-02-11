@@ -5,6 +5,7 @@ import { validateBody } from '../middleware/validateBody.js';
 import { uploadApplicationFiles } from '../middleware/upload.js';
 import { validateUploadedFiles } from '../middleware/validateFiles.js';
 import { eventCreateSchema, eventUpdateSchema, fairIntakeSchema, attendeesSchema } from '../schemas/index.js';
+import { getTemplate, resolveTemplate, sendThankYouEmail } from '../services/email.js';
 
 const router = Router();
 
@@ -34,6 +35,33 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
     res.json(events);
   } catch (error) {
     console.error('List events error:', error);
+    res.status(500).json({ error: 'Failed to fetch events' });
+  }
+});
+
+// Public: list published upcoming events for website
+router.get('/website', async (_req, res) => {
+  try {
+    const events = await prisma.recruitmentEvent.findMany({
+      where: {
+        publishToWebsite: true,
+        date: { gte: new Date() },
+      },
+      select: {
+        id: true,
+        name: true,
+        type: true,
+        date: true,
+        location: true,
+        description: true,
+        eventUrl: true,
+        university: true,
+      },
+      orderBy: { date: 'asc' },
+    });
+    res.json(events);
+  } catch (error) {
+    console.error('Public events error:', error);
     res.status(500).json({ error: 'Failed to fetch events' });
   }
 });
@@ -81,7 +109,7 @@ router.post(
   validateBody(eventCreateSchema),
   async (req: AuthRequest, res: Response) => {
     try {
-      const { name, type, location, date, notes, attendeeIds } = req.body;
+      const { name, type, location, date, notes, description, eventUrl, university, publishToWebsite, attendeeIds } = req.body;
 
       const event = await prisma.recruitmentEvent.create({
         data: {
@@ -90,6 +118,10 @@ router.post(
           location: location || null,
           date: new Date(date),
           notes: notes || null,
+          description: description || null,
+          eventUrl: eventUrl || null,
+          university: university || null,
+          publishToWebsite: publishToWebsite || false,
           createdById: req.user!.id,
         },
       });
@@ -134,7 +166,7 @@ router.put(
   async (req: AuthRequest, res: Response) => {
     try {
       const { id } = req.params;
-      const { name, type, location, date, notes } = req.body;
+      const { name, type, location, date, notes, description, eventUrl, university, publishToWebsite } = req.body;
 
       const existing = await prisma.recruitmentEvent.findUnique({ where: { id } });
       if (!existing) {
@@ -149,6 +181,10 @@ router.put(
           ...(location !== undefined && { location }),
           ...(date !== undefined && { date: new Date(date) }),
           ...(notes !== undefined && { notes }),
+          ...(description !== undefined && { description: description || null }),
+          ...(eventUrl !== undefined && { eventUrl: eventUrl || null }),
+          ...(university !== undefined && { university: university || null }),
+          ...(publishToWebsite !== undefined && { publishToWebsite }),
         },
         include: {
           createdBy: { select: { id: true, name: true } },
@@ -314,6 +350,19 @@ router.post('/:id/intake', authenticate, uploadApplicationFiles, validateUploade
 
       return { ...applicant, review };
     });
+
+    // Fire-and-forget: event thank-you auto-responder
+    (async () => {
+      try {
+        const template = await getTemplate('event_thank_you');
+        const variables = { firstName, lastName, eventName: event.name };
+        const subject = resolveTemplate(template.subject, variables);
+        const body = resolveTemplate(template.body, variables);
+        await sendThankYouEmail({ to: email, applicantName: `${firstName} ${lastName}`, subject, body });
+      } catch (err) {
+        console.error('Event thank-you email failed:', err);
+      }
+    })();
 
     res.status(201).json(result);
   } catch (error) {

@@ -111,6 +111,31 @@ Best regards,
 The Hiring Team
 WHLC Architecture`,
   },
+  event_thank_you: {
+    subject: 'Great meeting you at {{eventName}}',
+    body: `Dear {{firstName}},
+
+Thank you for stopping by to meet us at {{eventName}}. It was a pleasure learning about your background and interests.
+
+Our team will review the information you shared with us. If your experience aligns with our current needs, we will be in touch to discuss next steps.
+
+In the meantime, feel free to explore our open positions at whlc.com/careers.
+
+Best regards,
+The Hiring Team
+WHLC Architecture`,
+  },
+  review_request: {
+    subject: 'Review requested: {{applicantName}} for {{jobTitle}}',
+    body: `Hi {{recipientName}},
+
+{{senderName}} has requested your review of {{applicantName}} for the {{jobTitle}} position.
+
+View Applicant: {{applicantUrl}}
+
+Best,
+WHLC ATS`,
+  },
   rejection: {
     subject: 'Update on your application for {{jobTitle}}',
     body: `Dear {{firstName}},
@@ -201,12 +226,17 @@ export async function sendReviewRequest(params: ReviewRequestParams): Promise<{ 
   const baseUrl = process.env.PUBLIC_URL || 'http://localhost:3004';
   const applicantUrl = `${baseUrl}/applicants/${applicantId}`;
 
-  await sendEmail({
-    to,
-    subject: `Review requested: ${applicantName} for ${jobTitle}`,
-    text: `Hi ${recipientName},\n\n${senderName} has requested your review of ${applicantName} for the ${jobTitle} position.${message ? `\n\nMessage: ${message}` : ''}\n\nView Applicant: ${applicantUrl}\n\nBest,\nWHLC ATS`,
-    html: `<p>Hi ${recipientName},</p><p>${senderName} has requested your review of ${applicantName} for the ${jobTitle} position.</p>${message ? `<p>Message: ${message}</p>` : ''}<p><a href="${applicantUrl}">View Applicant</a></p><p>Best,<br>WHLC ATS</p>`,
-  });
+  const template = await getTemplate('review_request');
+  const variables = { recipientName, applicantName, jobTitle, senderName, applicantUrl };
+  let subject = resolveTemplate(template.subject, variables);
+  let body = resolveTemplate(template.body, variables);
+
+  // Append optional message if provided
+  if (message) {
+    body += `\n\nMessage from ${senderName}:\n${message}`;
+  }
+
+  await sendEmail({ to, subject, text: body });
 
   return { success: true };
 }

@@ -59,36 +59,43 @@ Seven stages: `new` → `screening` → `interview` → `offer` → `hired` / `r
 - Custom CSS badge classes for stages defined in `src/client/index.css` (e.g., `.badge-new`, `.badge-rejected`)
 - Stage color mappings are duplicated in Dashboard.tsx, Applicants.tsx, JobDetail.tsx, and ApplicantDetail.tsx
 - Email service (`src/server/services/email.ts`) is a mock/console-logged stub ready for a real provider (e.g., Postmark)
-- Email templates (`EmailTemplate` model) are configurable via the Notifications page (`/email-settings`); `getTemplate(type)` loads from DB with hardcoded fallbacks
-- Template variable resolution: `{{firstName}}`, `{{lastName}}`, `{{jobTitle}}` via `resolveTemplate()`
+- Email templates (`EmailTemplate` model) are configurable via the Settings page (`/email-settings`); `getTemplate(type)` loads from DB with hardcoded fallbacks
+- Template types: `thank_you`, `event_thank_you`, `review_request`, `rejection` — all editable via dropdown in Settings
+- Template variable resolution: `{{firstName}}`, `{{lastName}}`, `{{jobTitle}}`, `{{eventName}}`, etc. via `resolveTemplate()`
 
 ## Notifications & Email
 
-**Email templates**: Thank-you auto-responder and default rejection letter are stored in `EmailTemplate` and editable by admin/hiring_manager at `/email-settings`. The rejection modal in `ApplicantDetail.tsx` pre-fills from the saved template.
+**Email templates**: Four template types stored in `EmailTemplate`, all editable via the Settings page dropdown:
+- `thank_you` — auto-sent on public application submission (`{{firstName}}`, `{{lastName}}`, `{{jobTitle}}`)
+- `event_thank_you` — auto-sent on fair intake (`{{firstName}}`, `{{lastName}}`, `{{eventName}}`)
+- `review_request` — sent when requesting a user review an applicant (`{{recipientName}}`, `{{applicantName}}`, `{{jobTitle}}`, `{{senderName}}`, `{{applicantUrl}}`)
+- `rejection` — pre-fills rejection modal (`{{firstName}}`, `{{lastName}}`, `{{jobTitle}}`)
 
 **Notification subscriptions** (`JobNotificationSub`): Per-user, per-job. Any role can subscribe. When a public application is submitted, subscribed users receive a notification email (mock). Configured separately from reviewer access.
 
 **Reviewer job access** (`JobReviewer`): Controls which jobs reviewers can see. Purely access control — does not affect notifications. Managed at `/email-settings`.
 
-**Request Review**: Admin/hiring_manager can send a specific applicant to specific users for review via a modal on the applicant detail page. Sends mock email and creates a note on the applicant.
+**Request Review**: Admin/hiring_manager can send a specific applicant to specific users for review via a modal on the applicant detail page. Sends template-driven email and creates a note on the applicant.
 
 ## Website Integration
 
-Jobs have a `slug` (unique, auto-generated from title) and `publishToWebsite` flag. Public endpoints `GET /jobs/website` and `GET /jobs/website/:slug` serve published open jobs to the WHLC website. The WHLCddev project (`ats` branch) has Alpine.js components (`atsJobs`, `atsJobDetail`, `atsApplyForm`, `atsGeneralApplyForm`) that fetch from the ATS API. The general apply form (`atsGeneralApplyForm`) submits applicants without a `jobId` for the "Send us your Resume" page. The `ATS_API_URL` env var configures the API base URL.
+Jobs have a `slug` (unique, auto-generated from title) and `publishToWebsite` flag. Public endpoints `GET /jobs/website` and `GET /jobs/website/:slug` serve published open jobs to the WHLC website. The WHLCddev project (`ats` branch) has Alpine.js components (`atsJobs`, `atsJobDetail`, `atsApplyForm`, `atsGeneralApplyForm`, `atsEvents`) that fetch from the ATS API. The general apply form (`atsGeneralApplyForm`) submits applicants without a `jobId` for the "Send us your Resume" page. The `ATS_API_URL` env var configures the API base URL.
 
 ## Recruitment Events
 
-**Models**: `RecruitmentEvent` (name, type, location, date, notes, createdById) and `EventAttendee` (userId + eventId unique). `Applicant.eventId` is an optional foreign key linking applicants to events.
+**Models**: `RecruitmentEvent` (name, type, location, date, notes, description, eventUrl, university, publishToWebsite, createdById) and `EventAttendee` (userId + eventId unique). `Applicant.eventId` is an optional foreign key linking applicants to events.
 
 **Event types**: `job_fair`, `campus_visit`, `info_session`.
 
+**Public events**: `GET /api/events/website` (no auth) returns events with `publishToWebsite: true` and `date >= now()`, ordered soonest first. Past events are automatically hidden. Displayed on WHLC careers page via `atsEvents` Alpine component with accordion fold-out for events with descriptions.
+
 **Access control**: `getAccessibleEventIds(user)` returns `null` for admin/HM, event IDs for reviewers. `getAccessibleApplicantFilter(user)` combines job + event access into a single compound Prisma WHERE clause using `OR` conditions. This replaces the old job-only `applicantFilter` pattern in applicant, review, and dashboard routes.
 
-**Fair Intake**: `POST /api/events/:id/intake` atomically creates an applicant + review + note in a single transaction. Used by the "Save & Add Another" flow in the EventDetail page. Any authenticated user with event access can use it.
+**Fair Intake**: `POST /api/events/:id/intake` atomically creates an applicant + review + note in a single transaction. Sends `event_thank_you` auto-responder email (fire-and-forget). Used by the "Save & Add Another" flow in the EventDetail page. Any authenticated user with event access can use it.
 
 **Event-scoped reviewer access**: Reviewers assigned as attendees to an event can see that event and its applicants, independently from their job assignments. A reviewer can be assigned to both jobs and events — the compound filter handles the union.
 
-**Routes** (`src/server/routes/events.ts`): CRUD for events, `PUT /:id/attendees` for managing attendees (delete-and-recreate pattern), `POST /:id/intake` for fair intake. Registered at `/api/events`.
+**Routes** (`src/server/routes/events.ts`): CRUD for events, `GET /website` (public), `PUT /:id/attendees` for managing attendees (delete-and-recreate pattern), `POST /:id/intake` for fair intake. Registered at `/api/events`.
 
 **Client pages**: `Events.tsx` (list + create modal), `EventDetail.tsx` (detail + fair intake form + applicants table). Events nav item visible to all roles.
 
@@ -137,10 +144,14 @@ Jobs have a `slug` (unique, auto-generated from title) and `publishToWebsite` fl
 
 `Job.benefits` is an optional rich text field (nullable `String?`). Included in create/update routes and all public select clauses. Conditionally displayed on `JobDetail.tsx`, `ApplyPage.tsx`, and WHLC `jobDetail.twig`.
 
-## Site Settings (About WHLC)
+## Site Settings
 
-**`SiteSetting` model**: Key-value store (`key` unique, `value` text, `updatedAt`). Routes at `/api/settings`: `GET /public/:key` (no auth, whitelisted keys), `GET /:key` and `PUT /:key` (admin/HM, upsert). Schema in `src/server/schemas/siteSettings.ts`.
+**`SiteSetting` model**: Key-value store (`key` unique, `value` text, `updatedAt`). Routes at `/api/settings`: `GET /public/:key` (no auth, whitelisted keys: `about_whlc`, `positions_intro`, `events_intro`), `GET /:key` and `PUT /:key` (admin/HM, upsert). Schema in `src/server/schemas/siteSettings.ts`.
 
-**"About WHLC" setting** (`key: about_whlc`): Editable in the Settings page (`EmailSettings.tsx`) via `SiteSettings` component with `RichTextEditor`. Displayed on ATS `ApplyPage.tsx` and WHLC website (`jobDetail.twig`, `careerOpportunities.twig`) via public API fetch.
+**Settings page** (`EmailSettings.tsx`): Reorganized into dropdown-based cards:
+- **Site Content** — dropdown selector for `about_whlc` (job listings/apply page), `positions_intro` (above positions list), `events_intro` (above events list). Single RichTextEditor switches per selection.
+- **Email Templates** — dropdown selector for `thank_you`, `event_thank_you`, `review_request`, `rejection`. Subject + body editor with per-template variable hints.
+- **Reviewer Job Access** — job selector + reviewer checkboxes (unchanged)
+- **New Application Notifications** — job selector + user checkboxes (unchanged)
 
 **Nav rename**: "Notifications" → "Settings" in Layout.tsx for the `/email-settings` page.

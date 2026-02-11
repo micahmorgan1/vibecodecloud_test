@@ -16,6 +16,10 @@ interface RecruitmentEvent {
   location: string | null;
   date: string;
   notes: string | null;
+  description: string | null;
+  eventUrl: string | null;
+  university: string | null;
+  publishToWebsite: boolean;
   createdBy: { id: string; name: string };
   _count: { applicants: number };
   attendees: EventAttendee[];
@@ -102,7 +106,17 @@ export default function Events() {
                 {events.map((event) => (
                   <tr key={event.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4">
-                      <p className="font-medium text-gray-900">{event.name}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium text-gray-900">{event.name}</p>
+                        {event.publishToWebsite && (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-100 text-emerald-700">
+                            Website
+                          </span>
+                        )}
+                      </div>
+                      {event.university && (
+                        <p className="text-xs text-gray-500 mt-0.5">{event.university}</p>
+                      )}
                     </td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${typeBadgeStyles[event.type] || 'bg-gray-100 text-gray-800'}`}>
@@ -179,6 +193,10 @@ function EventFormModal({
   const [date, setDate] = useState(event ? new Date(event.date).toISOString().split('T')[0] : '');
   const [location, setLocation] = useState(event?.location || '');
   const [notes, setNotes] = useState(event?.notes || '');
+  const [university, setUniversity] = useState(event?.university || '');
+  const [eventUrl, setEventUrl] = useState(event?.eventUrl || '');
+  const [description, setDescription] = useState(event?.description || '');
+  const [publishToWebsite, setPublishToWebsite] = useState(event?.publishToWebsite || false);
   const [selectedAttendees, setSelectedAttendees] = useState<Set<string>>(
     new Set(event?.attendees.map(a => a.user.id) || [])
   );
@@ -209,6 +227,10 @@ function EventFormModal({
         date,
         location: location || null,
         notes: notes || null,
+        university: university || null,
+        eventUrl: eventUrl || null,
+        description: description || null,
+        publishToWebsite,
         attendeeIds: Array.from(selectedAttendees),
       };
 
@@ -281,25 +303,72 @@ function EventFormModal({
             </div>
           </div>
 
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="label">Location</label>
+              <input
+                type="text"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                className="input"
+                placeholder="LSU Student Union"
+              />
+            </div>
+            <div>
+              <label className="label">University / Institution</label>
+              <input
+                type="text"
+                value={university}
+                onChange={(e) => setUniversity(e.target.value)}
+                className="input"
+                placeholder="Louisiana State University"
+              />
+            </div>
+          </div>
+
           <div>
-            <label className="label">Location</label>
+            <label className="label">Event URL</label>
             <input
-              type="text"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
+              type="url"
+              value={eventUrl}
+              onChange={(e) => setEventUrl(e.target.value)}
               className="input"
-              placeholder="LSU Student Union"
+              placeholder="https://..."
             />
           </div>
 
           <div>
-            <label className="label">Notes</label>
+            <label className="label">Public Description</label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="input min-h-[80px]"
+              placeholder="Brief description shown on the website..."
+            />
+          </div>
+
+          <div>
+            <label className="label">Notes (Internal)</label>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               className="input min-h-[80px]"
               placeholder="Internal notes about the event..."
             />
+          </div>
+
+          <div className="flex items-center gap-3 py-1">
+            <input
+              type="checkbox"
+              id="publishToWebsite"
+              checked={publishToWebsite}
+              onChange={(e) => setPublishToWebsite(e.target.checked)}
+              className="h-4 w-4 rounded border-gray-300"
+            />
+            <label htmlFor="publishToWebsite" className="text-sm font-medium text-gray-900">
+              Publish to website
+            </label>
+            <span className="text-xs text-gray-400">Show this event on the public careers page</span>
           </div>
 
           <div>
