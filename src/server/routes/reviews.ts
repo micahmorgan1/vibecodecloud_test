@@ -4,6 +4,7 @@ import { authenticate, AuthRequest, getAccessibleApplicantFilter } from '../midd
 import { validateBody } from '../middleware/validateBody.js';
 import { reviewCreateSchema } from '../schemas/index.js';
 import logger from '../lib/logger.js';
+import { logActivity } from '../services/activityLog.js';
 
 const router = Router();
 
@@ -186,6 +187,12 @@ router.post('/applicant/:applicantId', authenticate, validateBody(reviewCreateSc
           select: { id: true, name: true, email: true },
         },
       },
+    });
+
+    logActivity('review_added', {
+      applicantId,
+      userId: req.user!.id,
+      metadata: { rating },
     });
 
     res.status(201).json(review);

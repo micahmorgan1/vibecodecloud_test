@@ -76,6 +76,8 @@ export default function Applicants() {
   const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
   const [showDeleteAllSpamModal, setShowDeleteAllSpamModal] = useState(false);
   const [showBulkMarkSpamModal, setShowBulkMarkSpamModal] = useState(false);
+  const [showBulkStageModal, setShowBulkStageModal] = useState(false);
+  const [duplicateWarnings, setDuplicateWarnings] = useState<{ id: string; firstName: string; lastName: string; job: { title: string } | null; stage: string }[]>([]);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
@@ -142,6 +144,7 @@ export default function Applicants() {
     setFormData(emptyForm);
     setFormError('');
     setFieldErrors({});
+    setDuplicateWarnings([]);
     setResumeFile(null);
     setPortfolioFile(null);
     try {
@@ -171,6 +174,44 @@ export default function Applicants() {
       else delete next[field];
       return next;
     });
+    if (field === 'email' && value && !error) {
+      checkDuplicates(value);
+    }
+  };
+
+  const handleExportCsv = async () => {
+    const params = new URLSearchParams();
+    if (stageFilter) params.append('stage', stageFilter);
+    if (search) params.append('search', search);
+    params.append('spam', showSpam ? 'true' : 'false');
+    const queryString = params.toString();
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/api/applicants/export${queryString ? `?${queryString}` : ''}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!response.ok) throw new Error('Export failed');
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `applicants-${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('CSV export failed:', err);
+    }
+  };
+
+  const checkDuplicates = async (email: string) => {
+    try {
+      const res = await api.post<{ id: string; firstName: string; lastName: string; job: { title: string } | null; stage: string }[]>(
+        '/applicants/check-duplicates', { email }
+      );
+      setDuplicateWarnings(res.data);
+    } catch {
+      setDuplicateWarnings([]);
+    }
   };
 
   const handleAddSubmit = async (e: React.FormEvent) => {
@@ -302,11 +343,18 @@ export default function Applicants() {
           <h1 className="text-3xl font-display font-bold text-gray-900 uppercase tracking-wide">Applicants</h1>
           <p className="text-gray-500 mt-1">Review and manage job applicants</p>
         </div>
-        {canAdd && (
-          <button onClick={openAddModal} className="btn btn-primary">
-            + Add Applicant
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {canAdd && (
+            <button onClick={handleExportCsv} className="btn btn-secondary text-sm">
+              Export CSV
+            </button>
+          )}
+          {canAdd && (
+            <button onClick={openAddModal} className="btn btn-primary">
+              + Add Applicant
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Search and Filters */}
@@ -403,12 +451,20 @@ export default function Applicants() {
           ) : (
             <>
               {selectedIds.size > 0 && (
-                <button
-                  onClick={() => setShowBulkMarkSpamModal(true)}
-                  className="px-3 py-1.5 bg-red-600 text-white rounded text-sm font-medium hover:bg-red-700 transition-colors"
-                >
-                  Mark Selected as Spam ({selectedIds.size})
-                </button>
+                <>
+                  <button
+                    onClick={() => setShowBulkStageModal(true)}
+                    className="px-3 py-1.5 bg-gray-900 text-white rounded text-sm font-medium hover:bg-gray-700 transition-colors"
+                  >
+                    Change Stage ({selectedIds.size})
+                  </button>
+                  <button
+                    onClick={() => setShowBulkMarkSpamModal(true)}
+                    className="px-3 py-1.5 bg-red-600 text-white rounded text-sm font-medium hover:bg-red-700 transition-colors"
+                  >
+                    Mark as Spam ({selectedIds.size})
+                  </button>
+                </>
               )}
             </>
           )}
@@ -644,6 +700,29 @@ export default function Applicants() {
         </div>
       )}
 
+      {/* Bulk Stage Change Modal */}
+      {showBulkStageModal && (
+        <BulkStageModal
+          count={selectedIds.size}
+          stages={stages}
+          stageLabels={stageLabels}
+          onConfirm={async (stage) => {
+            setBulkActionLoading(true);
+            try {
+              await api.post('/applicants/bulk-stage', { ids: Array.from(selectedIds), stage });
+              setShowBulkStageModal(false);
+              fetchApplicants();
+            } catch (err) {
+              console.error('Bulk stage change failed:', err);
+            } finally {
+              setBulkActionLoading(false);
+            }
+          }}
+          onClose={() => setShowBulkStageModal(false)}
+          loading={bulkActionLoading}
+        />
+      )}
+
       {/* Add Applicant Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -733,6 +812,21 @@ export default function Applicants() {
                 </div>
               </div>
 
+              {duplicateWarnings.length > 0 && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded p-3">
+                  <p className="text-sm font-medium text-yellow-800">
+                    Existing applications found for this email:
+                  </p>
+                  <ul className="mt-1 space-y-1">
+                    {duplicateWarnings.map((d) => (
+                      <li key={d.id} className="text-xs text-yellow-700">
+                        {d.firstName} {d.lastName} — {d.job?.title || 'General Application'} ({d.stage})
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="label">Source</label>
@@ -809,6 +903,66 @@ export default function Applicants() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function BulkStageModal({
+  count,
+  stages,
+  stageLabels,
+  onConfirm,
+  onClose,
+  loading,
+}: {
+  count: number;
+  stages: string[];
+  stageLabels: Record<string, string>;
+  onConfirm: (stage: string) => void;
+  onClose: () => void;
+  loading: boolean;
+}) {
+  const [stage, setStage] = useState('');
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded max-w-md w-full">
+        <div className="p-6 border-b border-gray-200">
+          <h2 className="text-xl font-display font-semibold uppercase tracking-wide">
+            Change Stage
+          </h2>
+        </div>
+        <div className="p-6 space-y-4">
+          <p className="text-gray-700">
+            Move <span className="font-medium">{count} applicant{count !== 1 ? 's' : ''}</span> to a new stage.
+          </p>
+          <div>
+            <label className="label">New Stage</label>
+            <select
+              value={stage}
+              onChange={(e) => setStage(e.target.value)}
+              className="input"
+            >
+              <option value="">Select stage...</option>
+              {stages.map((s) => (
+                <option key={s} value={s}>{stageLabels[s]}</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex justify-end gap-3 pt-4">
+            <button onClick={onClose} disabled={loading} className="btn btn-secondary">
+              Cancel
+            </button>
+            <button
+              onClick={() => onConfirm(stage)}
+              disabled={loading || !stage}
+              className="btn btn-primary"
+            >
+              {loading ? 'Updating...' : `Move ${count} Applicant${count !== 1 ? 's' : ''}`}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

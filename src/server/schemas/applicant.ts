@@ -74,3 +74,10 @@ export const bulkDeleteSchema = z.object({
 export const bulkMarkSpamSchema = z.object({
   ids: z.array(z.string().uuid()).min(1).max(500),
 });
+
+export const bulkStageSchema = z.object({
+  ids: z.array(z.string().uuid()).min(1).max(500),
+  stage: z.enum(['fair_intake', 'new', 'screening', 'interview', 'offer', 'hired', 'rejected', 'holding'], {
+    errorMap: () => ({ message: 'Invalid stage' }),
+  }),
+});

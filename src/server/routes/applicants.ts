@@ -18,10 +18,13 @@ import {
   confirmSpamSchema,
   bulkDeleteSchema,
   bulkMarkSpamSchema,
+  bulkStageSchema,
 } from '../schemas/index.js';
 import { deleteUploadedFiles } from '../utils/deleteUploadedFiles.js';
+import { formatCsvRow } from '../utils/csv.js';
 import { parsePagination, prismaSkipTake, paginatedResponse } from '../utils/pagination.js';
 import logger from '../lib/logger.js';
+import { logActivity } from '../services/activityLog.js';
 
 const router = Router();
 
@@ -107,6 +110,189 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
   } catch (error) {
     logger.error({ err: error }, 'Get applicants error');
     res.status(500).json({ error: 'Failed to fetch applicants' });
+  }
+});
+
+// Export applicants as CSV (admin/hiring_manager)
+router.get('/export', authenticate, requireRole('admin', 'hiring_manager'), async (req: AuthRequest, res: Response) => {
+  try {
+    const { jobId, stage, search, eventId, spam } = req.query;
+
+    const accessFilter = await getAccessibleApplicantFilter(req.user!);
+    const conditions: Record<string, unknown>[] = [];
+    if (accessFilter.OR) conditions.push(accessFilter);
+
+    if (spam === 'true') {
+      conditions.push({ spam: true });
+    } else if (spam === 'all') {
+      // no spam filter
+    } else {
+      conditions.push({ spam: false });
+    }
+
+    if (jobId) conditions.push({ jobId: jobId as string });
+    if (eventId) conditions.push({ eventId: eventId as string });
+    if (stage) conditions.push({ stage: stage as string });
+    if (search) {
+      conditions.push({
+        OR: [
+          { firstName: { contains: search as string } },
+          { lastName: { contains: search as string } },
+          { email: { contains: search as string } },
+        ],
+      });
+    }
+
+    const where = conditions.length > 0 ? { AND: conditions } : {};
+
+    const applicants = await prisma.applicant.findMany({
+      where,
+      include: {
+        job: { select: { title: true } },
+        event: { select: { name: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const today = new Date().toISOString().split('T')[0];
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="applicants-${today}.csv"`);
+
+    const header = formatCsvRow(['Name', 'Email', 'Phone', 'Job', 'Stage', 'Event', 'Source', 'Created', 'Updated']);
+    const rows = applicants.map((a) =>
+      formatCsvRow([
+        `${a.firstName} ${a.lastName}`,
+        a.email,
+        a.phone,
+        a.job?.title || 'General Application',
+        a.stage,
+        a.event?.name || '',
+        a.source || '',
+        new Date(a.createdAt).toISOString(),
+        new Date(a.updatedAt).toISOString(),
+      ])
+    );
+
+    res.send([header, ...rows].join('\n'));
+  } catch (error) {
+    logger.error({ err: error }, 'Export CSV error');
+    res.status(500).json({ error: 'Failed to export applicants' });
+  }
+});
+
+// Check for duplicate applicants by email (pre-creation)
+router.post('/check-duplicates', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const { email, excludeId } = req.body;
+    if (!email) {
+      return res.json([]);
+    }
+
+    const where: Record<string, unknown> = { email: email.toLowerCase() };
+    if (excludeId) {
+      where.id = { not: excludeId };
+    }
+
+    const matches = await prisma.applicant.findMany({
+      where,
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        stage: true,
+        createdAt: true,
+        job: { select: { id: true, title: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 10,
+    });
+
+    res.json(matches);
+  } catch (error) {
+    logger.error({ err: error }, 'Check duplicates error');
+    res.status(500).json({ error: 'Failed to check duplicates' });
+  }
+});
+
+// Get activity log for an applicant
+router.get('/:id/activity', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    // Access control
+    const accessFilter = await getAccessibleApplicantFilter(req.user!);
+    if (accessFilter.id === 'none') {
+      return res.status(404).json({ error: 'Applicant not found' });
+    }
+    const accessCheck = await prisma.applicant.findFirst({ where: { id, ...accessFilter } });
+    if (!accessCheck) {
+      return res.status(404).json({ error: 'Applicant not found' });
+    }
+
+    const pagination = parsePagination(req.query);
+
+    const where = { applicantId: id };
+    const include = { user: { select: { id: true, name: true } } };
+
+    if (pagination) {
+      const [logs, total] = await Promise.all([
+        prisma.activityLog.findMany({
+          where,
+          include,
+          orderBy: { createdAt: 'desc' },
+          ...prismaSkipTake(pagination),
+        }),
+        prisma.activityLog.count({ where }),
+      ]);
+      return res.json(paginatedResponse(logs, total, pagination));
+    }
+
+    const logs = await prisma.activityLog.findMany({
+      where,
+      include,
+      orderBy: { createdAt: 'desc' },
+    });
+
+    res.json(logs);
+  } catch (error) {
+    logger.error({ err: error }, 'Get activity log error');
+    res.status(500).json({ error: 'Failed to fetch activity log' });
+  }
+});
+
+// Get duplicate applicants (same email, different record)
+router.get('/:id/duplicates', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    // Access control
+    const accessFilter = await getAccessibleApplicantFilter(req.user!);
+    if (accessFilter.id === 'none') {
+      return res.status(404).json({ error: 'Applicant not found' });
+    }
+    const applicant = await prisma.applicant.findFirst({ where: { id, ...accessFilter } });
+    if (!applicant) {
+      return res.status(404).json({ error: 'Applicant not found' });
+    }
+
+    const duplicates = await prisma.applicant.findMany({
+      where: { email: applicant.email, id: { not: id } },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        stage: true,
+        createdAt: true,
+        job: { select: { id: true, title: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 10,
+    });
+
+    res.json(duplicates);
+  } catch (error) {
+    logger.error({ err: error }, 'Get duplicates error');
+    res.status(500).json({ error: 'Failed to fetch duplicates' });
   }
 });
 
@@ -239,6 +425,11 @@ router.post('/', uploadApplicationFiles, validateUploadedFiles, validateBody(pub
 
     const jobTitle = job?.title || 'General Application';
 
+    logActivity('applicant_created', {
+      applicantId: applicant.id,
+      metadata: { source: 'public', jobId: jobId || null, spam: spamResult.isSpam },
+    });
+
     // Only send emails for non-spam submissions
     if (!spamResult.isSpam) {
       // Fire-and-forget: thank-you auto-responder
@@ -367,6 +558,12 @@ router.post(
         },
       });
 
+      logActivity('applicant_created', {
+        applicantId: applicant.id,
+        userId: req.user!.id,
+        metadata: { source: 'manual', jobId: jobId || null },
+      });
+
       // Fire-and-forget: URL safety check
       const urls = [linkedIn, website, portfolioUrl].filter(Boolean) as string[];
       if (urls.length > 0) {
@@ -413,6 +610,8 @@ router.patch(
         data: { applicantId: id, content: `Manually flagged as spam by ${req.user!.email}` },
       });
 
+      logActivity('marked_spam', { applicantId: id, userId: req.user!.id });
+
       res.json(applicant);
     } catch (error) {
       logger.error({ err: error }, 'Mark spam error');
@@ -456,6 +655,49 @@ router.post(
   }
 );
 
+// Bulk stage change (admin/hiring_manager)
+router.post(
+  '/bulk-stage',
+  authenticate,
+  requireRole('admin', 'hiring_manager'),
+  validateBody(bulkStageSchema),
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const { ids, stage } = req.body;
+
+      const result = await prisma.$transaction(async (tx) => {
+        // Get current stages for logging
+        const applicants = await tx.applicant.findMany({
+          where: { id: { in: ids } },
+          select: { id: true, stage: true },
+        });
+
+        const updated = await tx.applicant.updateMany({
+          where: { id: { in: ids } },
+          data: { stage },
+        });
+
+        // Log activity for each applicant
+        await tx.activityLog.createMany({
+          data: applicants.map((a) => ({
+            action: 'stage_changed',
+            applicantId: a.id,
+            userId: req.user!.id,
+            metadata: JSON.stringify({ from: a.stage, to: stage, bulk: true }),
+          })),
+        });
+
+        return updated;
+      });
+
+      res.json({ updated: result.count });
+    } catch (error) {
+      logger.error({ err: error }, 'Bulk stage change error');
+      res.status(500).json({ error: 'Failed to update stages' });
+    }
+  }
+);
+
 // Delete all spam applicants (admin/hiring_manager)
 router.delete(
   '/spam',
@@ -475,6 +717,7 @@ router.delete(
       const ids = spamApplicants.map((a) => a.id);
 
       await prisma.$transaction(async (tx) => {
+        await tx.activityLog.deleteMany({ where: { applicantId: { in: ids } } });
         await tx.review.deleteMany({ where: { applicantId: { in: ids } } });
         await tx.note.deleteMany({ where: { applicantId: { in: ids } } });
         await tx.applicant.deleteMany({ where: { id: { in: ids } } });
@@ -510,6 +753,7 @@ router.post(
       const foundIds = applicants.map((a) => a.id);
 
       await prisma.$transaction(async (tx) => {
+        await tx.activityLog.deleteMany({ where: { applicantId: { in: foundIds } } });
         await tx.review.deleteMany({ where: { applicantId: { in: foundIds } } });
         await tx.note.deleteMany({ where: { applicantId: { in: foundIds } } });
         await tx.applicant.deleteMany({ where: { id: { in: foundIds } } });
@@ -548,6 +792,12 @@ router.patch('/:id/stage', authenticate, validateBody(stageUpdateSchema), async 
           select: { id: true, title: true },
         },
       },
+    });
+
+    logActivity('stage_changed', {
+      applicantId: id,
+      userId: req.user!.id,
+      metadata: { from: existing.stage, to: stage },
     });
 
     res.json(applicant);
@@ -612,6 +862,11 @@ router.put('/:id', authenticate, uploadApplicationFiles, validateUploadedFiles, 
       },
     });
 
+    logActivity('applicant_updated', {
+      applicantId: id,
+      userId: req.user!.id,
+    });
+
     // Fire-and-forget: URL safety check on updated URLs
     const urls = [linkedIn, website, portfolioUrl].filter(Boolean) as string[];
     if (urls.length > 0) {
@@ -644,6 +899,8 @@ router.post('/:id/notes', authenticate, validateBody(noteSchema), async (req: Au
         content,
       },
     });
+
+    logActivity('note_added', { applicantId: id, userId: req.user!.id });
 
     res.status(201).json(note);
   } catch (error) {
@@ -835,6 +1092,12 @@ router.patch(
         ]);
       }
 
+      logActivity('job_assigned', {
+        applicantId: id,
+        userId: req.user!.id,
+        metadata: { fromJobId: applicant.jobId || null, toJobId: jobId || null },
+      });
+
       // Re-fetch full applicant
       const updated = await prisma.applicant.findUnique({
         where: { id },
@@ -898,6 +1161,8 @@ router.patch(
       await prisma.note.create({
         data: { applicantId: id, content: `Marked as not spam by ${req.user!.email}` },
       });
+
+      logActivity('unmarked_spam', { applicantId: id, userId: req.user!.id });
 
       const jobTitle = existing.job?.title || 'General Application';
       const { firstName, lastName, email } = existing;
@@ -1002,6 +1267,8 @@ router.patch(
         data: { applicantId: id, content: noteText },
       });
 
+      logActivity('spam_confirmed', { applicantId: id, userId: req.user!.id });
+
       const applicant = await prisma.applicant.findUnique({
         where: { id },
         include: {
@@ -1034,6 +1301,7 @@ router.delete('/:id', authenticate, requireRole('admin', 'hiring_manager'), asyn
     }
 
     // Delete related records first
+    await prisma.activityLog.deleteMany({ where: { applicantId: id } });
     await prisma.review.deleteMany({ where: { applicantId: id } });
     await prisma.note.deleteMany({ where: { applicantId: id } });
     await prisma.applicant.delete({ where: { id } });

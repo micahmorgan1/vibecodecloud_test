@@ -26,6 +26,7 @@ model User {
   createdEvents     RecruitmentEvent[]   @relation("EventCreator")
   eventAttendees    EventAttendee[]
   blockedEmails     BlockedEmail[]
+  activityLogs      ActivityLog[]
 }
 
 // Job postings
@@ -132,6 +133,7 @@ model Applicant {
 
   reviews         Review[]
   notes           Note[]
+  activityLogs    ActivityLog[]
 
   @@index([jobId])
   @@index([eventId])
@@ -269,6 +271,24 @@ model SiteSetting {
   key       String   @unique
   value     String
   updatedAt DateTime @updatedAt
+}
+
+// Activity audit log
+model ActivityLog {
+  id          String   @id @default(cuid())
+  action      String
+  metadata    String?  // JSON-stringified
+  createdAt   DateTime @default(now())
+
+  applicantId String?
+  applicant   Applicant? @relation(fields: [applicantId], references: [id], onDelete: SetNull)
+
+  userId      String?
+  user        User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([applicantId])
+  @@index([userId])
+  @@index([createdAt])
 }
 
 // Office locations

@@ -26,6 +26,23 @@ interface Note {
   createdAt: string;
 }
 
+interface DuplicateApplicant {
+  id: string;
+  firstName: string;
+  lastName: string;
+  stage: string;
+  createdAt: string;
+  job: { id: string; title: string } | null;
+}
+
+interface ActivityLogEntry {
+  id: string;
+  action: string;
+  metadata: string | null;
+  createdAt: string;
+  user: { id: string; name: string } | null;
+}
+
 interface Applicant {
   id: string;
   firstName: string;
@@ -80,12 +97,34 @@ export default function ApplicantDetail() {
   const [viewingDocument, setViewingDocument] = useState<{ url: string; title: string } | null>(null);
   const [spamActionLoading, setSpamActionLoading] = useState(false);
   const [showConfirmSpamModal, setShowConfirmSpamModal] = useState(false);
+  const [activityLogs, setActivityLogs] = useState<ActivityLogEntry[]>([]);
+  const [duplicates, setDuplicates] = useState<DuplicateApplicant[]>([]);
 
   useEffect(() => {
     if (id) {
       fetchApplicant();
+      fetchActivity();
+      fetchDuplicates();
     }
   }, [id]);
+
+  const fetchDuplicates = async () => {
+    try {
+      const res = await api.get<DuplicateApplicant[]>(`/applicants/${id}/duplicates`);
+      setDuplicates(res.data);
+    } catch {
+      // Non-critical
+    }
+  };
+
+  const fetchActivity = async () => {
+    try {
+      const res = await api.get<ActivityLogEntry[]>(`/applicants/${id}/activity`);
+      setActivityLogs(res.data);
+    } catch {
+      // Non-critical — silently ignore
+    }
+  };
 
   const fetchApplicant = async () => {
     try {
@@ -548,8 +587,43 @@ export default function ApplicantDetail() {
           </div>
         </div>
 
-        {/* Sidebar - Notes */}
+        {/* Sidebar - Duplicates + Notes + Activity */}
         <div className="space-y-6">
+          {/* Other Applications (duplicates) */}
+          {duplicates.length > 0 && (
+            <div className="card">
+              <h2 className="text-lg font-display font-semibold text-gray-900 mb-4 uppercase tracking-wide">
+                Other Applications ({duplicates.length})
+              </h2>
+              <div className="space-y-2">
+                {duplicates.map((dup) => (
+                  <Link
+                    key={dup.id}
+                    to={`/applicants/${dup.id}`}
+                    className="block p-3 bg-gray-50 rounded border border-gray-100 hover:bg-gray-100 transition-colors"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">
+                          {dup.job?.title || <span className="italic text-gray-500">General Application</span>}
+                        </p>
+                        <p className="text-xs text-gray-500">{new Date(dup.createdAt).toLocaleDateString()}</p>
+                      </div>
+                      <span className={`badge ${
+                        dup.stage === 'hired' ? 'badge-hired' :
+                        dup.stage === 'rejected' ? 'badge-rejected' :
+                        dup.stage === 'new' ? 'badge-new' :
+                        `badge-${dup.stage}`
+                      }`}>
+                        {stageLabels[dup.stage] || dup.stage}
+                      </span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="card">
             <h2 className="text-lg font-display font-semibold text-gray-900 mb-4 uppercase tracking-wide">Notes</h2>
 
@@ -584,6 +658,33 @@ export default function ApplicantDetail() {
               </div>
             )}
           </div>
+
+          {/* Activity Timeline */}
+          {activityLogs.length > 0 && (
+            <div className="card">
+              <h2 className="text-lg font-display font-semibold text-gray-900 mb-4 uppercase tracking-wide">Activity</h2>
+              <div className="space-y-0">
+                {activityLogs.map((log, i) => {
+                  const meta = log.metadata ? JSON.parse(log.metadata) : {};
+                  return (
+                    <div key={log.id} className="flex gap-3">
+                      <div className="flex flex-col items-center">
+                        <div className="w-2 h-2 rounded-full bg-gray-400 mt-1.5 shrink-0" />
+                        {i < activityLogs.length - 1 && <div className="w-px flex-1 bg-gray-200 my-1" />}
+                      </div>
+                      <div className="pb-4 min-w-0">
+                        <p className="text-sm text-gray-600">{formatActivityMessage(log.action, meta)}</p>
+                        <p className="text-xs text-gray-400 mt-0.5">
+                          {log.user?.name && <span>{log.user.name} &middot; </span>}
+                          {formatRelativeTime(log.createdAt)}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -744,6 +845,52 @@ export default function ApplicantDetail() {
       )}
     </div>
   );
+}
+
+const stageLabelsMap: Record<string, string> = {
+  fair_intake: 'Fair Intake', new: 'New', screening: 'Screening', interview: 'Interview',
+  offer: 'Offer', hired: 'Hired', rejected: 'Rejected', holding: 'Holding',
+};
+
+function formatActivityMessage(action: string, meta: Record<string, unknown>): string {
+  switch (action) {
+    case 'applicant_created': {
+      const src = meta.source === 'public' ? 'Applied online' : meta.source === 'event_intake' ? 'Added via event intake' : 'Manually added';
+      return src;
+    }
+    case 'stage_changed':
+      return `Stage changed from ${stageLabelsMap[meta.from as string] || meta.from} to ${stageLabelsMap[meta.to as string] || meta.to}`;
+    case 'applicant_updated':
+      return 'Details updated';
+    case 'job_assigned':
+      return 'Job assignment changed';
+    case 'marked_spam':
+      return 'Flagged as spam';
+    case 'unmarked_spam':
+      return 'Removed from spam';
+    case 'spam_confirmed':
+      return 'Confirmed as spam';
+    case 'note_added':
+      return 'Note added';
+    case 'review_added':
+      return `Review added (${meta.rating}/5)`;
+    default:
+      return action.replace(/_/g, ' ');
+  }
+}
+
+function formatRelativeTime(dateStr: string): string {
+  const now = Date.now();
+  const then = new Date(dateStr).getTime();
+  const diffMs = now - then;
+  const diffMin = Math.floor(diffMs / 60000);
+  if (diffMin < 1) return 'just now';
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const diffHrs = Math.floor(diffMin / 60);
+  if (diffHrs < 24) return `${diffHrs}h ago`;
+  const diffDays = Math.floor(diffHrs / 24);
+  if (diffDays < 30) return `${diffDays}d ago`;
+  return new Date(dateStr).toLocaleDateString();
 }
 
 function ReviewModal({

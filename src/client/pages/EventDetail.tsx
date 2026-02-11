@@ -400,6 +400,7 @@ function IntakeForm({
   const [rating, setRating] = useState(0);
   const [recommendation, setRecommendation] = useState('');
   const [comments, setComments] = useState('');
+  const [duplicateWarnings, setDuplicateWarnings] = useState<{ id: string; firstName: string; lastName: string; job: { title: string } | null; stage: string }[]>([]);
 
   useEffect(() => {
     api.get<Job[]>('/jobs?status=open').then(res => setJobs(res.data)).catch(() => {});
@@ -424,6 +425,11 @@ function IntakeForm({
       else delete next[field];
       return next;
     });
+    if (field === 'email' && value && !err) {
+      api.post<{ id: string; firstName: string; lastName: string; job: { title: string } | null; stage: string }[]>(
+        '/applicants/check-duplicates', { email: value }
+      ).then((res) => setDuplicateWarnings(res.data)).catch(() => setDuplicateWarnings([]));
+    }
   };
 
   const resetForm = (keepJob = true) => {
@@ -440,6 +446,7 @@ function IntakeForm({
     setComments('');
     setError('');
     setFieldErrors({});
+    setDuplicateWarnings([]);
     setTimeout(() => firstNameRef.current?.focus(), 50);
   };
 
@@ -566,6 +573,21 @@ function IntakeForm({
             )}
           </div>
         </div>
+
+        {duplicateWarnings.length > 0 && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded p-3">
+            <p className="text-sm font-medium text-yellow-800">
+              Existing applications found for this email:
+            </p>
+            <ul className="mt-1 space-y-1">
+              {duplicateWarnings.map((d) => (
+                <li key={d.id} className="text-xs text-yellow-700">
+                  {d.firstName} {d.lastName} — {d.job?.title || 'General Application'} ({d.stage})
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>

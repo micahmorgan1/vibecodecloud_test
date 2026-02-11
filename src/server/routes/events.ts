@@ -7,6 +7,7 @@ import { validateUploadedFiles } from '../middleware/validateFiles.js';
 import { eventCreateSchema, eventUpdateSchema, fairIntakeSchema, attendeesSchema } from '../schemas/index.js';
 import { getTemplate, resolveTemplate, sendThankYouEmail } from '../services/email.js';
 import logger from '../lib/logger.js';
+import { activityLogData } from '../services/activityLog.js';
 import { parsePagination, prismaSkipTake, paginatedResponse } from '../utils/pagination.js';
 
 const router = Router();
@@ -365,6 +366,14 @@ router.post('/:id/intake', authenticate, uploadApplicationFiles, validateUploade
           applicantId: applicant.id,
           content: `Added at ${event.name} by ${req.user!.email}`,
         },
+      });
+
+      await tx.activityLog.create({
+        data: activityLogData('applicant_created', {
+          applicantId: applicant.id,
+          userId: req.user!.id,
+          metadata: { source: 'event_intake', eventId: id },
+        }),
       });
 
       return { ...applicant, review };
