@@ -14,6 +14,8 @@ import emailSettingsRoutes from './routes/emailSettings.js';
 import officeRoutes from './routes/offices.js';
 import eventRoutes from './routes/events.js';
 import siteSettingsRoutes from './routes/siteSettings.js';
+import logger from './lib/logger.js';
+import { requestLogger } from './middleware/requestLogger.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -86,6 +88,7 @@ app.use('/api/applicants', (req, _res, next) => {
   next();
 });
 
+app.use(requestLogger);
 app.use(express.json());
 
 // Serve uploaded files
@@ -121,10 +124,10 @@ if (process.env.NODE_ENV === 'production') {
 
 // Error handling middleware
 app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
-  console.error(err.stack);
+  logger.error({ err }, 'Unhandled error');
   res.status(500).json({ error: 'Something went wrong!' });
 });
 
 app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+  logger.info(`Server running on http://localhost:${PORT}`);
 });

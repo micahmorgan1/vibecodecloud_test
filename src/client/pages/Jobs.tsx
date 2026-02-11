@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import RichTextEditor from '../components/RichTextEditor';
+import Pagination from '../components/Pagination';
+import { PaginatedResponse, isPaginated } from '../lib/pagination';
 
 interface Job {
   id: string;
@@ -29,13 +31,17 @@ export default function Jobs() {
   const [statusFilter, setStatusFilter] = useState('');
   const [showArchived, setShowArchived] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const pageSize = 25;
 
   const canCreateJob = user?.role === 'admin' || user?.role === 'hiring_manager';
   const isAdmin = user?.role === 'admin';
 
   useEffect(() => {
     fetchJobs();
-  }, [statusFilter, showArchived]);
+  }, [statusFilter, showArchived, page]);
 
   const fetchJobs = async () => {
     setLoading(true);
@@ -43,9 +49,19 @@ export default function Jobs() {
       const params = new URLSearchParams();
       if (statusFilter) params.append('status', statusFilter);
       if (showArchived) params.append('archived', 'true');
+      params.append('page', String(page));
+      params.append('pageSize', String(pageSize));
       const queryString = params.toString();
-      const res = await api.get<Job[]>(`/jobs${queryString ? `?${queryString}` : ''}`);
-      setJobs(res.data);
+      const res = await api.get<PaginatedResponse<Job> | Job[]>(`/jobs${queryString ? `?${queryString}` : ''}`);
+      if (isPaginated(res.data)) {
+        setJobs(res.data.data);
+        setTotal(res.data.total);
+        setTotalPages(res.data.totalPages);
+      } else {
+        setJobs(res.data);
+        setTotal(res.data.length);
+        setTotalPages(1);
+      }
     } finally {
       setLoading(false);
     }
@@ -93,7 +109,7 @@ export default function Jobs() {
         {!showArchived && ['', 'open', 'closed', 'on-hold'].map((status) => (
           <button
             key={status}
-            onClick={() => setStatusFilter(status)}
+            onClick={() => { setStatusFilter(status); setPage(1); }}
             className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
               statusFilter === status
                 ? 'bg-black text-white'
@@ -108,6 +124,7 @@ export default function Jobs() {
             onClick={() => {
               setShowArchived(!showArchived);
               setStatusFilter('');
+              setPage(1);
             }}
             className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
               showArchived
@@ -198,6 +215,8 @@ export default function Jobs() {
           ))}
         </div>
       )}
+
+      <Pagination page={page} totalPages={totalPages} total={total} pageSize={pageSize} onPageChange={setPage} />
 
       {/* Create Job Modal */}
       {showCreateModal && (

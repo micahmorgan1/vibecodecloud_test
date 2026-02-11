@@ -1,4 +1,5 @@
 import prisma from '../db.js';
+import logger from '../lib/logger.js';
 
 const SAFE_BROWSING_KEY = process.env.GOOGLE_SAFE_BROWSING_KEY;
 const SAFE_BROWSING_URL = 'https://safebrowsing.googleapis.com/v4/threatMatches:find';
@@ -44,7 +45,7 @@ export async function checkUrls(urls: string[]): Promise<CheckResult> {
     });
 
     if (!response.ok) {
-      console.warn(`[WARN] Safe Browsing API returned ${response.status}`);
+      logger.warn(`Safe Browsing API returned ${response.status}`);
       return { safe: true, threats: [] };
     }
 
@@ -61,7 +62,7 @@ export async function checkUrls(urls: string[]): Promise<CheckResult> {
 
     return { safe: false, threats };
   } catch (err) {
-    console.warn('[WARN] Safe Browsing API error, skipping check:', err);
+    logger.warn({ err }, 'Safe Browsing API error, skipping check');
     return { safe: true, threats: [] };
   }
 }
@@ -107,7 +108,7 @@ export function checkApplicantUrls(applicantId: string, urls: string[]): void {
         });
       }
     } catch (err) {
-      console.error('URL safety check failed for applicant', applicantId, err);
+      logger.error({ err, applicantId }, 'URL safety check failed');
     }
   })();
 }

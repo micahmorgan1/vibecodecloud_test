@@ -1,10 +1,11 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import logger from './lib/logger.js';
 
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('Seeding database...');
+  logger.info('Seeding database...');
 
   // Wipe all tables in dependency order (children first)
   await prisma.review.deleteMany();
@@ -18,7 +19,7 @@ async function main() {
   await prisma.emailTemplate.deleteMany();
   await prisma.office.deleteMany();
   await prisma.user.deleteMany();
-  console.log('Cleared existing data');
+  logger.info('Cleared existing data');
 
   // Create users
   const adminPassword = await bcrypt.hash('admin123', 10);
@@ -58,7 +59,7 @@ async function main() {
     },
   });
 
-  console.log('Created users:', { admin: admin.email, manager: manager.email, reviewer: reviewer.email });
+  logger.info({ admin: admin.email, manager: manager.email, reviewer: reviewer.email }, 'Created users');
 
   // Create offices
   const officeBR = await prisma.office.upsert({
@@ -103,7 +104,7 @@ async function main() {
     },
   });
 
-  console.log('Created offices:', { br: officeBR.name, fairhope: officeFairhope.name, biloxi: officeBiloxi.name });
+  logger.info({ br: officeBR.name, fairhope: officeFairhope.name, biloxi: officeBiloxi.name }, 'Created offices');
 
   // Create jobs
   const jobs = await Promise.all([
@@ -243,7 +244,7 @@ Key Responsibilities:
     }),
   ]);
 
-  console.log(`Created ${jobs.length} jobs`);
+  logger.info(`Created ${jobs.length} jobs`);
 
   // Create sample applicants
   const applicants = await Promise.all([
@@ -311,7 +312,7 @@ Key Responsibilities:
     }),
   ]);
 
-  console.log(`Created ${applicants.length} applicants`);
+  logger.info(`Created ${applicants.length} applicants`);
 
   // Create reviews
   await Promise.all([
@@ -373,7 +374,7 @@ Key Responsibilities:
     }),
   ]);
 
-  console.log('Created reviews');
+  logger.info('Created reviews');
 
   // Create notes
   await Promise.all([
@@ -391,7 +392,7 @@ Key Responsibilities:
     }),
   ]);
 
-  console.log('Created notes');
+  logger.info('Created notes');
 
   // Seed default email templates
   await prisma.emailTemplate.upsert({
@@ -433,7 +434,7 @@ The Hiring Team`,
     },
   });
 
-  console.log('Created email templates');
+  logger.info('Created email templates');
 
   // Seed reviewer-to-job access assignments
   await prisma.jobReviewer.upsert({
@@ -464,7 +465,7 @@ The Hiring Team`,
     },
   });
 
-  console.log('Created reviewer assignments');
+  logger.info('Created reviewer assignments');
 
   // Seed notification subscriptions (manager gets notified for Senior Architect)
   await prisma.jobNotificationSub.upsert({
@@ -495,7 +496,7 @@ The Hiring Team`,
     },
   });
 
-  console.log('Created notification subscriptions');
+  logger.info('Created notification subscriptions');
 
   // Create recruitment events
   const lsuEvent = await prisma.recruitmentEvent.create({
@@ -520,7 +521,7 @@ The Hiring Team`,
     },
   });
 
-  console.log('Created recruitment events');
+  logger.info('Created recruitment events');
 
   // Assign attendees
   await prisma.eventAttendee.create({
@@ -533,7 +534,7 @@ The Hiring Team`,
     data: { userId: admin.id, eventId: ullEvent.id },
   });
 
-  console.log('Created event attendees');
+  logger.info('Created event attendees');
 
   // Create fair applicants for LSU event
   const fairApplicant1 = await prisma.applicant.create({
@@ -573,7 +574,7 @@ The Hiring Team`,
     },
   });
 
-  console.log('Created fair applicants');
+  logger.info('Created fair applicants');
 
   // Create inline reviews for fair applicants
   await prisma.review.create({
@@ -606,7 +607,7 @@ The Hiring Team`,
     },
   });
 
-  console.log('Created fair applicant reviews');
+  logger.info('Created fair applicant reviews');
 
   // Add notes for fair applicants
   await prisma.note.create({
@@ -628,13 +629,13 @@ The Hiring Team`,
     },
   });
 
-  console.log('Created fair applicant notes');
-  console.log('Seeding complete!');
+  logger.info('Created fair applicant notes');
+  logger.info('Seeding complete!');
 }
 
 main()
   .catch((e) => {
-    console.error(e);
+    logger.error({ err: e }, 'Seed failed');
     process.exit(1);
   })
   .finally(async () => {

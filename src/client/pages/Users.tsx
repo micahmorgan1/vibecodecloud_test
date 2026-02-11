@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../lib/api';
 import Avatar from '../components/Avatar';
+import Pagination from '../components/Pagination';
+import { PaginatedResponse, isPaginated } from '../lib/pagination';
 
 interface User {
   id: string;
@@ -59,10 +61,14 @@ export default function Users() {
   const [formError, setFormError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const pageSize = 25;
 
   useEffect(() => {
     fetchUsers();
-  }, [roleFilter]);
+  }, [roleFilter, page]);
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -70,9 +76,19 @@ export default function Users() {
       const params = new URLSearchParams();
       if (roleFilter) params.append('role', roleFilter);
       if (search) params.append('search', search);
+      params.append('page', String(page));
+      params.append('pageSize', String(pageSize));
       const queryString = params.toString();
-      const res = await api.get<User[]>(`/users${queryString ? `?${queryString}` : ''}`);
-      setUsers(res.data);
+      const res = await api.get<PaginatedResponse<User> | User[]>(`/users${queryString ? `?${queryString}` : ''}`);
+      if (isPaginated(res.data)) {
+        setUsers(res.data.data);
+        setTotal(res.data.total);
+        setTotalPages(res.data.totalPages);
+      } else {
+        setUsers(res.data);
+        setTotal(res.data.length);
+        setTotalPages(1);
+      }
     } finally {
       setLoading(false);
     }
@@ -80,6 +96,7 @@ export default function Users() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
+    setPage(1);
     fetchUsers();
   };
 
@@ -198,7 +215,7 @@ export default function Users() {
           ].map((filter) => (
             <button
               key={filter.value}
-              onClick={() => setRoleFilter(filter.value)}
+              onClick={() => { setRoleFilter(filter.value); setPage(1); }}
               className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
                 roleFilter === filter.value
                   ? 'bg-black text-white'
@@ -296,6 +313,8 @@ export default function Users() {
         </div>
       )}
 
+      <Pagination page={page} totalPages={totalPages} total={total} pageSize={pageSize} onPageChange={setPage} />
+
       {/* Create/Edit Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -350,8 +369,9 @@ export default function Users() {
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   className="input"
                   required={!editingUser}
-                  minLength={6}
+                  minLength={8}
                 />
+                <p className="text-xs text-gray-400 mt-1">Min 8 chars, 1 uppercase, 1 lowercase, 1 number</p>
               </div>
 
               <div>

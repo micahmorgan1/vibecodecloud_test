@@ -6,6 +6,8 @@ import { JOB_BOARD_PLATFORMS, getPlatformById, generateTrackingUrl } from '../se
 import { generateUniqueSlug } from '../utils/slugify.js';
 import { validateBody } from '../middleware/validateBody.js';
 import { jobCreateSchema, jobUpdateSchema, linkedInStatusSchema, platformStatusSchema } from '../schemas/index.js';
+import { parsePagination, prismaSkipTake, paginatedResponse } from '../utils/pagination.js';
+import logger from '../lib/logger.js';
 
 const router = Router();
 
@@ -34,6 +36,29 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
       where.id = { in: accessibleJobIds };
     }
 
+    const pagination = parsePagination(req.query);
+
+    if (pagination) {
+      const [jobs, total] = await Promise.all([
+        prisma.job.findMany({
+          where,
+          include: {
+            createdBy: {
+              select: { id: true, name: true, email: true },
+            },
+            office: true,
+            _count: {
+              select: { applicants: true },
+            },
+          },
+          orderBy: { createdAt: 'desc' },
+          ...prismaSkipTake(pagination),
+        }),
+        prisma.job.count({ where }),
+      ]);
+      return res.json(paginatedResponse(jobs, total, pagination));
+    }
+
     const jobs = await prisma.job.findMany({
       where,
       include: {
@@ -50,7 +75,7 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
 
     res.json(jobs);
   } catch (error) {
-    console.error('Get jobs error:', error);
+    logger.error({ err: error }, 'Get jobs error');
     res.status(500).json({ error: 'Failed to fetch jobs' });
   }
 });
@@ -86,7 +111,7 @@ router.get('/public', async (req, res) => {
 
     res.json(jobs);
   } catch (error) {
-    console.error('Get public jobs error:', error);
+    logger.error({ err: error }, 'Get public jobs error');
     res.status(500).json({ error: 'Failed to fetch jobs' });
   }
 });
@@ -120,7 +145,7 @@ router.get('/website', async (_req, res) => {
 
     res.json(jobs);
   } catch (error) {
-    console.error('Get website jobs error:', error);
+    logger.error({ err: error }, 'Get website jobs error');
     res.status(500).json({ error: 'Failed to fetch jobs' });
   }
 });
@@ -158,7 +183,7 @@ router.get('/website/:slug', async (req, res) => {
 
     res.json(job);
   } catch (error) {
-    console.error('Get website job error:', error);
+    logger.error({ err: error }, 'Get website job error');
     res.status(500).json({ error: 'Failed to fetch job' });
   }
 });
@@ -191,7 +216,7 @@ router.get('/:id/public', async (req, res) => {
 
     res.json(job);
   } catch (error) {
-    console.error('Get public job error:', error);
+    logger.error({ err: error }, 'Get public job error');
     res.status(500).json({ error: 'Failed to fetch job' });
   }
 });
@@ -235,7 +260,7 @@ router.get('/:id', authenticate, async (req: AuthRequest, res: Response) => {
 
     res.json(job);
   } catch (error) {
-    console.error('Get job error:', error);
+    logger.error({ err: error }, 'Get job error');
     res.status(500).json({ error: 'Failed to fetch job' });
   }
 });
@@ -293,7 +318,7 @@ router.post(
 
       res.status(201).json(job);
     } catch (error) {
-      console.error('Create job error:', error);
+      logger.error({ err: error }, 'Create job error');
       res.status(500).json({ error: 'Failed to create job' });
     }
   }
@@ -357,7 +382,7 @@ router.put(
 
       res.json(job);
     } catch (error) {
-      console.error('Update job error:', error);
+      logger.error({ err: error }, 'Update job error');
       res.status(500).json({ error: 'Failed to update job' });
     }
   }
@@ -388,7 +413,7 @@ router.delete(
 
       res.json({ message: 'Job archived successfully' });
     } catch (error) {
-      console.error('Archive job error:', error);
+      logger.error({ err: error }, 'Archive job error');
       res.status(500).json({ error: 'Failed to archive job' });
     }
   }
@@ -424,7 +449,7 @@ router.patch(
 
       res.json(job);
     } catch (error) {
-      console.error('Unarchive job error:', error);
+      logger.error({ err: error }, 'Unarchive job error');
       res.status(500).json({ error: 'Failed to unarchive job' });
     }
   }
@@ -464,7 +489,7 @@ router.get('/:id/stats', authenticate, async (req: AuthRequest, res: Response) =
       }, {} as Record<string, number>),
     });
   } catch (error) {
-    console.error('Get job stats error:', error);
+    logger.error({ err: error }, 'Get job stats error');
     res.status(500).json({ error: 'Failed to fetch job statistics' });
   }
 });
@@ -491,7 +516,7 @@ router.get('/:id/linkedin-preview', authenticate, async (req: AuthRequest, res: 
       postUrl: job.linkedInPostUrl,
     });
   } catch (error) {
-    console.error('LinkedIn preview error:', error);
+    logger.error({ err: error }, 'LinkedIn preview error');
     res.status(500).json({ error: 'Failed to generate LinkedIn preview' });
   }
 });
@@ -518,7 +543,7 @@ router.patch(
 
       res.json(job);
     } catch (error) {
-      console.error('Update LinkedIn status error:', error);
+      logger.error({ err: error }, 'Update LinkedIn status error');
       res.status(500).json({ error: 'Failed to update LinkedIn status' });
     }
   }
@@ -552,7 +577,7 @@ router.get('/:id/platforms', authenticate, async (req: AuthRequest, res: Respons
 
     res.json({ platforms });
   } catch (error) {
-    console.error('Get platforms error:', error);
+    logger.error({ err: error }, 'Get platforms error');
     res.status(500).json({ error: 'Failed to fetch platforms' });
   }
 });
@@ -587,7 +612,7 @@ router.patch(
 
       res.json(job);
     } catch (error) {
-      console.error('Update platform status error:', error);
+      logger.error({ err: error }, 'Update platform status error');
       res.status(500).json({ error: 'Failed to update platform status' });
     }
   }

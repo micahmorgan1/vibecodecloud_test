@@ -12,7 +12,7 @@ export interface AuthRequest extends Request {
   };
 }
 
-export function authenticate(req: AuthRequest, res: Response, next: NextFunction) {
+export async function authenticate(req: AuthRequest, res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -26,8 +26,19 @@ export function authenticate(req: AuthRequest, res: Response, next: NextFunction
       id: string;
       email: string;
       role: string;
+      tokenVersion?: number;
     };
-    req.user = decoded;
+
+    // Verify tokenVersion against DB
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.id },
+      select: { tokenVersion: true },
+    });
+    if (!user || (decoded.tokenVersion ?? 0) !== user.tokenVersion) {
+      return res.status(401).json({ error: 'Token revoked' });
+    }
+
+    req.user = { id: decoded.id, email: decoded.email, role: decoded.role };
     next();
   } catch {
     return res.status(401).json({ error: 'Invalid or expired token' });
@@ -48,9 +59,9 @@ export function requireRole(...roles: string[]) {
   };
 }
 
-export function generateToken(user: { id: string; email: string; role: string }) {
+export function generateToken(user: { id: string; email: string; role: string; tokenVersion?: number }) {
   return jwt.sign(
-    { id: user.id, email: user.email, role: user.role },
+    { id: user.id, email: user.email, role: user.role, tokenVersion: user.tokenVersion ?? 0 },
     JWT_SECRET,
     { expiresIn: '7d' }
   );

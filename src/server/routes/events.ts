@@ -6,6 +6,8 @@ import { uploadApplicationFiles } from '../middleware/upload.js';
 import { validateUploadedFiles } from '../middleware/validateFiles.js';
 import { eventCreateSchema, eventUpdateSchema, fairIntakeSchema, attendeesSchema } from '../schemas/index.js';
 import { getTemplate, resolveTemplate, sendThankYouEmail } from '../services/email.js';
+import logger from '../lib/logger.js';
+import { parsePagination, prismaSkipTake, paginatedResponse } from '../utils/pagination.js';
 
 const router = Router();
 
@@ -18,23 +20,40 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
       ? { id: { in: accessibleEventIds } }
       : {};
 
+    const pagination = parsePagination(req.query);
+
+    const include = {
+      createdBy: { select: { id: true, name: true } },
+      _count: { select: { applicants: true } },
+      attendees: {
+        include: {
+          user: { select: { id: true, name: true, email: true } },
+        },
+      },
+    } as const;
+
+    if (pagination) {
+      const [events, total] = await Promise.all([
+        prisma.recruitmentEvent.findMany({
+          where,
+          orderBy: { date: 'desc' },
+          include,
+          ...prismaSkipTake(pagination),
+        }),
+        prisma.recruitmentEvent.count({ where }),
+      ]);
+      return res.json(paginatedResponse(events, total, pagination));
+    }
+
     const events = await prisma.recruitmentEvent.findMany({
       where,
       orderBy: { date: 'desc' },
-      include: {
-        createdBy: { select: { id: true, name: true } },
-        _count: { select: { applicants: true } },
-        attendees: {
-          include: {
-            user: { select: { id: true, name: true, email: true } },
-          },
-        },
-      },
+      include,
     });
 
     res.json(events);
   } catch (error) {
-    console.error('List events error:', error);
+    logger.error({ err: error }, 'List events error');
     res.status(500).json({ error: 'Failed to fetch events' });
   }
 });
@@ -61,7 +80,7 @@ router.get('/website', async (_req, res) => {
     });
     res.json(events);
   } catch (error) {
-    console.error('Public events error:', error);
+    logger.error({ err: error }, 'Public events error');
     res.status(500).json({ error: 'Failed to fetch events' });
   }
 });
@@ -96,7 +115,7 @@ router.get('/:id', authenticate, async (req: AuthRequest, res: Response) => {
 
     res.json(event);
   } catch (error) {
-    console.error('Get event error:', error);
+    logger.error({ err: error }, 'Get event error');
     res.status(500).json({ error: 'Failed to fetch event' });
   }
 });
@@ -151,7 +170,7 @@ router.post(
 
       res.status(201).json(created);
     } catch (error) {
-      console.error('Create event error:', error);
+      logger.error({ err: error }, 'Create event error');
       res.status(500).json({ error: 'Failed to create event' });
     }
   }
@@ -199,7 +218,7 @@ router.put(
 
       res.json(event);
     } catch (error) {
-      console.error('Update event error:', error);
+      logger.error({ err: error }, 'Update event error');
       res.status(500).json({ error: 'Failed to update event' });
     }
   }
@@ -230,7 +249,7 @@ router.delete(
 
       res.json({ message: 'Event deleted successfully' });
     } catch (error) {
-      console.error('Delete event error:', error);
+      logger.error({ err: error }, 'Delete event error');
       res.status(500).json({ error: 'Failed to delete event' });
     }
   }
@@ -278,7 +297,7 @@ router.put(
 
       res.json(updated);
     } catch (error) {
-      console.error('Update attendees error:', error);
+      logger.error({ err: error }, 'Update attendees error');
       res.status(500).json({ error: 'Failed to update attendees' });
     }
   }
@@ -360,13 +379,13 @@ router.post('/:id/intake', authenticate, uploadApplicationFiles, validateUploade
         const body = resolveTemplate(template.body, variables);
         await sendThankYouEmail({ to: email, applicantName: `${firstName} ${lastName}`, subject, body });
       } catch (err) {
-        console.error('Event thank-you email failed:', err);
+        logger.error({ err }, 'Event thank-you email failed');
       }
     })();
 
     res.status(201).json(result);
   } catch (error) {
-    console.error('Fair intake error:', error);
+    logger.error({ err: error }, 'Fair intake error');
     res.status(500).json({ error: 'Failed to add applicant' });
   }
 });

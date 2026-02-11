@@ -7,6 +7,8 @@ import { isValidEmail, isValidPhone } from '../utils/validation';
 import QRScanner from '../components/QRScanner';
 import { VCardData } from '../utils/vcardParser';
 import { EventFormModal } from './Events';
+import Pagination from '../components/Pagination';
+import { PaginatedResponse, isPaginated } from '../lib/pagination';
 
 interface EventAttendee {
   id: string;
@@ -102,6 +104,10 @@ export default function EventDetail() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showManageAttendees, setShowManageAttendees] = useState(false);
   const [showIntakeForm, setShowIntakeForm] = useState(false);
+  const [appPage, setAppPage] = useState(1);
+  const [appTotal, setAppTotal] = useState(0);
+  const [appTotalPages, setAppTotalPages] = useState(0);
+  const appPageSize = 25;
 
   const canManage = currentUser?.role === 'admin' || currentUser?.role === 'hiring_manager';
 
@@ -110,7 +116,7 @@ export default function EventDetail() {
       fetchEvent();
       fetchApplicants();
     }
-  }, [id]);
+  }, [id, appPage]);
 
   const fetchEvent = async () => {
     try {
@@ -123,8 +129,18 @@ export default function EventDetail() {
 
   const fetchApplicants = async () => {
     try {
-      const res = await api.get<Applicant[]>(`/applicants?eventId=${id}`);
-      setApplicants(res.data);
+      const res = await api.get<PaginatedResponse<Applicant> | Applicant[]>(
+        `/applicants?eventId=${id}&page=${appPage}&pageSize=${appPageSize}`
+      );
+      if (isPaginated(res.data)) {
+        setApplicants(res.data.data);
+        setAppTotal(res.data.total);
+        setAppTotalPages(res.data.totalPages);
+      } else {
+        setApplicants(res.data);
+        setAppTotal(res.data.length);
+        setAppTotalPages(1);
+      }
     } catch {
       // ignore
     }
@@ -254,7 +270,7 @@ export default function EventDetail() {
       {/* Applicants Table */}
       <div className="card">
         <h2 className="text-lg font-display font-semibold text-gray-900 mb-4 uppercase tracking-wide">
-          Event Applicants ({applicants.length})
+          Event Applicants ({appTotal})
         </h2>
 
         {applicants.length === 0 ? (
@@ -325,6 +341,7 @@ export default function EventDetail() {
             </table>
           </div>
         )}
+        <Pagination page={appPage} totalPages={appTotalPages} total={appTotal} pageSize={appPageSize} onPageChange={setAppPage} />
       </div>
 
       {/* Edit Event Modal */}

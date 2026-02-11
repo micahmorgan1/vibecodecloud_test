@@ -1,4 +1,5 @@
 import NodeClam from 'clamscan';
+import logger from '../lib/logger.js';
 
 interface ScanResult {
   clean: boolean;
@@ -25,10 +26,10 @@ async function initClamAV(): Promise<void> {
       preference: 'clamdscan',
     });
     available = true;
-    console.log('[INFO] ClamAV: connected');
+    logger.info('ClamAV: connected');
   } catch {
     available = false;
-    console.warn('[WARN] ClamAV: not available, virus scanning disabled');
+    logger.warn('ClamAV: not available, virus scanning disabled');
   }
 }
 
@@ -53,7 +54,7 @@ export async function scanFile(filePath: string): Promise<ScanResult> {
     }
     return { clean: true };
   } catch (err) {
-    console.error('ClamAV scan error:', err);
+    logger.error({ err }, 'ClamAV scan error');
     // Fail open — don't block uploads if scan fails
     return { clean: true };
   }

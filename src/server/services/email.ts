@@ -1,5 +1,6 @@
 import nodemailer from 'nodemailer';
 import prisma from '../db.js';
+import logger from '../lib/logger.js';
 
 // SMTP transport — uses Mailtrap/Postmark/any SMTP when configured, falls back to console.log
 const SMTP_HOST = process.env.SMTP_HOST;
@@ -19,9 +20,9 @@ if (SMTP_HOST && SMTP_USER && SMTP_PASS) {
       pass: SMTP_PASS,
     },
   });
-  console.log(`[INFO] Email: SMTP configured (${SMTP_HOST}:${SMTP_PORT})`);
+  logger.info(`Email: SMTP configured (${SMTP_HOST}:${SMTP_PORT})`);
 } else {
-  console.log('[INFO] Email: No SMTP configured, using console.log mock');
+  logger.info('Email: No SMTP configured, using mock');
 }
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -44,7 +45,7 @@ async function sendEmail(params: { to: string; subject: string; text: string; ht
         const isRateLimit = err.responseCode === 550 && err.response?.includes('Too many emails');
         if (isRateLimit && attempt < MAX_RETRIES) {
           const delay = (attempt + 1) * 3000; // 3s, 6s, 9s
-          console.log(`[EMAIL] Rate limited, retry ${attempt + 1}/${MAX_RETRIES} after ${delay / 1000}s...`);
+          logger.warn(`Email rate limited, retry ${attempt + 1}/${MAX_RETRIES} after ${delay / 1000}s`);
           await sleep(delay);
         } else {
           throw err;
@@ -52,11 +53,7 @@ async function sendEmail(params: { to: string; subject: string; text: string; ht
       }
     }
   } else {
-    console.log(`=== EMAIL (mock) ===`);
-    console.log(`To: ${to}`);
-    console.log(`Subject: ${subject}`);
-    console.log(`Body:\n${text}`);
-    console.log(`=== END EMAIL ===`);
+    logger.info({ to, subject }, 'Email sent (mock)');
   }
 }
 

@@ -3,6 +3,7 @@ import prisma from '../db.js';
 import { authenticate, requireRole, AuthRequest } from '../middleware/auth.js';
 import { validateBody } from '../middleware/validateBody.js';
 import { officeCreateSchema, officeUpdateSchema } from '../schemas/index.js';
+import logger from '../lib/logger.js';
 
 const router = Router();
 
@@ -17,7 +18,7 @@ router.get('/', authenticate, async (_req: AuthRequest, res: Response) => {
     });
     res.json(offices);
   } catch (error) {
-    console.error('Get offices error:', error);
+    logger.error({ err: error }, 'Get offices error');
     res.status(500).json({ error: 'Failed to fetch offices' });
   }
 });
@@ -39,7 +40,7 @@ router.post(
 
       res.status(201).json(office);
     } catch (error) {
-      console.error('Create office error:', error);
+      logger.error({ err: error }, 'Create office error');
       res.status(500).json({ error: 'Failed to create office' });
     }
   }
@@ -77,7 +78,7 @@ router.put(
 
       res.json(office);
     } catch (error) {
-      console.error('Update office error:', error);
+      logger.error({ err: error }, 'Update office error');
       res.status(500).json({ error: 'Failed to update office' });
     }
   }
@@ -109,7 +110,7 @@ router.delete(
       await prisma.office.delete({ where: { id } });
       res.json({ message: 'Office deleted successfully' });
     } catch (error) {
-      console.error('Delete office error:', error);
+      logger.error({ err: error }, 'Delete office error');
       res.status(500).json({ error: 'Failed to delete office' });
     }
   }

@@ -17,6 +17,8 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  tokenVersion  Int      @default(0)
+
   reviews           Review[]
   jobs              Job[]                @relation("JobCreator")
   assignedJobs      JobReviewer[]
@@ -75,6 +77,9 @@ model Job {
   applicants        Applicant[]
   reviewers         JobReviewer[]
   notificationSubs  JobNotificationSub[]
+
+  @@index([status, archived])
+  @@index([createdById])
 }
 
 // Applicants applying for jobs
@@ -127,6 +132,13 @@ model Applicant {
 
   reviews         Review[]
   notes           Note[]
+
+  @@index([jobId])
+  @@index([eventId])
+  @@index([email])
+  @@index([stage])
+  @@index([spam])
+  @@index([createdAt])
 }
 
 // Reviews/ratings from managers
@@ -154,6 +166,8 @@ model Review {
   applicantId String
 
   @@unique([reviewerId, applicantId])
+  @@index([applicantId])
+  @@index([reviewerId])
 }
 
 // Internal notes on applicants
@@ -164,6 +178,8 @@ model Note {
 
   applicant   Applicant @relation(fields: [applicantId], references: [id])
   applicantId String
+
+  @@index([applicantId])
 }
 
 // Configurable email templates
@@ -185,6 +201,7 @@ model JobReviewer {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   job       Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
   @@unique([userId, jobId])
+  @@index([userId])
 }
 
 // Per-user, per-job notification subscriptions (any role)
@@ -196,6 +213,7 @@ model JobNotificationSub {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   job       Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
   @@unique([userId, jobId])
+  @@index([jobId])
 }
 
 // Recruitment events (job fairs, campus visits, etc.)
@@ -216,6 +234,9 @@ model RecruitmentEvent {
   createdBy        User     @relation("EventCreator", fields: [createdById], references: [id])
   applicants       Applicant[]
   attendees        EventAttendee[]
+
+  @@index([date])
+  @@index([publishToWebsite, date])
 }
 
 // Event attendee assignments (which users attend which events)
@@ -227,6 +248,7 @@ model EventAttendee {
   user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   event     RecruitmentEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
   @@unique([userId, eventId])
+  @@index([userId])
 }
 
 // Blocked emails/domains for spam prevention
@@ -238,6 +260,7 @@ model BlockedEmail {
   createdById String
   createdBy   User     @relation(fields: [createdById], references: [id])
   @@unique([type, value])
+  @@index([value])
 }
 
 // Site-wide settings (About WHLC, etc.)

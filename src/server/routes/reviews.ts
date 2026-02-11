@@ -3,6 +3,7 @@ import prisma from '../db.js';
 import { authenticate, AuthRequest, getAccessibleApplicantFilter } from '../middleware/auth.js';
 import { validateBody } from '../middleware/validateBody.js';
 import { reviewCreateSchema } from '../schemas/index.js';
+import logger from '../lib/logger.js';
 
 const router = Router();
 
@@ -30,7 +31,7 @@ router.get('/applicant/:applicantId', authenticate, async (req: AuthRequest, res
 
     res.json(reviews);
   } catch (error) {
-    console.error('Get reviews error:', error);
+    logger.error({ err: error }, 'Get reviews error');
     res.status(500).json({ error: 'Failed to fetch reviews' });
   }
 });
@@ -123,7 +124,7 @@ router.get('/applicant/:applicantId/summary', authenticate, async (req: AuthRequ
       recommendations,
     });
   } catch (error) {
-    console.error('Get review summary error:', error);
+    logger.error({ err: error }, 'Get review summary error');
     res.status(500).json({ error: 'Failed to fetch review summary' });
   }
 });
@@ -189,7 +190,7 @@ router.post('/applicant/:applicantId', authenticate, validateBody(reviewCreateSc
 
     res.status(201).json(review);
   } catch (error) {
-    console.error('Create review error:', error);
+    logger.error({ err: error }, 'Create review error');
     res.status(500).json({ error: 'Failed to create review' });
   }
 });
@@ -217,7 +218,7 @@ router.get('/applicant/:applicantId/mine', authenticate, async (req: AuthRequest
 
     res.json(review);
   } catch (error) {
-    console.error('Get my review error:', error);
+    logger.error({ err: error }, 'Get my review error');
     res.status(500).json({ error: 'Failed to fetch review' });
   }
 });
@@ -240,7 +241,7 @@ router.delete('/:id', authenticate, async (req: AuthRequest, res: Response) => {
 
     res.json({ message: 'Review deleted successfully' });
   } catch (error) {
-    console.error('Delete review error:', error);
+    logger.error({ err: error }, 'Delete review error');
     res.status(500).json({ error: 'Failed to delete review' });
   }
 });

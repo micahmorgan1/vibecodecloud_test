@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../lib/api';
 import Avatar from '../components/Avatar';
+import Pagination from '../components/Pagination';
+import { PaginatedResponse, isPaginated } from '../lib/pagination';
 
 interface EventAttendee {
   id: string;
@@ -49,17 +51,32 @@ export default function Events() {
   const [events, setEvents] = useState<RecruitmentEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const pageSize = 25;
 
   const canManage = currentUser?.role === 'admin' || currentUser?.role === 'hiring_manager';
 
   useEffect(() => {
     fetchEvents();
-  }, []);
+  }, [page]);
 
   const fetchEvents = async () => {
     try {
-      const res = await api.get<RecruitmentEvent[]>('/events');
-      setEvents(res.data);
+      const params = new URLSearchParams();
+      params.append('page', String(page));
+      params.append('pageSize', String(pageSize));
+      const res = await api.get<PaginatedResponse<RecruitmentEvent> | RecruitmentEvent[]>(`/events?${params.toString()}`);
+      if (isPaginated(res.data)) {
+        setEvents(res.data.data);
+        setTotal(res.data.total);
+        setTotalPages(res.data.totalPages);
+      } else {
+        setEvents(res.data);
+        setTotal(res.data.length);
+        setTotalPages(1);
+      }
     } finally {
       setLoading(false);
     }
@@ -164,6 +181,8 @@ export default function Events() {
           </div>
         </div>
       )}
+
+      <Pagination page={page} totalPages={totalPages} total={total} pageSize={pageSize} onPageChange={setPage} />
 
       {showCreateModal && (
         <EventFormModal

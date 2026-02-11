@@ -3,6 +3,7 @@ import prisma from '../db.js';
 import { authenticate, requireRole, AuthRequest } from '../middleware/auth.js';
 import { validateBody } from '../middleware/validateBody.js';
 import { siteSettingUpdateSchema } from '../schemas/index.js';
+import logger from '../lib/logger.js';
 
 const router = Router();
 
@@ -23,7 +24,7 @@ router.get('/public/:key', async (req, res) => {
 
     res.json({ key: setting.key, value: setting.value });
   } catch (error) {
-    console.error('Get public setting error:', error);
+    logger.error({ err: error }, 'Get public setting error');
     res.status(500).json({ error: 'Failed to fetch setting' });
   }
 });
@@ -38,7 +39,7 @@ router.get('/:key', authenticate, requireRole('admin', 'hiring_manager'), async 
     }
     res.json({ key: setting.key, value: setting.value });
   } catch (error) {
-    console.error('Get setting error:', error);
+    logger.error({ err: error }, 'Get setting error');
     res.status(500).json({ error: 'Failed to fetch setting' });
   }
 });
@@ -62,7 +63,7 @@ router.put(
 
       res.json({ key: setting.key, value: setting.value });
     } catch (error) {
-      console.error('Update setting error:', error);
+      logger.error({ err: error }, 'Update setting error');
       res.status(500).json({ error: 'Failed to update setting' });
     }
   }

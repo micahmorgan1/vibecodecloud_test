@@ -4,6 +4,8 @@ import { useAuth } from '../context/AuthContext';
 import { api } from '../lib/api';
 import { isValidEmail, isValidPhone } from '../utils/validation';
 import Avatar from '../components/Avatar';
+import Pagination from '../components/Pagination';
+import { PaginatedResponse, isPaginated } from '../lib/pagination';
 
 interface Applicant {
   id: string;
@@ -74,6 +76,10 @@ export default function Applicants() {
   const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
   const [showDeleteAllSpamModal, setShowDeleteAllSpamModal] = useState(false);
   const [showBulkMarkSpamModal, setShowBulkMarkSpamModal] = useState(false);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const pageSize = 25;
 
   const canAdd = currentUser?.role === 'admin' || currentUser?.role === 'hiring_manager';
   const canManageSpam = currentUser?.role === 'admin' || currentUser?.role === 'hiring_manager';
@@ -82,7 +88,7 @@ export default function Applicants() {
 
   useEffect(() => {
     fetchApplicants();
-  }, [stageFilter, showSpam]);
+  }, [stageFilter, showSpam, page]);
 
   useEffect(() => {
     refreshSpamCount();
@@ -102,9 +108,19 @@ export default function Applicants() {
       if (stageFilter) params.append('stage', stageFilter);
       if (search) params.append('search', search);
       params.append('spam', showSpam ? 'true' : 'false');
+      params.append('page', String(page));
+      params.append('pageSize', String(pageSize));
       const queryString = params.toString();
-      const res = await api.get<Applicant[]>(`/applicants${queryString ? `?${queryString}` : ''}`);
-      setApplicants(res.data);
+      const res = await api.get<PaginatedResponse<Applicant> | Applicant[]>(`/applicants${queryString ? `?${queryString}` : ''}`);
+      if (isPaginated(res.data)) {
+        setApplicants(res.data.data);
+        setTotal(res.data.total);
+        setTotalPages(res.data.totalPages);
+      } else {
+        setApplicants(res.data);
+        setTotal(res.data.length);
+        setTotalPages(1);
+      }
     } finally {
       setLoading(false);
     }
@@ -112,11 +128,13 @@ export default function Applicants() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
+    setPage(1);
     fetchApplicants();
   };
 
   const handleStageChange = (stage: string) => {
     setStageFilter(stage);
+    setPage(1);
     setSearchParams(stage ? { stage } : {});
   };
 
@@ -348,7 +366,7 @@ export default function Applicants() {
             <>
               <span className="text-gray-300 mx-1">|</span>
               <button
-                onClick={() => { setShowSpam(!showSpam); setStageFilter(''); }}
+                onClick={() => { setShowSpam(!showSpam); setStageFilter(''); setPage(1); }}
                 className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
                   showSpam
                     ? 'bg-red-600 text-white'
@@ -517,6 +535,7 @@ export default function Applicants() {
               </tbody>
             </table>
           </div>
+          <Pagination page={page} totalPages={totalPages} total={total} pageSize={pageSize} onPageChange={setPage} />
         </div>
       )}
 

@@ -4,6 +4,7 @@ import prisma from '../db.js';
 import { generateToken, authenticate, AuthRequest } from '../middleware/auth.js';
 import { validateBody } from '../middleware/validateBody.js';
 import { loginSchema, registerSchema, passwordChangeSchema } from '../schemas/index.js';
+import logger from '../lib/logger.js';
 
 const router = Router();
 
@@ -42,7 +43,7 @@ router.post('/register', validateBody(registerSchema), async (req: Request, res:
 
     res.status(201).json({ user, token });
   } catch (error) {
-    console.error('Registration error:', error);
+    logger.error({ err: error }, 'Registration error');
     res.status(500).json({ error: 'Failed to register user' });
   }
 });
@@ -69,6 +70,7 @@ router.post('/login', validateBody(loginSchema), async (req: Request, res: Respo
       id: user.id,
       email: user.email,
       role: user.role,
+      tokenVersion: user.tokenVersion,
     });
 
     res.json({
@@ -81,7 +83,7 @@ router.post('/login', validateBody(loginSchema), async (req: Request, res: Respo
       token,
     });
   } catch (error) {
-    console.error('Login error:', error);
+    logger.error({ err: error }, 'Login error');
     res.status(500).json({ error: 'Failed to login' });
   }
 });
@@ -106,7 +108,7 @@ router.get('/me', authenticate, async (req: AuthRequest, res: Response) => {
 
     res.json(user);
   } catch (error) {
-    console.error('Get user error:', error);
+    logger.error({ err: error }, 'Get user error');
     res.status(500).json({ error: 'Failed to get user' });
   }
 });
@@ -127,14 +129,21 @@ router.put('/password', authenticate, validateBody(passwordChangeSchema), async 
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
-    await prisma.user.update({
+    const updated = await prisma.user.update({
       where: { id: req.user!.id },
-      data: { password: hashedPassword },
+      data: { password: hashedPassword, tokenVersion: { increment: 1 } },
     });
 
-    res.json({ message: 'Password updated successfully' });
+    const token = generateToken({
+      id: updated.id,
+      email: updated.email,
+      role: updated.role,
+      tokenVersion: updated.tokenVersion,
+    });
+
+    res.json({ message: 'Password updated successfully', token });
   } catch (error) {
-    console.error('Password update error:', error);
+    logger.error({ err: error }, 'Password update error');
     res.status(500).json({ error: 'Failed to update password' });
   }
 });

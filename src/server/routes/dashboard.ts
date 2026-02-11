@@ -1,6 +1,7 @@
 import { Router, Response } from 'express';
 import prisma from '../db.js';
 import { authenticate, AuthRequest, getAccessibleApplicantFilter } from '../middleware/auth.js';
+import logger from '../lib/logger.js';
 
 const router = Router();
 
@@ -60,7 +61,7 @@ router.get('/stats', authenticate, async (req: AuthRequest, res: Response) => {
       spamCount,
     });
   } catch (error) {
-    console.error('Get dashboard stats error:', error);
+    logger.error({ err: error }, 'Get dashboard stats error');
     res.status(500).json({ error: 'Failed to fetch dashboard stats' });
   }
 });
@@ -94,7 +95,7 @@ router.get('/pipeline', authenticate, async (req: AuthRequest, res: Response) =>
 
     res.json(pipeline);
   } catch (error) {
-    console.error('Get pipeline error:', error);
+    logger.error({ err: error }, 'Get pipeline error');
     res.status(500).json({ error: 'Failed to fetch pipeline data' });
   }
 });
@@ -137,7 +138,7 @@ router.get('/activity', authenticate, async (req: AuthRequest, res: Response) =>
       recentReviews,
     });
   } catch (error) {
-    console.error('Get activity error:', error);
+    logger.error({ err: error }, 'Get activity error');
     res.status(500).json({ error: 'Failed to fetch activity' });
   }
 });
@@ -176,7 +177,7 @@ router.get('/funnel', authenticate, async (req: AuthRequest, res: Response) => {
       conversionRate: totalApplicants > 0 ? (hiredCount / totalApplicants) * 100 : 0,
     });
   } catch (error) {
-    console.error('Get funnel error:', error);
+    logger.error({ err: error }, 'Get funnel error');
     res.status(500).json({ error: 'Failed to fetch funnel data' });
   }
 });
@@ -217,7 +218,7 @@ router.get('/top-applicants', authenticate, async (req: AuthRequest, res: Respon
 
     res.json(ranked);
   } catch (error) {
-    console.error('Get top applicants error:', error);
+    logger.error({ err: error }, 'Get top applicants error');
     res.status(500).json({ error: 'Failed to fetch top applicants' });
   }
 });
@@ -264,7 +265,7 @@ router.get('/sources', authenticate, async (req: AuthRequest, res: Response) => 
 
     res.json({ sourceBreakdown });
   } catch (error) {
-    console.error('Get source analytics error:', error);
+    logger.error({ err: error }, 'Get source analytics error');
     res.status(500).json({ error: 'Failed to fetch source analytics' });
   }
 });
@@ -282,7 +283,7 @@ router.get('/upcoming-events', authenticate, async (req: AuthRequest, res: Respo
     });
     res.json(events);
   } catch (error) {
-    console.error('Get upcoming events error:', error);
+    logger.error({ err: error }, 'Get upcoming events error');
     res.status(500).json({ error: 'Failed to fetch upcoming events' });
   }
 });

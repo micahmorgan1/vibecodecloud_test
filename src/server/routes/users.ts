@@ -4,6 +4,8 @@ import prisma from '../db.js';
 import { authenticate, requireRole, AuthRequest } from '../middleware/auth.js';
 import { validateBody } from '../middleware/validateBody.js';
 import { userCreateSchema, userUpdateSchema } from '../schemas/index.js';
+import { parsePagination, prismaSkipTake, paginatedResponse } from '../utils/pagination.js';
+import logger from '../lib/logger.js';
 
 const router = Router();
 
@@ -21,21 +23,29 @@ router.get('/', authenticate, requireRole('admin'), async (req: AuthRequest, res
       ];
     }
 
+    const pagination = parsePagination(req.query);
+
+    if (pagination) {
+      const [users, total] = await Promise.all([
+        prisma.user.findMany({
+          where,
+          select: { id: true, name: true, email: true, role: true, createdAt: true },
+          orderBy: { createdAt: 'desc' },
+          ...prismaSkipTake(pagination),
+        }),
+        prisma.user.count({ where }),
+      ]);
+      return res.json(paginatedResponse(users, total, pagination));
+    }
+
     const users = await prisma.user.findMany({
       where,
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        createdAt: true,
-      },
+      select: { id: true, name: true, email: true, role: true, createdAt: true },
       orderBy: { createdAt: 'desc' },
     });
-
     res.json(users);
   } catch (error) {
-    console.error('Get users error:', error);
+    logger.error({ err: error }, 'Get users error');
     res.status(500).json({ error: 'Failed to fetch users' });
   }
 });
@@ -65,7 +75,7 @@ router.post('/', authenticate, requireRole('admin'), validateBody(userCreateSche
 
     res.status(201).json(user);
   } catch (error) {
-    console.error('Create user error:', error);
+    logger.error({ err: error }, 'Create user error');
     res.status(500).json({ error: 'Failed to create user' });
   }
 });
@@ -94,6 +104,7 @@ router.put('/:id', authenticate, requireRole('admin'), validateBody(userUpdateSc
     if (role) updateData.role = role;
     if (password) {
       updateData.password = await bcrypt.hash(password, 10);
+      updateData.tokenVersion = { increment: 1 };
     }
 
     const user = await prisma.user.update({
@@ -110,7 +121,7 @@ router.put('/:id', authenticate, requireRole('admin'), validateBody(userUpdateSc
 
     res.json(user);
   } catch (error) {
-    console.error('Update user error:', error);
+    logger.error({ err: error }, 'Update user error');
     res.status(500).json({ error: 'Failed to update user' });
   }
 });
@@ -133,7 +144,7 @@ router.delete('/:id', authenticate, requireRole('admin'), async (req: AuthReques
 
     res.json({ message: 'User deleted successfully' });
   } catch (error) {
-    console.error('Delete user error:', error);
+    logger.error({ err: error }, 'Delete user error');
     res.status(500).json({ error: 'Failed to delete user' });
   }
 });

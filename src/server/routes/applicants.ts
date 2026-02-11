@@ -20,6 +20,8 @@ import {
   bulkMarkSpamSchema,
 } from '../schemas/index.js';
 import { deleteUploadedFiles } from '../utils/deleteUploadedFiles.js';
+import { parsePagination, prismaSkipTake, paginatedResponse } from '../utils/pagination.js';
+import logger from '../lib/logger.js';
 
 const router = Router();
 
@@ -61,32 +63,49 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
 
     const where = conditions.length > 0 ? { AND: conditions } : {};
 
-    const applicants = await prisma.applicant.findMany({
-      where,
-      include: {
-        job: {
-          select: { id: true, title: true, department: true, archived: true },
-        },
-        event: {
-          select: { id: true, name: true },
-        },
-        reviews: {
-          include: {
-            reviewer: {
-              select: { id: true, name: true },
-            },
+    const includeClause = {
+      job: {
+        select: { id: true, title: true, department: true, archived: true },
+      },
+      event: {
+        select: { id: true, name: true },
+      },
+      reviews: {
+        include: {
+          reviewer: {
+            select: { id: true, name: true },
           },
         },
-        _count: {
-          select: { reviews: true, notes: true },
-        },
       },
+      _count: {
+        select: { reviews: true, notes: true },
+      },
+    };
+
+    const pagination = parsePagination(req.query);
+
+    if (pagination) {
+      const [applicants, total] = await Promise.all([
+        prisma.applicant.findMany({
+          where,
+          include: includeClause,
+          orderBy: { createdAt: 'desc' },
+          ...prismaSkipTake(pagination),
+        }),
+        prisma.applicant.count({ where }),
+      ]);
+      return res.json(paginatedResponse(applicants, total, pagination));
+    }
+
+    const applicants = await prisma.applicant.findMany({
+      where,
+      include: includeClause,
       orderBy: { createdAt: 'desc' },
     });
 
     res.json(applicants);
   } catch (error) {
-    console.error('Get applicants error:', error);
+    logger.error({ err: error }, 'Get applicants error');
     res.status(500).json({ error: 'Failed to fetch applicants' });
   }
 });
@@ -131,7 +150,7 @@ router.get('/:id', authenticate, async (req: AuthRequest, res: Response) => {
 
     res.json(applicant);
   } catch (error) {
-    console.error('Get applicant error:', error);
+    logger.error({ err: error }, 'Get applicant error');
     res.status(500).json({ error: 'Failed to fetch applicant' });
   }
 });
@@ -231,7 +250,7 @@ router.post('/', uploadApplicationFiles, validateUploadedFiles, validateBody(pub
           const body = resolveTemplate(template.body, variables);
           await sendThankYouEmail({ to: email, applicantName: `${firstName} ${lastName}`, subject, body });
         } catch (err) {
-          console.error('Thank-you email failed:', err);
+          logger.error({ err }, 'Thank-you email failed');
         }
       })();
 
@@ -253,7 +272,7 @@ router.post('/', uploadApplicationFiles, validateUploadedFiles, validateBody(pub
               });
             }
           } catch (err) {
-            console.error('Subscriber notification failed:', err);
+            logger.error({ err }, 'Subscriber notification failed');
           }
         })();
       }
@@ -267,7 +286,7 @@ router.post('/', uploadApplicationFiles, validateUploadedFiles, validateBody(pub
 
     res.status(201).json(applicant);
   } catch (error) {
-    console.error('Create applicant error:', error);
+    logger.error({ err: error }, 'Create applicant error');
     res.status(500).json({ error: 'Failed to submit application' });
   }
 });
@@ -356,7 +375,7 @@ router.post(
 
       res.status(201).json(applicant);
     } catch (error) {
-      console.error('Manual add applicant error:', error);
+      logger.error({ err: error }, 'Manual add applicant error');
       res.status(500).json({ error: 'Failed to add applicant' });
     }
   }
@@ -396,7 +415,7 @@ router.patch(
 
       res.json(applicant);
     } catch (error) {
-      console.error('Mark spam error:', error);
+      logger.error({ err: error }, 'Mark spam error');
       res.status(500).json({ error: 'Failed to mark as spam' });
     }
   }
@@ -431,7 +450,7 @@ router.post(
 
       res.json({ message: `${result.count} applicant(s) marked as spam` });
     } catch (error) {
-      console.error('Bulk mark spam error:', error);
+      logger.error({ err: error }, 'Bulk mark spam error');
       res.status(500).json({ error: 'Failed to mark applicants as spam' });
     }
   }
@@ -467,7 +486,7 @@ router.delete(
 
       res.json({ message: `${spamApplicants.length} spam applicant(s) deleted`, count: spamApplicants.length });
     } catch (error) {
-      console.error('Delete all spam error:', error);
+      logger.error({ err: error }, 'Delete all spam error');
       res.status(500).json({ error: 'Failed to delete spam applicants' });
     }
   }
@@ -502,7 +521,7 @@ router.post(
 
       res.json({ message: `${foundIds.length} applicant(s) deleted`, count: foundIds.length });
     } catch (error) {
-      console.error('Bulk delete error:', error);
+      logger.error({ err: error }, 'Bulk delete error');
       res.status(500).json({ error: 'Failed to delete applicants' });
     }
   }
@@ -533,7 +552,7 @@ router.patch('/:id/stage', authenticate, validateBody(stageUpdateSchema), async 
 
     res.json(applicant);
   } catch (error) {
-    console.error('Update stage error:', error);
+    logger.error({ err: error }, 'Update stage error');
     res.status(500).json({ error: 'Failed to update applicant stage' });
   }
 });
@@ -601,7 +620,7 @@ router.put('/:id', authenticate, uploadApplicationFiles, validateUploadedFiles, 
 
     res.json(applicant);
   } catch (error) {
-    console.error('Update applicant error:', error);
+    logger.error({ err: error }, 'Update applicant error');
     res.status(500).json({ error: 'Failed to update applicant' });
   }
 });
@@ -628,7 +647,7 @@ router.post('/:id/notes', authenticate, validateBody(noteSchema), async (req: Au
 
     res.status(201).json(note);
   } catch (error) {
-    console.error('Add note error:', error);
+    logger.error({ err: error }, 'Add note error');
     res.status(500).json({ error: 'Failed to add note' });
   }
 });
@@ -652,7 +671,7 @@ router.get('/:id/notes', authenticate, async (req: AuthRequest, res: Response) =
 
     res.json(notes);
   } catch (error) {
-    console.error('Get notes error:', error);
+    logger.error({ err: error }, 'Get notes error');
     res.status(500).json({ error: 'Failed to fetch notes' });
   }
 });
@@ -741,7 +760,7 @@ router.post('/:id/send-rejection', authenticate, validateBody(rejectionEmailSche
 
     res.json(result);
   } catch (error) {
-    console.error('Send rejection error:', error);
+    logger.error({ err: error }, 'Send rejection error');
     res.status(500).json({ error: 'Failed to send rejection email' });
   }
 });
@@ -839,7 +858,7 @@ router.patch(
 
       res.json(updated);
     } catch (error) {
-      console.error('Assign job error:', error);
+      logger.error({ err: error }, 'Assign job error');
       res.status(500).json({ error: 'Failed to assign job' });
     }
   }
@@ -892,7 +911,7 @@ router.patch(
           const body = resolveTemplate(template.body, variables);
           await sendThankYouEmail({ to: email, applicantName: `${firstName} ${lastName}`, subject, body });
         } catch (err) {
-          console.error('Thank-you email failed:', err);
+          logger.error({ err }, 'Thank-you email failed');
         }
       })();
 
@@ -914,7 +933,7 @@ router.patch(
               });
             }
           } catch (err) {
-            console.error('Subscriber notification failed:', err);
+            logger.error({ err }, 'Subscriber notification failed');
           }
         })();
       }
@@ -935,7 +954,7 @@ router.patch(
 
       res.json(updated);
     } catch (error) {
-      console.error('Mark not spam error:', error);
+      logger.error({ err: error }, 'Mark not spam error');
       res.status(500).json({ error: 'Failed to update applicant' });
     }
   }
@@ -998,7 +1017,7 @@ router.patch(
 
       res.json(applicant);
     } catch (error) {
-      console.error('Confirm spam error:', error);
+      logger.error({ err: error }, 'Confirm spam error');
       res.status(500).json({ error: 'Failed to update applicant' });
     }
   }
@@ -1024,7 +1043,7 @@ router.delete('/:id', authenticate, requireRole('admin', 'hiring_manager'), asyn
 
     res.json({ message: 'Applicant deleted successfully' });
   } catch (error) {
-    console.error('Delete applicant error:', error);
+    logger.error({ err: error }, 'Delete applicant error');
     res.status(500).json({ error: 'Failed to delete applicant' });
   }
 });

@@ -4,6 +4,7 @@ import { authenticate, requireRole, AuthRequest } from '../middleware/auth.js';
 import { getTemplate, sendReviewRequest } from '../services/email.js';
 import { validateBody } from '../middleware/validateBody.js';
 import { templateUpdateSchema, reviewerAssignmentSchema, subscriberSchema, requestReviewSchema } from '../schemas/index.js';
+import logger from '../lib/logger.js';
 
 const router = Router();
 
@@ -17,7 +18,7 @@ router.get(
       const templates = await prisma.emailTemplate.findMany();
       res.json(templates);
     } catch (error) {
-      console.error('Get templates error:', error);
+      logger.error({ err: error }, 'Get templates error');
       res.status(500).json({ error: 'Failed to fetch templates' });
     }
   }
@@ -30,7 +31,7 @@ router.get('/templates/:type', authenticate, async (req: AuthRequest, res: Respo
     const template = await getTemplate(type);
     res.json(template);
   } catch (error) {
-    console.error('Get template error:', error);
+    logger.error({ err: error }, 'Get template error');
     res.status(500).json({ error: 'Failed to fetch template' });
   }
 });
@@ -59,7 +60,7 @@ router.put(
 
       res.json(template);
     } catch (error) {
-      console.error('Upsert template error:', error);
+      logger.error({ err: error }, 'Upsert template error');
       res.status(500).json({ error: 'Failed to save template' });
     }
   }
@@ -78,7 +79,7 @@ router.get(
       });
       res.json(reviewers);
     } catch (error) {
-      console.error('Get reviewers error:', error);
+      logger.error({ err: error }, 'Get reviewers error');
       res.status(500).json({ error: 'Failed to fetch reviewers' });
     }
   }
@@ -97,7 +98,7 @@ router.get(
       });
       res.json(users);
     } catch (error) {
-      console.error('Get users error:', error);
+      logger.error({ err: error }, 'Get users error');
       res.status(500).json({ error: 'Failed to fetch users' });
     }
   }
@@ -119,7 +120,7 @@ router.get(
       });
       res.json(assignments);
     } catch (error) {
-      console.error('Get job reviewers error:', error);
+      logger.error({ err: error }, 'Get job reviewers error');
       res.status(500).json({ error: 'Failed to fetch job reviewers' });
     }
   }
@@ -153,7 +154,7 @@ router.put(
 
       res.json(result);
     } catch (error) {
-      console.error('Set job reviewers error:', error);
+      logger.error({ err: error }, 'Set job reviewers error');
       res.status(500).json({ error: 'Failed to save reviewer assignments' });
     }
   }
@@ -175,7 +176,7 @@ router.get(
       });
       res.json(subs);
     } catch (error) {
-      console.error('Get subscribers error:', error);
+      logger.error({ err: error }, 'Get subscribers error');
       res.status(500).json({ error: 'Failed to fetch subscribers' });
     }
   }
@@ -209,7 +210,7 @@ router.put(
 
       res.json(result);
     } catch (error) {
-      console.error('Set subscribers error:', error);
+      logger.error({ err: error }, 'Set subscribers error');
       res.status(500).json({ error: 'Failed to save subscribers' });
     }
   }
@@ -224,7 +225,7 @@ router.get('/my-assignments', authenticate, async (req: AuthRequest, res: Respon
     });
     res.json(assignments.map((a) => a.jobId));
   } catch (error) {
-    console.error('Get my assignments error:', error);
+    logger.error({ err: error }, 'Get my assignments error');
     res.status(500).json({ error: 'Failed to fetch assignments' });
   }
 });
@@ -283,7 +284,7 @@ router.post(
 
       res.json({ success: true, notified: recipients.length });
     } catch (error) {
-      console.error('Request review error:', error);
+      logger.error({ err: error }, 'Request review error');
       res.status(500).json({ error: 'Failed to send review requests' });
     }
   }
