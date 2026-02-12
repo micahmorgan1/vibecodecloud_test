@@ -415,14 +415,16 @@ export default function ApplicantDetail() {
               Send Rejection Letter
             </button>
           )}
+          {(user?.role === 'admin' || user?.role === 'hiring_manager' || (user?.role === 'reviewer' && applicant.event)) && (
+            <button
+              onClick={() => setShowEditModal(true)}
+              className="btn btn-secondary text-sm"
+            >
+              Edit Details
+            </button>
+          )}
           {(user?.role === 'admin' || user?.role === 'hiring_manager') && (
             <>
-              <button
-                onClick={() => setShowEditModal(true)}
-                className="btn btn-secondary text-sm"
-              >
-                Edit Details
-              </button>
               <button
                 onClick={() => setShowAssignJobModal(true)}
                 className="btn btn-secondary text-sm"
