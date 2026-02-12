@@ -32,7 +32,7 @@ app.set('trust proxy', true);
 
 // Security headers
 app.use(helmet({
-  contentSecurityPolicy: process.env.NODE_ENV === 'production' ? undefined : false,
+  contentSecurityPolicy: false, // Vite-built SPA uses inline scripts; CSP can be fine-tuned later
   crossOriginEmbedderPolicy: false,
 }));
 
