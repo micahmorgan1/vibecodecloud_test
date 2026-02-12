@@ -2,7 +2,10 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import prisma from '../db.js';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+if (!process.env.JWT_SECRET) {
+  throw new Error('FATAL: JWT_SECRET environment variable is required. Set it in .env or your hosting provider.');
+}
+const JWT_SECRET: string = process.env.JWT_SECRET;
 
 export interface AuthRequest extends Request {
   user?: {

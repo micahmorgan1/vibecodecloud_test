@@ -1,8 +1,13 @@
 import { PrismaClient } from '@prisma/client';
+import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import logger from './lib/logger.js';
 
 const prisma = new PrismaClient();
+
+function generateStrongPassword(): string {
+  return crypto.randomBytes(24).toString('base64url'); // 32-char random password
+}
 
 async function main() {
   logger.info('Seeding database...');
@@ -21,10 +26,25 @@ async function main() {
   await prisma.user.deleteMany();
   logger.info('Cleared existing data');
 
-  // Create users
-  const adminPassword = await bcrypt.hash('admin123', 10);
-  const managerPassword = await bcrypt.hash('manager123', 10);
-  const reviewerPassword = await bcrypt.hash('reviewer123', 10);
+  // Create users — read passwords from env vars, or generate strong random ones
+  const adminPw = process.env.SEED_ADMIN_PASSWORD || generateStrongPassword();
+  const managerPw = process.env.SEED_MANAGER_PASSWORD || generateStrongPassword();
+  const reviewerPw = process.env.SEED_REVIEWER_PASSWORD || generateStrongPassword();
+
+  // Log generated passwords so the admin can record them (only shown once at seed time)
+  if (!process.env.SEED_ADMIN_PASSWORD) {
+    logger.warn({ email: 'admin@archfirm.com', password: adminPw }, 'Generated admin password — save this now!');
+  }
+  if (!process.env.SEED_MANAGER_PASSWORD) {
+    logger.warn({ email: 'manager@archfirm.com', password: managerPw }, 'Generated manager password — save this now!');
+  }
+  if (!process.env.SEED_REVIEWER_PASSWORD) {
+    logger.warn({ email: 'reviewer@archfirm.com', password: reviewerPw }, 'Generated reviewer password — save this now!');
+  }
+
+  const adminPassword = await bcrypt.hash(adminPw, 10);
+  const managerPassword = await bcrypt.hash(managerPw, 10);
+  const reviewerPassword = await bcrypt.hash(reviewerPw, 10);
 
   const admin = await prisma.user.upsert({
     where: { email: 'admin@archfirm.com' },

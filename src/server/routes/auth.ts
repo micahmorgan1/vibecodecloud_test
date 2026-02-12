@@ -3,49 +3,16 @@ import bcrypt from 'bcryptjs';
 import prisma from '../db.js';
 import { generateToken, authenticate, AuthRequest } from '../middleware/auth.js';
 import { validateBody } from '../middleware/validateBody.js';
-import { loginSchema, registerSchema, passwordChangeSchema } from '../schemas/index.js';
+import { loginSchema, passwordChangeSchema } from '../schemas/index.js';
 import logger from '../lib/logger.js';
+import { logActivity } from '../services/activityLog.js';
 
 const router = Router();
 
-// Register a new user
-router.post('/register', validateBody(registerSchema), async (req: Request, res: Response) => {
-  try {
-    const { email, password, name, role } = req.body;
-
-    // Check if user already exists
-    const existingUser = await prisma.user.findUnique({ where: { email } });
-    if (existingUser) {
-      return res.status(400).json({ error: 'User already exists' });
-    }
-
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Create user
-    const user = await prisma.user.create({
-      data: {
-        email,
-        password: hashedPassword,
-        name,
-        role,
-      },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-      },
-    });
-
-    // Generate token
-    const token = generateToken(user);
-
-    res.status(201).json({ user, token });
-  } catch (error) {
-    logger.error({ err: error }, 'Registration error');
-    res.status(500).json({ error: 'Failed to register user' });
-  }
+// Public registration disabled — users are created by admins via /api/users
+// Kept as a 404 to avoid leaking that the endpoint once existed
+router.post('/register', (_req: Request, res: Response) => {
+  res.status(404).json({ error: 'Not found' });
 });
 
 // Login
@@ -53,15 +20,19 @@ router.post('/login', validateBody(loginSchema), async (req: Request, res: Respo
   try {
     const { email, password } = req.body;
 
+    const ip = req.ip || req.socket.remoteAddress || 'unknown';
+
     // Find user
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) {
+      logActivity('login_failed', { metadata: { email, ip, reason: 'unknown_email' } });
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
     // Verify password
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) {
+      logActivity('login_failed', { userId: user.id, metadata: { email, ip, reason: 'wrong_password' } });
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
@@ -72,6 +43,8 @@ router.post('/login', validateBody(loginSchema), async (req: Request, res: Respo
       role: user.role,
       tokenVersion: user.tokenVersion,
     });
+
+    logActivity('login_success', { userId: user.id, metadata: { email, ip } });
 
     res.json({
       user: {
@@ -135,8 +108,11 @@ router.put('/password', authenticate, validateBody(passwordChangeSchema), async 
       return res.status(404).json({ error: 'User not found' });
     }
 
+    const ip = req.ip || req.socket.remoteAddress || 'unknown';
+
     const validPassword = await bcrypt.compare(currentPassword, user.password);
     if (!validPassword) {
+      logActivity('password_change_failed', { userId: req.user!.id, metadata: { ip, reason: 'wrong_current_password' } });
       return res.status(401).json({ error: 'Current password is incorrect' });
     }
 
@@ -152,6 +128,8 @@ router.put('/password', authenticate, validateBody(passwordChangeSchema), async 
       role: updated.role,
       tokenVersion: updated.tokenVersion,
     });
+
+    logActivity('password_changed', { userId: req.user!.id, metadata: { ip } });
 
     res.json({ message: 'Password updated successfully', token });
   } catch (error) {

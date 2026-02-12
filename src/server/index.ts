@@ -38,7 +38,11 @@ app.use(helmet({
 // CORS — restrict origins in production/staging
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
-  : null; // null = allow all origins in development
+  : null;
+
+if (!allowedOrigins && process.env.NODE_ENV === 'production') {
+  logger.warn('ALLOWED_ORIGINS is not set — CORS will allow all origins. Set ALLOWED_ORIGINS in production.');
+}
 
 app.use(cors({
   origin: (origin, callback) => {
