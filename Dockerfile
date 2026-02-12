@@ -8,7 +8,7 @@ COPY package*.json ./
 COPY prisma ./prisma/
 
 # Install dependencies
-RUN npm ci
+RUN npm install
 
 # Copy source files
 COPY . .
@@ -27,7 +27,7 @@ WORKDIR /app
 # Copy package files and install production dependencies
 COPY package*.json ./
 COPY prisma ./prisma/
-RUN npm ci --only=production
+RUN npm install --omit=dev
 RUN npx prisma generate
 
 # Copy built files
