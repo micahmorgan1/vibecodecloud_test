@@ -10,6 +10,7 @@ interface DashboardStats {
   reviews: { total: number };
   events?: { total: number; upcoming: number };
   upcomingInterviews?: number;
+  spamCount?: number;
 }
 
 interface UpcomingEvent {
@@ -28,6 +29,8 @@ interface PipelineApplicant {
   email: string;
   createdAt: string;
   job: { id: string; title: string } | null;
+  interviews?: Array<{ id: string; scheduledAt: string; status: string }>;
+  offers?: Array<{ id: string; status: string; createdAt: string }>;
   _count: { reviews: number };
 }
 
@@ -35,6 +38,22 @@ interface PipelineStage {
   stage: string;
   count: number;
   applicants: PipelineApplicant[];
+}
+
+interface UpcomingInterview {
+  id: string;
+  scheduledAt: string;
+  type: string;
+  location: string | null;
+  applicant: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    job: { id: string; title: string } | null;
+  };
+  participants: Array<{ user: { id: string; name: string } }>;
+  createdBy: { id: string; name: string };
 }
 
 interface Activity {
@@ -69,6 +88,7 @@ export default function Dashboard() {
   const [activity, setActivity] = useState<Activity | null>(null);
   const [sourceAnalytics, setSourceAnalytics] = useState<SourceAnalytics | null>(null);
   const [upcomingEvents, setUpcomingEvents] = useState<UpcomingEvent[]>([]);
+  const [upcomingInterviews, setUpcomingInterviews] = useState<UpcomingInterview[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedStage, setExpandedStage] = useState<string | null>(null);
   const [draggedApplicant, setDraggedApplicant] = useState<{ id: string; fromStage: string } | null>(null);
@@ -90,6 +110,11 @@ export default function Dashboard() {
         setUpcomingEvents(eventsRes.data);
       })
       .finally(() => setLoading(false));
+
+    // Fetch separately so a failure doesn't block the entire dashboard
+    api.get<UpcomingInterview[]>('/dashboard/upcoming-interviews')
+      .then(res => setUpcomingInterviews(res.data))
+      .catch(() => {});
   }, []);
 
   const refreshPipeline = async () => {
@@ -162,95 +187,22 @@ export default function Dashboard() {
   return (
     <div className="space-y-8">
       {/* Page Header */}
-      <div>
-        <h1 className="text-3xl font-display font-bold text-gray-900 uppercase tracking-wide">Dashboard</h1>
-        <p className="text-gray-500 mt-1">Welcome back. Here's an overview of your recruiting pipeline.</p>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-        <div className="card">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-500">Open Jobs</p>
-              <p className="text-3xl font-display font-bold text-gray-900 mt-1">{stats?.jobs.open}</p>
-            </div>
-            <div className="w-12 h-12 bg-gray-100 rounded flex items-center justify-center">
-              <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-              </svg>
-            </div>
-          </div>
-          <Link to="/jobs" className="text-sm text-gray-900 hover:text-gray-600 mt-4 inline-block font-medium">
-            View all jobs &rarr;
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-3xl font-display font-bold text-gray-900 uppercase tracking-wide">Dashboard</h1>
+          <p className="text-gray-500 mt-1">Welcome back. Here's an overview of your recruiting pipeline.</p>
+        </div>
+        {(stats?.spamCount ?? 0) > 0 && (
+          <Link
+            to="/applicants?spam=true"
+            className="flex items-center gap-2 px-3 py-1.5 bg-red-50 border border-red-200 rounded text-sm text-red-700 hover:bg-red-100 transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+            {stats!.spamCount} spam
           </Link>
-        </div>
-
-        <div className="card">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-500">Total Applicants</p>
-              <p className="text-3xl font-display font-bold text-gray-900 mt-1">{stats?.applicants.total}</p>
-            </div>
-            <div className="w-12 h-12 bg-gray-100 rounded flex items-center justify-center">
-              <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-              </svg>
-            </div>
-          </div>
-          <Link to="/applicants" className="text-sm text-gray-900 hover:text-gray-600 mt-4 inline-block font-medium">
-            View all applicants &rarr;
-          </Link>
-        </div>
-
-        <div className="card">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-500">New Applicants</p>
-              <p className="text-3xl font-display font-bold text-gray-900 mt-1">{stats?.applicants.new}</p>
-            </div>
-            <div className="w-12 h-12 bg-gray-100 rounded flex items-center justify-center">
-              <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-              </svg>
-            </div>
-          </div>
-          <Link to="/applicants?stage=new" className="text-sm text-gray-900 hover:text-gray-600 mt-4 inline-block font-medium">
-            Review new applicants &rarr;
-          </Link>
-        </div>
-
-        <div className="card">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-500">In Review</p>
-              <p className="text-3xl font-display font-bold text-gray-900 mt-1">{stats?.applicants.inReview}</p>
-            </div>
-            <div className="w-12 h-12 bg-gray-100 rounded flex items-center justify-center">
-              <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-              </svg>
-            </div>
-          </div>
-          <p className="text-sm text-gray-500 mt-4">{stats?.reviews.total} total reviews</p>
-        </div>
-
-        <div className="card">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-500">Upcoming Interviews</p>
-              <p className="text-3xl font-display font-bold text-gray-900 mt-1">{stats?.upcomingInterviews ?? 0}</p>
-            </div>
-            <div className="w-12 h-12 bg-gray-100 rounded flex items-center justify-center">
-              <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-            </div>
-          </div>
-          <Link to="/applicants?stage=interview" className="text-sm text-gray-900 hover:text-gray-600 mt-4 inline-block font-medium">
-            View interviews &rarr;
-          </Link>
-        </div>
+        )}
       </div>
 
       {/* Pipeline Overview */}
@@ -281,6 +233,14 @@ export default function Dashboard() {
               <div className={`w-full h-2 ${stageColors[stage.stage]} rounded-full mb-2`}></div>
               <p className="text-2xl font-display font-bold text-gray-900">{stage.count}</p>
               <p className="text-sm text-gray-500">{stageLabels[stage.stage]}</p>
+              <svg
+                className={`w-4 h-4 mx-auto mt-1 text-gray-400 ${expandedStage === stage.stage ? 'scale-y-[-1]' : ''}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
             </div>
           ))}
         </div>
@@ -340,13 +300,46 @@ export default function Dashboard() {
                           </p>
                         </div>
                       </Link>
-                      <div className="text-right shrink-0 ml-4">
-                        <p className="text-xs text-gray-400">
-                          {new Date(applicant.createdAt).toLocaleDateString()}
-                        </p>
-                        <p className="text-xs text-gray-400">
-                          {applicant._count.reviews} review{applicant._count.reviews !== 1 ? 's' : ''}
-                        </p>
+                      <div className="flex items-center gap-3 shrink-0 ml-4">
+                        {(() => {
+                          const iv = applicant.interviews?.[0];
+                          if (!iv) return null;
+                          const isCompleted = iv.status === 'completed';
+                          const isScheduled = iv.status === 'scheduled';
+                          return (
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${
+                              isCompleted ? 'bg-green-100 text-green-800'
+                                : isScheduled ? 'bg-blue-100 text-blue-800'
+                                : 'bg-gray-100 text-gray-600'
+                            }`}>
+                              {isCompleted ? 'Interview Done' : isScheduled ? 'Interview ' + new Date(iv.scheduledAt).toLocaleDateString() : iv.status}
+                            </span>
+                          );
+                        })()}
+                        {(() => {
+                          const offer = applicant.offers?.[0];
+                          if (!offer) return null;
+                          const offerColors: Record<string, string> = {
+                            draft: 'bg-gray-100 text-gray-700',
+                            extended: 'bg-purple-100 text-purple-800',
+                            accepted: 'bg-green-100 text-green-800',
+                            declined: 'bg-red-100 text-red-800',
+                            rescinded: 'bg-orange-100 text-orange-800',
+                          };
+                          return (
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${offerColors[offer.status] || 'bg-gray-100 text-gray-600'}`}>
+                              Offer: {offer.status}
+                            </span>
+                          );
+                        })()}
+                        <div className="text-right">
+                          <p className="text-xs text-gray-400">
+                            {new Date(applicant.createdAt).toLocaleDateString()}
+                          </p>
+                          <p className="text-xs text-gray-400">
+                            {applicant._count.reviews} review{applicant._count.reviews !== 1 ? 's' : ''}
+                          </p>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -356,6 +349,103 @@ export default function Dashboard() {
           );
         })()}
       </div>
+
+      {/* Upcoming Interviews */}
+      {upcomingInterviews.length > 0 && (
+        <div className="card">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-display font-semibold text-gray-900 uppercase tracking-wide">Your Upcoming Interviews</h2>
+            <Link to="/applicants?stage=interview" className="text-sm text-gray-900 hover:text-gray-600 font-medium">
+              View all &rarr;
+            </Link>
+          </div>
+          <div className="space-y-2">
+            {upcomingInterviews.map((interview) => {
+              const typeLabels: Record<string, string> = { in_person: 'In Person', video: 'Video', phone: 'Phone' };
+              const date = new Date(interview.scheduledAt);
+              return (
+                <div
+                  key={interview.id}
+                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <Link
+                    to={`/applicants/${interview.applicant.id}`}
+                    className="flex items-center gap-3 min-w-0 flex-1"
+                  >
+                    <Avatar
+                      name={`${interview.applicant.firstName} ${interview.applicant.lastName}`}
+                      email={interview.applicant.email}
+                      size={40}
+                    />
+                    <div>
+                      <p className="font-medium text-gray-900">
+                        {interview.applicant.firstName} {interview.applicant.lastName}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {interview.applicant.job?.title || 'General Application'}
+                      </p>
+                    </div>
+                  </Link>
+                  <div className="flex items-center gap-4 text-right">
+                    <div>
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        {typeLabels[interview.type] || interview.type}
+                      </span>
+                      {interview.location && (
+                        <p className="text-xs text-gray-400 mt-0.5">{interview.location}</p>
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">
+                        {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                      </p>
+                    </div>
+                    <Link
+                      to={`/interviews/${interview.id}/live`}
+                      className="text-xs px-2.5 py-1 bg-gray-900 text-white rounded hover:bg-gray-700 transition-colors whitespace-nowrap"
+                    >
+                      Live Notes
+                    </Link>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Upcoming Events */}
+      {upcomingEvents.length > 0 && (
+        <div className="card">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-display font-semibold text-gray-900 uppercase tracking-wide">Upcoming Events</h2>
+            <Link to="/events" className="text-sm text-gray-900 hover:text-gray-600 font-medium">
+              View all &rarr;
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {upcomingEvents.map((event) => (
+              <Link
+                key={event.id}
+                to={`/events/${event.id}`}
+                className="p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                <p className="font-medium text-gray-900">{event.name}</p>
+                <p className="text-sm text-gray-500 mt-1">
+                  {new Date(event.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                  {event.location && ` — ${event.location}`}
+                </p>
+                <p className="text-sm text-gray-400 mt-2">
+                  {event._count.applicants} applicant{event._count.applicants !== 1 ? 's' : ''}
+                </p>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Recent Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -430,36 +520,6 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
-
-      {/* Upcoming Events */}
-      {upcomingEvents.length > 0 && (
-        <div className="card">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-display font-semibold text-gray-900 uppercase tracking-wide">Upcoming Events</h2>
-            <Link to="/events" className="text-sm text-gray-900 hover:text-gray-600 font-medium">
-              View all &rarr;
-            </Link>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {upcomingEvents.map((event) => (
-              <Link
-                key={event.id}
-                to={`/events/${event.id}`}
-                className="p-4 border rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                <p className="font-medium text-gray-900">{event.name}</p>
-                <p className="text-sm text-gray-500 mt-1">
-                  {new Date(event.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                  {event.location && ` — ${event.location}`}
-                </p>
-                <p className="text-sm text-gray-400 mt-2">
-                  {event._count.applicants} applicant{event._count.applicants !== 1 ? 's' : ''}
-                </p>
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Application Sources */}
       <div className="card">

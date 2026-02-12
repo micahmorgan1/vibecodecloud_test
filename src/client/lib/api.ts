@@ -57,7 +57,7 @@ class ApiClient {
     return this.request<T>('DELETE', endpoint);
   }
 
-  async upload<T>(endpoint: string, formData: FormData, method: 'POST' | 'PUT' = 'POST'): Promise<{ data: T }> {
+  async upload<T>(endpoint: string, formData: FormData, method: 'POST' | 'PUT' | 'PATCH' = 'POST'): Promise<{ data: T }> {
     const headers: HeadersInit = {};
     const token = localStorage.getItem('token');
     if (token) {

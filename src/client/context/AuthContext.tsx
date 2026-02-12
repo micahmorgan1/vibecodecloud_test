@@ -9,6 +9,7 @@ interface User {
   scopedDepartments?: string[] | null;
   scopedOffices?: string[] | null;
   eventAccess?: boolean;
+  offerAccess?: boolean;
 }
 
 interface AuthContextType {

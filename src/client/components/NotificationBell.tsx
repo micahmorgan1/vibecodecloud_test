@@ -33,6 +33,10 @@ const typeIcons: Record<string, string> = {
   review_request: '\u{1F4CB}',
   interview_scheduled: '\u{1F4C5}',
   interview_cancelled: '\u{274C}',
+  offer_extended: '\u{1F4E8}',
+  offer_accepted: '\u{2705}',
+  offer_declined: '\u{1F6AB}',
+  offer_rescinded: '\u{26A0}\u{FE0F}',
 };
 
 export default function NotificationBell() {

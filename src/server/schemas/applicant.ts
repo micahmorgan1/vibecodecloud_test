@@ -43,6 +43,8 @@ export const applicantUpdateSchema = z.object({
   website: z.string().trim().max(500).transform(stripHtml).optional().nullable(),
   portfolioUrl: z.string().trim().max(500).transform(stripHtml).optional().nullable(),
   coverLetter: z.string().max(10000).transform(sanitizeRichText).optional().nullable(),
+  source: z.string().trim().max(200).transform(stripHtml).optional().nullable(),
+  startDate: z.string().nullable().optional(),
 });
 
 export const stageUpdateSchema = z.object({

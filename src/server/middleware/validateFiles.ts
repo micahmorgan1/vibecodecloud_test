@@ -30,7 +30,9 @@ export async function validateUploadedFiles(req: Request, res: Response, next: N
 
   for (const [fieldname, fileArray] of Object.entries(files)) {
     for (const file of fileArray) {
-      const allowed = fieldname === 'resume' ? ALLOWED_RESUME_TYPES : ALLOWED_PORTFOLIO_TYPES;
+      const allowed = fieldname === 'resume' || fieldname === 'offerLetter'
+        ? ALLOWED_RESUME_TYPES
+        : ALLOWED_PORTFOLIO_TYPES;
 
       // Magic byte validation
       const detected = await fileTypeFromFile(file.path);

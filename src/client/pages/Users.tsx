@@ -20,6 +20,7 @@ interface User {
   scopedOffices: string[] | null;
   scopeMode: string;
   eventAccess: boolean;
+  offerAccess: boolean;
 }
 
 interface UserFormData {
@@ -32,6 +33,7 @@ interface UserFormData {
   scopeGlobal: boolean;
   scopeMode: string;
   eventAccess: boolean;
+  offerAccess: boolean;
 }
 
 const roles = [
@@ -76,6 +78,7 @@ export default function Users() {
     scopeGlobal: true,
     scopeMode: 'or',
     eventAccess: true,
+    offerAccess: false,
   });
   const [formError, setFormError] = useState('');
   const [departments, setDepartments] = useState<string[]>([]);
@@ -142,7 +145,7 @@ export default function Users() {
 
   const openCreateModal = () => {
     setEditingUser(null);
-    setFormData({ name: '', email: '', password: '', role: 'reviewer', scopedDepartments: [], scopedOffices: [], scopeGlobal: true, scopeMode: 'or', eventAccess: true });
+    setFormData({ name: '', email: '', password: '', role: 'reviewer', scopedDepartments: [], scopedOffices: [], scopeGlobal: true, scopeMode: 'or', eventAccess: true, offerAccess: false });
     setFormError('');
     fetchScopeOptions();
     setShowModal(true);
@@ -161,6 +164,7 @@ export default function Users() {
       scopeGlobal: isGlobal,
       scopeMode: user.scopeMode || 'or',
       eventAccess: user.eventAccess !== false,
+      offerAccess: user.offerAccess === true,
     });
     setFormError('');
     fetchScopeOptions();
@@ -183,8 +187,8 @@ export default function Users() {
         ? { scopedDepartments: formData.scopedDepartments, scopedOffices: formData.scopedOffices, scopeMode: formData.scopeMode }
         : { scopedDepartments: null, scopedOffices: null, scopeMode: 'or' };
       const eventAccessField = formData.role === 'hiring_manager'
-        ? { eventAccess: formData.eventAccess }
-        : { eventAccess: true };
+        ? { eventAccess: formData.eventAccess, offerAccess: formData.offerAccess }
+        : { eventAccess: true, offerAccess: false };
 
       if (editingUser) {
         const data: Record<string, unknown> = {
@@ -357,6 +361,9 @@ export default function Users() {
                           </div>
                           {user.eventAccess === false && (
                             <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-red-50 text-red-600 mt-1">No Events</span>
+                          )}
+                          {user.offerAccess === true && (
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-purple-50 text-purple-600 mt-1">Offers</span>
                           )}
                         </div>
                       ) : (
@@ -602,6 +609,22 @@ export default function Users() {
                     </label>
                     <p className="text-xs text-gray-400 mt-1">
                       When enabled, this hiring manager can see and manage all recruitment events. Notification preferences are managed separately in Settings.
+                    </p>
+                  </div>
+
+                  {/* Offer Access toggle */}
+                  <div className="border-t pt-3 mt-3">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={formData.offerAccess}
+                        onChange={(e) => setFormData({ ...formData, offerAccess: e.target.checked })}
+                        className="h-4 w-4 rounded border-gray-300"
+                      />
+                      <span className="text-sm text-gray-700 font-medium">Offer Access</span>
+                    </label>
+                    <p className="text-xs text-gray-400 mt-1">
+                      When enabled, this hiring manager can create, view, and manage offer letters for applicants.
                     </p>
                   </div>
                 </div>

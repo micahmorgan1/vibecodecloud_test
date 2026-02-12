@@ -98,6 +98,16 @@ router.get('/pipeline', authenticate, async (req: AuthRequest, res: Response) =>
             job: {
               select: { id: true, title: true },
             },
+            interviews: {
+              select: { id: true, scheduledAt: true, status: true },
+              orderBy: { scheduledAt: 'desc' },
+              take: 1,
+            },
+            offers: {
+              select: { id: true, status: true, createdAt: true },
+              orderBy: { createdAt: 'desc' },
+              take: 1,
+            },
             _count: {
               select: { reviews: true },
             },
@@ -281,6 +291,53 @@ router.get('/sources', authenticate, async (req: AuthRequest, res: Response) => 
   } catch (error) {
     logger.error({ err: error }, 'Get source analytics error');
     res.status(500).json({ error: 'Failed to fetch source analytics' });
+  }
+});
+
+// Get upcoming interviews for current user (as participant or creator)
+router.get('/upcoming-interviews', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user!.id;
+
+    const interviews = await prisma.interview.findMany({
+      where: {
+        status: 'scheduled',
+        scheduledAt: { gte: new Date() },
+        applicant: { spam: false },
+        OR: [
+          { createdById: userId },
+          { participants: { some: { userId } } },
+        ],
+      },
+      orderBy: { scheduledAt: 'asc' },
+      take: 10,
+      select: {
+        id: true,
+        scheduledAt: true,
+        type: true,
+        location: true,
+        applicant: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            job: { select: { id: true, title: true } },
+          },
+        },
+        participants: {
+          select: {
+            user: { select: { id: true, name: true } },
+          },
+        },
+        createdBy: { select: { id: true, name: true } },
+      },
+    });
+
+    res.json(interviews);
+  } catch (error) {
+    logger.error({ err: error }, 'Get upcoming interviews error');
+    res.status(500).json({ error: 'Failed to fetch upcoming interviews' });
   }
 });
 

@@ -13,6 +13,7 @@ export interface AuthRequest extends Request {
     scopedOffices?: string[] | null;
     scopeMode?: string;
     eventAccess?: boolean;
+    offerAccess?: boolean;
   };
 }
 
@@ -36,7 +37,7 @@ export async function authenticate(req: AuthRequest, res: Response, next: NextFu
     // Verify tokenVersion against DB (and fetch scope for HMs)
     const user = await prisma.user.findUnique({
       where: { id: decoded.id },
-      select: { tokenVersion: true, role: true, scopedDepartments: true, scopedOffices: true, scopeMode: true, eventAccess: true },
+      select: { tokenVersion: true, role: true, scopedDepartments: true, scopedOffices: true, scopeMode: true, eventAccess: true, offerAccess: true },
     });
     if (!user || (decoded.tokenVersion ?? 0) !== user.tokenVersion) {
       return res.status(401).json({ error: 'Token revoked' });
@@ -50,6 +51,7 @@ export async function authenticate(req: AuthRequest, res: Response, next: NextFu
       authUser!.scopedOffices = user.scopedOffices ? JSON.parse(user.scopedOffices) : null;
       authUser!.scopeMode = user.scopeMode;
       authUser!.eventAccess = user.eventAccess;
+      authUser!.offerAccess = user.offerAccess;
     }
 
     req.user = authUser;

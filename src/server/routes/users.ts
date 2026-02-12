@@ -17,15 +17,16 @@ function parseUserScope(user: { scopedDepartments: string | null; scopedOffices:
 }
 
 /** Convert scope arrays to JSON strings for DB storage. Clears to null for non-HM roles. */
-function scopeDataForRole(role: string | undefined, scopedDepartments?: string[] | null, scopedOffices?: string[] | null, scopeMode?: string, eventAccess?: boolean) {
+function scopeDataForRole(role: string | undefined, scopedDepartments?: string[] | null, scopedOffices?: string[] | null, scopeMode?: string, eventAccess?: boolean, offerAccess?: boolean) {
   if (role !== 'hiring_manager') {
-    return { scopedDepartments: null, scopedOffices: null, scopeMode: 'or', eventAccess: true };
+    return { scopedDepartments: null, scopedOffices: null, scopeMode: 'or', eventAccess: true, offerAccess: false };
   }
   return {
     scopedDepartments: scopedDepartments && scopedDepartments.length > 0 ? JSON.stringify(scopedDepartments) : null,
     scopedOffices: scopedOffices && scopedOffices.length > 0 ? JSON.stringify(scopedOffices) : null,
     scopeMode: scopeMode || 'or',
     eventAccess: eventAccess !== undefined ? eventAccess : true,
+    offerAccess: offerAccess !== undefined ? offerAccess : false,
   };
 }
 
@@ -49,7 +50,7 @@ router.get('/', authenticate, requireRole('admin'), async (req: AuthRequest, res
 
     const selectClause = {
       id: true, name: true, email: true, role: true, createdAt: true,
-      scopedDepartments: true, scopedOffices: true, scopeMode: true, eventAccess: true,
+      scopedDepartments: true, scopedOffices: true, scopeMode: true, eventAccess: true, offerAccess: true,
     };
 
     if (pagination) {
@@ -81,7 +82,7 @@ router.get('/', authenticate, requireRole('admin'), async (req: AuthRequest, res
 // Create a new user
 router.post('/', authenticate, requireRole('admin'), validateBody(userCreateSchema), async (req: AuthRequest, res: Response) => {
   try {
-    const { email, name, password, role, scopedDepartments, scopedOffices, scopeMode, eventAccess } = req.body;
+    const { email, name, password, role, scopedDepartments, scopedOffices, scopeMode, eventAccess, offerAccess } = req.body;
 
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
@@ -89,7 +90,7 @@ router.post('/', authenticate, requireRole('admin'), validateBody(userCreateSche
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const scopeData = scopeDataForRole(role, scopedDepartments, scopedOffices, scopeMode, eventAccess);
+    const scopeData = scopeDataForRole(role, scopedDepartments, scopedOffices, scopeMode, eventAccess, offerAccess);
 
     const user = await prisma.user.create({
       data: { email, name, password: hashedPassword, role, ...scopeData },
@@ -102,6 +103,7 @@ router.post('/', authenticate, requireRole('admin'), validateBody(userCreateSche
         scopedDepartments: true,
         scopedOffices: true,
         eventAccess: true,
+        offerAccess: true,
       },
     });
 
@@ -116,7 +118,7 @@ router.post('/', authenticate, requireRole('admin'), validateBody(userCreateSche
 router.put('/:id', authenticate, requireRole('admin'), validateBody(userUpdateSchema), async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
-    const { name, email, role, password, scopedDepartments, scopedOffices, scopeMode, eventAccess } = req.body;
+    const { name, email, role, password, scopedDepartments, scopedOffices, scopeMode, eventAccess, offerAccess } = req.body;
 
     const existing = await prisma.user.findUnique({ where: { id } });
     if (!existing) {
@@ -141,13 +143,14 @@ router.put('/:id', authenticate, requireRole('admin'), validateBody(userUpdateSc
 
     // Handle scope fields
     const effectiveRole = role || existing.role;
-    const scopeData = scopeDataForRole(effectiveRole, scopedDepartments, scopedOffices, scopeMode, eventAccess);
+    const scopeData = scopeDataForRole(effectiveRole, scopedDepartments, scopedOffices, scopeMode, eventAccess, offerAccess);
     // Only update scope if provided or role changed
-    if (scopedDepartments !== undefined || scopedOffices !== undefined || scopeMode !== undefined || eventAccess !== undefined || (role && role !== existing.role)) {
+    if (scopedDepartments !== undefined || scopedOffices !== undefined || scopeMode !== undefined || eventAccess !== undefined || offerAccess !== undefined || (role && role !== existing.role)) {
       updateData.scopedDepartments = scopeData.scopedDepartments;
       updateData.scopedOffices = scopeData.scopedOffices;
       updateData.scopeMode = scopeData.scopeMode;
       updateData.eventAccess = scopeData.eventAccess;
+      updateData.offerAccess = scopeData.offerAccess;
     }
 
     const user = await prisma.user.update({
@@ -162,6 +165,7 @@ router.put('/:id', authenticate, requireRole('admin'), validateBody(userUpdateSc
         scopedDepartments: true,
         scopedOffices: true,
         eventAccess: true,
+        offerAccess: true,
       },
     });
 

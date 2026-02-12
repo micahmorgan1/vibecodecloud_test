@@ -39,11 +39,26 @@ interface Interview {
   location: string | null;
   type: string;
   notes: string | null;
+  notesUrl: string | null;
   status: string;
   feedback: string | null;
   outcome: string | null;
   createdAt: string;
   participants: InterviewParticipant[];
+  createdBy: { id: string; name: string };
+}
+
+interface Offer {
+  id: string;
+  status: string;
+  filePath: string | null;
+  notes: string | null;
+  salary: string | null;
+  offerDate: string | null;
+  acceptedDate: string | null;
+  declinedDate: string | null;
+  createdAt: string;
+  updatedAt: string;
   createdBy: { id: string; name: string };
 }
 
@@ -77,6 +92,7 @@ interface Applicant {
   portfolioUrl: string | null;
   coverLetter: string | null;
   stage: string;
+  startDate: string | null;
   source: string | null;
   spam: boolean;
   spamReason: string | null;
@@ -86,6 +102,7 @@ interface Applicant {
   reviews: Review[];
   notes: Note[];
   interviews: Interview[];
+  offers: Offer[];
 }
 
 const stages = ['fair_intake', 'new', 'screening', 'interview', 'offer', 'hired', 'rejected', 'holding'];
@@ -125,6 +142,8 @@ export default function ApplicantDetail() {
   const [editingInterview, setEditingInterview] = useState<Interview | null>(null);
   const [feedbackInterview, setFeedbackInterview] = useState<Interview | null>(null);
   const [detailInterview, setDetailInterview] = useState<Interview | null>(null);
+  const [showOfferModal, setShowOfferModal] = useState(false);
+  const [editingOffer, setEditingOffer] = useState<Offer | null>(null);
 
   useEffect(() => {
     if (id) {
@@ -372,6 +391,10 @@ export default function ApplicantDetail() {
                       ? 'bg-red-500 text-white'
                       : stage === 'hired'
                       ? 'bg-black text-white'
+                      : stage === 'fair_intake'
+                      ? 'bg-teal-600 text-white'
+                      : stage === 'holding'
+                      ? 'bg-yellow-500 text-white'
                       : 'bg-gray-900 text-white'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
@@ -530,6 +553,29 @@ export default function ApplicantDetail() {
             )}
           </div>
 
+          {/* Start Date — shown when hired */}
+          {applicant.stage === 'hired' && (user?.role === 'admin' || user?.role === 'hiring_manager') && (
+            <div className="card bg-green-50 border border-green-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-display font-semibold text-gray-900 uppercase tracking-wide">Start Date</h2>
+                  {applicant.startDate ? (
+                    <p className="text-green-800 font-medium mt-1">
+                      {new Date(applicant.startDate).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                    </p>
+                  ) : (
+                    <p className="text-gray-500 text-sm mt-1">No start date set</p>
+                  )}
+                </div>
+                <StartDatePicker
+                  applicantId={applicant.id}
+                  currentDate={applicant.startDate}
+                  onSaved={fetchApplicant}
+                />
+              </div>
+            </div>
+          )}
+
           {/* Interviews */}
           <div className="card">
             <div className="flex items-center justify-between mb-4">
@@ -589,7 +635,15 @@ export default function ApplicantDetail() {
                           </div>
                         </div>
                         <div className="flex gap-1">
-                          {isParticipant && interview.status === 'completed' && !myParticipant?.feedback && (
+                          {interview.status === 'scheduled' && (
+                            <Link
+                              to={`/interviews/${interview.id}/live`}
+                              className="text-xs px-2 py-1 bg-gray-900 text-white rounded hover:bg-gray-700 transition-colors"
+                            >
+                              Live Notes
+                            </Link>
+                          )}
+                          {isParticipant && (interview.status === 'scheduled' || interview.status === 'completed') && !myParticipant?.feedback && (
                             <button
                               onClick={() => setFeedbackInterview(interview)}
                               className="text-xs px-2 py-1 bg-gray-900 text-white rounded hover:bg-gray-700 transition-colors"
@@ -625,6 +679,93 @@ export default function ApplicantDetail() {
               </div>
             )}
           </div>
+
+          {/* Offers — hidden for reviewers and HMs without offerAccess */}
+          {(user?.role === 'admin' || (user?.role === 'hiring_manager' && user?.offerAccess)) && (
+            <div className="card">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-display font-semibold text-gray-900 uppercase tracking-wide">
+                  Offers ({applicant.offers?.length || 0})
+                </h2>
+                <button
+                  onClick={() => { setEditingOffer(null); setShowOfferModal(true); }}
+                  className="btn btn-primary text-sm"
+                >
+                  Create Offer
+                </button>
+              </div>
+              {(!applicant.offers || applicant.offers.length === 0) ? (
+                <p className="text-gray-500 text-center py-4">No offers yet</p>
+              ) : (
+                <div className="space-y-3">
+                  {applicant.offers.map((offer) => {
+                    const statusColors: Record<string, string> = {
+                      draft: 'bg-gray-100 text-gray-700',
+                      extended: 'bg-purple-100 text-purple-800',
+                      accepted: 'bg-green-100 text-green-800',
+                      declined: 'bg-red-100 text-red-800',
+                      rescinded: 'bg-orange-100 text-orange-800',
+                    };
+                    return (
+                      <div key={offer.id} className="p-4 bg-gray-50 rounded border border-gray-100">
+                        <div className="flex items-start justify-between mb-2">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${statusColors[offer.status] || 'bg-gray-100 text-gray-700'}`}>
+                                {offer.status}
+                              </span>
+                              {offer.salary && (
+                                <span className="text-sm text-gray-600">{offer.salary}</span>
+                              )}
+                              {offer.offerDate && (
+                                <span className="text-xs text-gray-500">
+                                  Offered {new Date(offer.offerDate).toLocaleDateString()}
+                                </span>
+                              )}
+                              {offer.acceptedDate && (
+                                <span className="text-xs text-green-600">
+                                  Accepted {new Date(offer.acceptedDate).toLocaleDateString()}
+                                </span>
+                              )}
+                              {offer.declinedDate && (
+                                <span className="text-xs text-red-600">
+                                  Declined {new Date(offer.declinedDate).toLocaleDateString()}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs text-gray-400 mt-1">
+                              Created by {offer.createdBy.name} on {new Date(offer.createdAt).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <div className="flex gap-1">
+                            {offer.filePath && (
+                              <a
+                                href={offer.filePath}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
+                              >
+                                Download
+                              </a>
+                            )}
+                            <button
+                              onClick={() => { setEditingOffer(offer); setShowOfferModal(true); }}
+                              className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
+                            >
+                              Edit
+                            </button>
+                          </div>
+                        </div>
+                        {offer.notes && (
+                          <div className="text-sm text-gray-600 mt-2" dangerouslySetInnerHTML={{ __html: offer.notes }} />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Reviews */}
           <div className="card">
@@ -993,6 +1134,21 @@ export default function ApplicantDetail() {
         <InterviewDetailModal
           interview={detailInterview}
           onClose={() => setDetailInterview(null)}
+        />
+      )}
+
+      {/* Offer Modal */}
+      {showOfferModal && (
+        <OfferModal
+          applicantId={applicant.id}
+          existingOffer={editingOffer || undefined}
+          onClose={() => { setShowOfferModal(false); setEditingOffer(null); }}
+          onSaved={() => {
+            setShowOfferModal(false);
+            setEditingOffer(null);
+            fetchApplicant();
+            fetchActivity();
+          }}
         />
       )}
 
@@ -1640,6 +1796,7 @@ function EditApplicantModal({
   const [website, setWebsite] = useState(applicant.website || '');
   const [portfolioUrl, setPortfolioUrl] = useState(applicant.portfolioUrl || '');
   const [coverLetter, setCoverLetter] = useState(applicant.coverLetter || '');
+  const [source, setSource] = useState(applicant.source || '');
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [portfolioFile, setPortfolioFile] = useState<File | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -1692,6 +1849,7 @@ function EditApplicantModal({
       if (website) fd.append('website', website);
       if (portfolioUrl) fd.append('portfolioUrl', portfolioUrl);
       if (coverLetter) fd.append('coverLetter', coverLetter);
+      if (source) fd.append('source', source);
       if (resumeFile) fd.append('resume', resumeFile);
       if (portfolioFile) fd.append('portfolio', portfolioFile);
 
@@ -1816,6 +1974,17 @@ function EditApplicantModal({
               value={coverLetter}
               onChange={(e) => setCoverLetter(e.target.value)}
               className="input min-h-[100px]"
+            />
+          </div>
+
+          <div>
+            <label className="label">Source</label>
+            <input
+              type="text"
+              value={source}
+              onChange={(e) => setSource(e.target.value)}
+              className="input"
+              placeholder="e.g. LinkedIn, Career Fair, Referral, Website..."
             />
           </div>
 
@@ -1991,6 +2160,7 @@ function ScheduleInterviewModal({
   });
   const [type, setType] = useState(existingInterview?.type || 'in_person');
   const [location, setLocation] = useState(existingInterview?.location || '');
+  const [notesUrl, setNotesUrl] = useState(existingInterview?.notesUrl || '');
   const [notes, setNotes] = useState(existingInterview?.notes || '');
   const [status, setStatus] = useState(existingInterview?.status || 'scheduled');
   const [outcome, setOutcome] = useState(existingInterview?.outcome || '');
@@ -2040,6 +2210,7 @@ function ScheduleInterviewModal({
           scheduledAt: new Date(scheduledAt).toISOString(),
           type,
           location: location || null,
+          notesUrl: notesUrl || null,
           notes: notes || null,
           status,
           outcome: outcome || null,
@@ -2052,6 +2223,7 @@ function ScheduleInterviewModal({
           scheduledAt: new Date(scheduledAt).toISOString(),
           type,
           location: location || null,
+          notesUrl: notesUrl || null,
           notes: notes || null,
           participantIds: Array.from(participantIds),
         });
@@ -2129,6 +2301,17 @@ function ScheduleInterviewModal({
                 placeholder="Office, Zoom link, etc."
               />
             </div>
+          </div>
+
+          <div>
+            <label className="label">Meeting Notes URL</label>
+            <input
+              type="url"
+              value={notesUrl}
+              onChange={(e) => setNotesUrl(e.target.value)}
+              className="input"
+              placeholder="OneNote, Google Docs, etc."
+            />
           </div>
 
           {isEdit && (
@@ -2405,6 +2588,21 @@ function InterviewDetailModal({
                 <dd className="font-medium">{interview.location}</dd>
               </div>
             )}
+            {interview.notesUrl && (
+              <div className="col-span-2">
+                <dt className="text-sm text-gray-500">Meeting Notes</dt>
+                <dd>
+                  <a
+                    href={interview.notesUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-gray-900 hover:text-gray-600 font-medium"
+                  >
+                    Open Notes Link &rarr;
+                  </a>
+                </dd>
+              </div>
+            )}
             <div className="col-span-2">
               <dt className="text-sm text-gray-500">Scheduled by</dt>
               <dd className="font-medium">{interview.createdBy.name}</dd>
@@ -2466,6 +2664,286 @@ function InterviewDetailModal({
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function OfferModal({
+  applicantId,
+  existingOffer,
+  onClose,
+  onSaved,
+}: {
+  applicantId: string;
+  existingOffer?: Offer;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [status, setStatus] = useState(existingOffer?.status || 'draft');
+  const [salary, setSalary] = useState(existingOffer?.salary || '');
+  const [offerDate, setOfferDate] = useState(
+    existingOffer?.offerDate ? existingOffer.offerDate.split('T')[0] : ''
+  );
+  const [acceptedDate, setAcceptedDate] = useState(
+    existingOffer?.acceptedDate ? existingOffer.acceptedDate.split('T')[0] : ''
+  );
+  const [declinedDate, setDeclinedDate] = useState(
+    existingOffer?.declinedDate ? existingOffer.declinedDate.split('T')[0] : ''
+  );
+  const [notes, setNotes] = useState(existingOffer?.notes || '');
+  const [file, setFile] = useState<File | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [deleting, setDeleting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    setError('');
+
+    try {
+      if (existingOffer) {
+        // Update offer
+        await api.put(`/offers/${existingOffer.id}`, {
+          status,
+          notes: notes || undefined,
+          salary: salary || undefined,
+          offerDate: offerDate || null,
+          acceptedDate: acceptedDate || null,
+          declinedDate: declinedDate || null,
+        });
+        // Upload file separately if provided
+        if (file) {
+          const formData = new FormData();
+          formData.append('offerLetter', file);
+          await api.upload(`/offers/${existingOffer.id}/upload`, formData, 'PATCH');
+        }
+      } else {
+        // Create offer — always use FormData so multer middleware works
+        const formData = new FormData();
+        formData.append('status', status);
+        if (notes) formData.append('notes', notes);
+        if (salary) formData.append('salary', salary);
+        if (offerDate) formData.append('offerDate', offerDate);
+        if (acceptedDate) formData.append('acceptedDate', acceptedDate);
+        if (declinedDate) formData.append('declinedDate', declinedDate);
+        if (file) formData.append('offerLetter', file);
+        await api.upload(`/offers/applicant/${applicantId}`, formData);
+      }
+      onSaved();
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to save offer';
+      setError(message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!existingOffer) return;
+    setDeleting(true);
+    try {
+      await api.delete(`/offers/${existingOffer.id}`);
+      onSaved();
+    } catch {
+      setError('Failed to delete offer');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+        <div className="p-6">
+          <h2 className="text-lg font-display font-semibold text-gray-900 mb-4 uppercase tracking-wide">
+            {existingOffer ? 'Edit Offer' : 'Create Offer'}
+          </h2>
+
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-sm text-red-600">
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="label">Status</label>
+              <select
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+                className="input"
+              >
+                <option value="draft">Draft</option>
+                <option value="extended">Extended</option>
+                <option value="accepted">Accepted</option>
+                <option value="declined">Declined</option>
+                <option value="rescinded">Rescinded</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="label">Salary / Compensation</label>
+              <input
+                type="text"
+                value={salary}
+                onChange={(e) => setSalary(e.target.value)}
+                placeholder="e.g. $75,000/year"
+                className="input"
+              />
+            </div>
+
+            <div>
+              <label className="label">Offer Date</label>
+              <input
+                type="date"
+                value={offerDate}
+                onChange={(e) => setOfferDate(e.target.value)}
+                className="input"
+              />
+            </div>
+
+            {(status === 'accepted' || acceptedDate) && (
+              <div>
+                <label className="label">Accepted Date</label>
+                <input
+                  type="date"
+                  value={acceptedDate}
+                  onChange={(e) => setAcceptedDate(e.target.value)}
+                  className="input"
+                />
+              </div>
+            )}
+
+            {(status === 'declined' || declinedDate) && (
+              <div>
+                <label className="label">Declined Date</label>
+                <input
+                  type="date"
+                  value={declinedDate}
+                  onChange={(e) => setDeclinedDate(e.target.value)}
+                  className="input"
+                />
+              </div>
+            )}
+
+            <div>
+              <label className="label">Notes</label>
+              <textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                rows={3}
+                placeholder="Negotiation details, revision notes..."
+                className="input"
+              />
+            </div>
+
+            <div>
+              <label className="label">
+                Offer Letter {existingOffer?.filePath ? '(replace)' : '(optional)'}
+              </label>
+              <input
+                type="file"
+                accept=".pdf,.doc,.docx"
+                onChange={(e) => setFile(e.target.files?.[0] || null)}
+                className="input text-sm"
+              />
+              {existingOffer?.filePath && !file && (
+                <p className="text-xs text-gray-500 mt-1">
+                  Current file: <a href={existingOffer.filePath} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">View</a>
+                </p>
+              )}
+            </div>
+
+            <div className="flex justify-between items-center pt-4">
+              <div>
+                {existingOffer && (
+                  <button
+                    type="button"
+                    onClick={handleDelete}
+                    disabled={deleting}
+                    className="text-sm text-red-600 hover:text-red-800"
+                  >
+                    {deleting ? 'Deleting...' : 'Delete Offer'}
+                  </button>
+                )}
+              </div>
+              <div className="flex gap-3">
+                <button type="button" onClick={onClose} className="btn btn-secondary">
+                  Cancel
+                </button>
+                <button type="submit" disabled={saving} className="btn btn-primary">
+                  {saving ? 'Saving...' : existingOffer ? 'Update Offer' : 'Create Offer'}
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function StartDatePicker({
+  applicantId,
+  currentDate,
+  onSaved,
+}: {
+  applicantId: string;
+  currentDate: string | null;
+  onSaved: () => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [date, setDate] = useState(currentDate ? currentDate.split('T')[0] : '');
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await api.put(`/applicants/${applicantId}`, {
+        startDate: date || null,
+      });
+      onSaved();
+      setEditing(false);
+    } catch {
+      // ignore
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (!editing) {
+    return (
+      <button
+        onClick={() => setEditing(true)}
+        className="text-sm text-blue-600 hover:text-blue-800"
+      >
+        {currentDate ? 'Change' : 'Set Date'}
+      </button>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <input
+        type="date"
+        value={date}
+        onChange={(e) => setDate(e.target.value)}
+        className="input text-sm py-1"
+      />
+      <button
+        onClick={handleSave}
+        disabled={saving}
+        className="btn btn-primary text-sm py-1 px-3"
+      >
+        {saving ? '...' : 'Save'}
+      </button>
+      <button
+        onClick={() => { setEditing(false); setDate(currentDate ? currentDate.split('T')[0] : ''); }}
+        className="text-sm text-gray-500 hover:text-gray-700"
+      >
+        Cancel
+      </button>
     </div>
   );
 }

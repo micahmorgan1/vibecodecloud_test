@@ -53,7 +53,7 @@ router.post(
   async (req: AuthRequest, res: Response) => {
     try {
       const { applicantId } = req.params;
-      const { scheduledAt, location, type, notes, participantIds } = req.body;
+      const { scheduledAt, location, type, notes, notesUrl, participantIds } = req.body;
 
       // Verify applicant exists
       const applicant = await prisma.applicant.findUnique({
@@ -76,6 +76,7 @@ router.post(
             location: location || null,
             type,
             notes: notes || null,
+            notesUrl: notesUrl || null,
             createdById: req.user!.id,
             participants: {
               create: participantIds.map((userId: string) => ({ userId })),
@@ -166,7 +167,7 @@ router.post(
   }
 );
 
-// Get single interview detail
+// Get single interview detail (expanded for live notes page)
 router.get('/:id', authenticate, async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
@@ -178,7 +179,33 @@ router.get('/:id', authenticate, async (req: AuthRequest, res: Response) => {
           include: { user: { select: userSelect } },
         },
         createdBy: { select: { id: true, name: true } },
-        applicant: { select: { id: true, firstName: true, lastName: true, jobId: true } },
+        applicant: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            phone: true,
+            linkedIn: true,
+            resumePath: true,
+            portfolioPath: true,
+            portfolioUrl: true,
+            stage: true,
+            jobId: true,
+            job: { select: { id: true, title: true, department: true, location: true } },
+            event: { select: { id: true, name: true } },
+            reviews: {
+              select: {
+                id: true,
+                rating: true,
+                recommendation: true,
+                comments: true,
+                reviewer: { select: { id: true, name: true } },
+              },
+              orderBy: { createdAt: 'desc' as const },
+            },
+          },
+        },
       },
     });
 
@@ -186,16 +213,19 @@ router.get('/:id', authenticate, async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ error: 'Interview not found' });
     }
 
-    // Access control via applicant
-    const accessFilter = await getAccessibleApplicantFilter(req.user!);
-    if (accessFilter.id === 'none') {
-      return res.status(404).json({ error: 'Interview not found' });
-    }
-    const accessCheck = await prisma.applicant.findFirst({
-      where: { id: interview.applicantId, ...accessFilter },
-    });
-    if (!accessCheck) {
-      return res.status(404).json({ error: 'Interview not found' });
+    // Access control: check applicant access OR participant membership
+    const isParticipant = interview.participants.some(p => p.userId === req.user!.id);
+    if (!isParticipant) {
+      const accessFilter = await getAccessibleApplicantFilter(req.user!);
+      if (accessFilter.id === 'none') {
+        return res.status(404).json({ error: 'Interview not found' });
+      }
+      const accessCheck = await prisma.applicant.findFirst({
+        where: { id: interview.applicantId, ...accessFilter },
+      });
+      if (!accessCheck) {
+        return res.status(404).json({ error: 'Interview not found' });
+      }
     }
 
     res.json(interview);
@@ -214,7 +244,7 @@ router.put(
   async (req: AuthRequest, res: Response) => {
     try {
       const { id } = req.params;
-      const { scheduledAt, location, type, notes, status, feedback, outcome, participantIds } = req.body;
+      const { scheduledAt, location, type, notes, notesUrl, status, feedback, outcome, participantIds } = req.body;
 
       const existing = await prisma.interview.findUnique({
         where: { id },
@@ -240,6 +270,7 @@ router.put(
         if (location !== undefined) updateData.location = location || null;
         if (type !== undefined) updateData.type = type;
         if (notes !== undefined) updateData.notes = notes || null;
+        if (notesUrl !== undefined) updateData.notesUrl = notesUrl || null;
         if (status !== undefined) updateData.status = status;
         if (feedback !== undefined) updateData.feedback = feedback || null;
         if (outcome !== undefined) updateData.outcome = outcome || null;

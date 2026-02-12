@@ -36,6 +36,7 @@ export const userCreateSchema = z.object({
   scopedOffices: scopeArraySchema,
   scopeMode: z.enum(['or', 'and']).default('or'),
   eventAccess: z.boolean().optional(),
+  offerAccess: z.boolean().optional(),
 });
 
 export const userUpdateSchema = z.object({
@@ -47,4 +48,5 @@ export const userUpdateSchema = z.object({
   scopedOffices: scopeArraySchema,
   scopeMode: z.enum(['or', 'and']).optional(),
   eventAccess: z.boolean().optional(),
+  offerAccess: z.boolean().optional(),
 });

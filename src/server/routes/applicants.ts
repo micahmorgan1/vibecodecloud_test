@@ -81,6 +81,16 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
           },
         },
       },
+      interviews: {
+        select: { id: true, scheduledAt: true, status: true, type: true },
+        orderBy: { scheduledAt: 'desc' as const },
+        take: 1,
+      },
+      offers: {
+        select: { id: true, status: true, createdAt: true },
+        orderBy: { createdAt: 'desc' as const },
+        take: 1,
+      },
       _count: {
         select: { reviews: true, notes: true },
       },
@@ -340,6 +350,12 @@ router.get('/:id', authenticate, async (req: AuthRequest, res: Response) => {
             createdBy: { select: { id: true, name: true } },
           },
           orderBy: { scheduledAt: 'desc' },
+        },
+        offers: {
+          include: {
+            createdBy: { select: { id: true, name: true } },
+          },
+          orderBy: { createdAt: 'desc' },
         },
       },
     });
@@ -737,17 +753,27 @@ router.delete(
 
       const ids = spamApplicants.map((a) => a.id);
 
+      // Collect offer file paths before deletion
+      const offerFiles = await prisma.offer.findMany({
+        where: { applicantId: { in: ids } },
+        select: { filePath: true },
+      });
+
       await prisma.$transaction(async (tx) => {
         await tx.activityLog.deleteMany({ where: { applicantId: { in: ids } } });
         await tx.interviewParticipant.deleteMany({ where: { interview: { applicantId: { in: ids } } } });
         await tx.interview.deleteMany({ where: { applicantId: { in: ids } } });
+        await tx.offer.deleteMany({ where: { applicantId: { in: ids } } });
         await tx.review.deleteMany({ where: { applicantId: { in: ids } } });
         await tx.note.deleteMany({ where: { applicantId: { in: ids } } });
         await tx.applicant.deleteMany({ where: { id: { in: ids } } });
       });
 
       // Fire-and-forget: clean up uploaded files
-      const filePaths = spamApplicants.flatMap((a) => [a.resumePath, a.portfolioPath]);
+      const filePaths = [
+        ...spamApplicants.flatMap((a) => [a.resumePath, a.portfolioPath]),
+        ...offerFiles.map((o) => o.filePath),
+      ];
       deleteUploadedFiles(filePaths).catch(() => {});
 
       res.json({ message: `${spamApplicants.length} spam applicant(s) deleted`, count: spamApplicants.length });
@@ -775,17 +801,27 @@ router.post(
 
       const foundIds = applicants.map((a) => a.id);
 
+      // Collect offer file paths before deletion
+      const offerFiles = await prisma.offer.findMany({
+        where: { applicantId: { in: foundIds } },
+        select: { filePath: true },
+      });
+
       await prisma.$transaction(async (tx) => {
         await tx.activityLog.deleteMany({ where: { applicantId: { in: foundIds } } });
         await tx.interviewParticipant.deleteMany({ where: { interview: { applicantId: { in: foundIds } } } });
         await tx.interview.deleteMany({ where: { applicantId: { in: foundIds } } });
+        await tx.offer.deleteMany({ where: { applicantId: { in: foundIds } } });
         await tx.review.deleteMany({ where: { applicantId: { in: foundIds } } });
         await tx.note.deleteMany({ where: { applicantId: { in: foundIds } } });
         await tx.applicant.deleteMany({ where: { id: { in: foundIds } } });
       });
 
       // Fire-and-forget: clean up uploaded files
-      const filePaths = applicants.flatMap((a) => [a.resumePath, a.portfolioPath]);
+      const filePaths = [
+        ...applicants.flatMap((a) => [a.resumePath, a.portfolioPath]),
+        ...offerFiles.map((o) => o.filePath),
+      ];
       deleteUploadedFiles(filePaths).catch(() => {});
 
       res.json({ message: `${foundIds.length} applicant(s) deleted`, count: foundIds.length });
@@ -857,6 +893,8 @@ router.put('/:id', authenticate, uploadApplicationFiles, validateUploadedFiles, 
       website,
       portfolioUrl,
       coverLetter,
+      source,
+      startDate,
     } = req.body;
 
     // Access control
@@ -875,6 +913,8 @@ router.put('/:id', authenticate, uploadApplicationFiles, validateUploadedFiles, 
     if (website !== undefined) updateData.website = website;
     if (portfolioUrl !== undefined) updateData.portfolioUrl = portfolioUrl;
     if (coverLetter !== undefined) updateData.coverLetter = coverLetter;
+    if (source !== undefined) updateData.source = source;
+    if (startDate !== undefined) updateData.startDate = startDate ? new Date(startDate) : null;
 
     // Handle uploaded files
     const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
@@ -1337,16 +1377,24 @@ router.delete('/:id', authenticate, requireRole('admin', 'hiring_manager'), asyn
       return res.status(404).json({ error: 'Applicant not found' });
     }
 
+    // Collect offer file paths before deletion
+    const offerFiles = await prisma.offer.findMany({
+      where: { applicantId: id },
+      select: { filePath: true },
+    });
+
     // Delete related records first
     await prisma.activityLog.deleteMany({ where: { applicantId: id } });
     await prisma.interviewParticipant.deleteMany({ where: { interview: { applicantId: id } } });
     await prisma.interview.deleteMany({ where: { applicantId: id } });
+    await prisma.offer.deleteMany({ where: { applicantId: id } });
     await prisma.review.deleteMany({ where: { applicantId: id } });
     await prisma.note.deleteMany({ where: { applicantId: id } });
     await prisma.applicant.delete({ where: { id } });
 
     // Fire-and-forget: clean up uploaded files
-    deleteUploadedFiles([applicant.resumePath, applicant.portfolioPath]).catch(() => {});
+    const filePaths = [applicant.resumePath, applicant.portfolioPath, ...offerFiles.map(o => o.filePath)];
+    deleteUploadedFiles(filePaths).catch(() => {});
 
     res.json({ message: 'Applicant deleted successfully' });
   } catch (error) {

@@ -52,19 +52,19 @@ h1, h2, h3, h4, h5, h6 {
   }
 
   .badge-new {
-    @apply bg-gray-200 text-gray-800;
+    @apply bg-gray-100 text-gray-600;
   }
 
   .badge-screening {
-    @apply bg-gray-300 text-gray-900;
+    @apply bg-gray-100 text-gray-600;
   }
 
   .badge-interview {
-    @apply bg-gray-400 text-white;
+    @apply bg-gray-100 text-gray-600;
   }
 
   .badge-offer {
-    @apply bg-gray-600 text-white;
+    @apply bg-gray-100 text-gray-600;
   }
 
   .badge-hired {

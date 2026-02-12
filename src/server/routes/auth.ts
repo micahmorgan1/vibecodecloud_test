@@ -103,6 +103,7 @@ router.get('/me', authenticate, async (req: AuthRequest, res: Response) => {
         scopedOffices: true,
         scopeMode: true,
         eventAccess: true,
+        offerAccess: true,
       },
     });
 

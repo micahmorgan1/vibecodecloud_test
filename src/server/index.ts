@@ -16,6 +16,7 @@ import eventRoutes from './routes/events.js';
 import siteSettingsRoutes from './routes/siteSettings.js';
 import notificationRoutes from './routes/notifications.js';
 import interviewRoutes from './routes/interviews.js';
+import offerRoutes from './routes/offers.js';
 import logger from './lib/logger.js';
 import { requestLogger } from './middleware/requestLogger.js';
 
@@ -119,6 +120,7 @@ app.use('/api/events', eventRoutes);
 app.use('/api/settings', siteSettingsRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/interviews', interviewRoutes);
+app.use('/api/offers', offerRoutes);
 
 // Health check
 app.get('/api/health', (_req, res) => {

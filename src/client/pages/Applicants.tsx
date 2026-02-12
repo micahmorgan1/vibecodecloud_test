@@ -7,6 +7,19 @@ import Avatar from '../components/Avatar';
 import Pagination from '../components/Pagination';
 import { PaginatedResponse, isPaginated } from '../lib/pagination';
 
+interface ApplicantInterview {
+  id: string;
+  scheduledAt: string;
+  status: string;
+  type: string;
+}
+
+interface ApplicantOffer {
+  id: string;
+  status: string;
+  createdAt: string;
+}
+
 interface Applicant {
   id: string;
   firstName: string;
@@ -20,6 +33,8 @@ interface Applicant {
   job: { id: string; title: string; department: string; archived: boolean } | null;
   event: { id: string; name: string } | null;
   reviews: Array<{ rating: number }>;
+  interviews?: ApplicantInterview[];
+  offers?: ApplicantOffer[];
   _count: { reviews: number; notes: number };
 }
 
@@ -69,7 +84,7 @@ export default function Applicants() {
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [portfolioFile, setPortfolioFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [showSpam, setShowSpam] = useState(false);
+  const [showSpam, setShowSpam] = useState(searchParams.get('spam') === 'true');
   const [spamCount, setSpamCount] = useState(0);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkActionLoading, setBulkActionLoading] = useState(false);
@@ -498,7 +513,7 @@ export default function Applicants() {
                   )}
                   <th className="px-6 py-4 font-medium">Applicant</th>
                   <th className="px-6 py-4 font-medium">Position</th>
-                  <th className="px-6 py-4 font-medium">Stage</th>
+                  <th className="px-6 py-4 font-medium">Status</th>
                   <th className="px-6 py-4 font-medium">Rating</th>
                   <th className="px-6 py-4 font-medium">Applied</th>
                   <th className="px-6 py-4 font-medium"></th>
@@ -558,9 +573,41 @@ export default function Applicants() {
                       )}
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`badge ${stageBadge(applicant.stage)}`}>
-                        {stageLabels[applicant.stage]}
-                      </span>
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className={`badge ${stageBadge(applicant.stage)}`}>
+                          {stageLabels[applicant.stage]}
+                        </span>
+                        {(() => {
+                          const iv = applicant.interviews?.[0];
+                          if (!iv) return null;
+                          const isScheduled = iv.status === 'scheduled';
+                          const isCompleted = iv.status === 'completed';
+                          return (
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                              isCompleted ? 'bg-green-100 text-green-800'
+                                : isScheduled ? 'bg-blue-100 text-blue-800'
+                                : 'bg-gray-100 text-gray-600'
+                            }`}>
+                              {isCompleted ? 'Interviewed' : isScheduled ? 'Interview ' + new Date(iv.scheduledAt).toLocaleDateString() : iv.status}
+                            </span>
+                          );
+                        })()}
+                        {(() => {
+                          const offer = applicant.offers?.[0];
+                          if (!offer || offer.status === 'draft') return null;
+                          const offerColors: Record<string, string> = {
+                            extended: 'bg-purple-100 text-purple-800',
+                            accepted: 'bg-green-100 text-green-800',
+                            declined: 'bg-red-100 text-red-800',
+                            rescinded: 'bg-orange-100 text-orange-800',
+                          };
+                          return (
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${offerColors[offer.status] || 'bg-gray-100 text-gray-600'}`}>
+                              Offer {offer.status}
+                            </span>
+                          );
+                        })()}
+                      </div>
                     </td>
                     <td className="px-6 py-4">
                       {applicant.reviews.length > 0 ? (

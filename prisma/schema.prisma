@@ -32,12 +32,14 @@ model User {
   interviewParticipants InterviewParticipant[] @relation("InterviewParticipant")
   notificationSubsNew   NotificationSub[]      @relation("NotificationSubs")
   eventReviewers        EventReviewer[]
+  createdOffers         Offer[]              @relation("OfferCreator")
 
   // Scoping for hiring managers (null = global access)
   scopedDepartments  String?  // JSON array e.g. '["Design","Engineering"]'
   scopedOffices      String?  // JSON array of office IDs e.g. '["uuid1","uuid2"]'
   scopeMode          String   @default("or") // 'or' = any match, 'and' = must match both department AND office
   eventAccess        Boolean  @default(true) // For HMs: false = cannot see/access events
+  offerAccess        Boolean  @default(false) // For HMs: must be explicitly enabled
 }
 
 // Job postings
@@ -114,6 +116,7 @@ model Applicant {
 
   // Workflow status
   stage           String   @default("new") // new, screening, interview, offer, hired, rejected, holding
+  startDate       DateTime? // Expected start date once hired
 
   // Source tracking
   source          String?  // High-level source: 'Direct Application', 'manual', 'LinkedIn', 'Indeed', etc.
@@ -146,6 +149,7 @@ model Applicant {
   notes           Note[]
   activityLogs    ActivityLog[]
   interviews      Interview[]
+  offers          Offer[]
 
   @@index([jobId])
   @@index([eventId])
@@ -340,6 +344,7 @@ model Interview {
   location    String?
   type        String   @default("in_person") // in_person, video, phone
   notes       String?  // prep notes
+  notesUrl    String?  // external meeting notes link (OneNote, Google Docs, etc.)
   status      String   @default("scheduled") // scheduled, completed, cancelled, no_show
   feedback    String?  // post-interview summary
   outcome     String?  // advance, hold, reject
@@ -401,4 +406,27 @@ model NotificationSub {
   createdAt DateTime @default(now())
   @@unique([userId, type, value])
   @@index([type, value])
+}
+
+// Offer letters and tracking
+model Offer {
+  id          String    @id @default(uuid())
+  status      String    @default("draft") // draft, extended, accepted, declined, rescinded
+  filePath    String?
+  notes       String?
+  salary      String?
+  offerDate    DateTime?
+  acceptedDate DateTime?
+  declinedDate DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  applicantId String
+  applicant   Applicant @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+
+  createdById String
+  createdBy   User @relation("OfferCreator", fields: [createdById], references: [id])
+
+  @@index([applicantId])
+  @@index([status])
 }

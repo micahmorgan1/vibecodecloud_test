@@ -10,8 +10,9 @@ const __dirname = path.dirname(__filename);
 const uploadsDir = path.join(__dirname, '../../../uploads');
 const resumesDir = path.join(uploadsDir, 'resumes');
 const portfoliosDir = path.join(uploadsDir, 'portfolios');
+const offersDir = path.join(uploadsDir, 'offers');
 
-[uploadsDir, resumesDir, portfoliosDir].forEach(dir => {
+[uploadsDir, resumesDir, portfoliosDir, offersDir].forEach(dir => {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
@@ -73,6 +74,35 @@ export const uploadPortfolio = multer({
   storage: portfolioStorage,
   fileFilter: portfolioFilter,
   limits: { fileSize: 50 * 1024 * 1024 } // 50MB limit
+});
+
+// Configure storage for offer letters
+const offerStorage = multer.diskStorage({
+  destination: (_req, _file, cb) => {
+    cb(null, offersDir);
+  },
+  filename: (_req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+// File filter for offer letters (PDF, DOC, DOCX)
+const offerFilter = (_req: Express.Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+  const allowedTypes = ['.pdf', '.doc', '.docx'];
+  const ext = path.extname(file.originalname).toLowerCase();
+
+  if (allowedTypes.includes(ext)) {
+    cb(null, true);
+  } else {
+    cb(new Error('Only PDF, DOC, and DOCX files are allowed for offer letters'));
+  }
+};
+
+export const uploadOfferLetter = multer({
+  storage: offerStorage,
+  fileFilter: offerFilter,
+  limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
 });
 
 // Combined upload for application submission

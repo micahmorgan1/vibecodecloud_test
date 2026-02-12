@@ -264,6 +264,7 @@ export default function EventDetail() {
             fetchApplicants();
             fetchEvent();
           }}
+          onDone={() => setShowIntakeForm(false)}
         />
       )}
 
@@ -376,10 +377,12 @@ function IntakeForm({
   eventId,
   eventName,
   onApplicantAdded,
+  onDone,
 }: {
   eventId: string;
   eventName: string;
   onApplicantAdded: () => void;
+  onDone: () => void;
 }) {
   const firstNameRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -500,6 +503,7 @@ function IntakeForm({
         resetForm(true);
       } else {
         resetForm(false);
+        onDone();
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to add applicant');
@@ -734,6 +738,13 @@ function IntakeForm({
             className="btn btn-secondary"
           >
             Save & Done
+          </button>
+          <button
+            onClick={onDone}
+            disabled={submitting}
+            className="text-sm text-gray-500 hover:text-gray-700"
+          >
+            Cancel
           </button>
         </div>
       </div>

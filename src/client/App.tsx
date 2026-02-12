@@ -14,6 +14,7 @@ import Settings from './pages/Settings';
 import Offices from './pages/Offices';
 import Events from './pages/Events';
 import EventDetail from './pages/EventDetail';
+import LiveInterview from './pages/LiveInterview';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -55,6 +56,7 @@ function AppRoutes() {
         <Route path="applicants/:id" element={<ApplicantDetail />} />
         <Route path="events" element={<Events />} />
         <Route path="events/:id" element={<EventDetail />} />
+        <Route path="interviews/:id/live" element={<LiveInterview />} />
         <Route path="settings" element={<Settings />} />
         <Route path="email-settings" element={<Navigate to="/settings" replace />} />
         <Route path="offices" element={<Offices />} />
