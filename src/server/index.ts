@@ -1,3 +1,4 @@
+console.log('[BOOT] Starting server imports...');
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -148,6 +149,8 @@ app.use((err: Error, _req: express.Request, res: express.Response, _next: expres
   res.status(500).json({ error: 'Something went wrong!' });
 });
 
+console.log(`[BOOT] About to listen on port ${PORT}...`);
 app.listen(PORT, () => {
+  console.log(`[BOOT] Server running on port ${PORT}`);
   logger.info(`Server running on http://localhost:${PORT}`);
 });
