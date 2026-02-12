@@ -36,7 +36,16 @@ app.use(helmet({
   crossOriginEmbedderPolicy: false,
 }));
 
-// CORS — restrict origins in production/staging
+// Serve static frontend in production (before CORS/API middleware)
+if (process.env.NODE_ENV === 'production') {
+  const clientPath = path.join(__dirname, '../client');
+  app.use(express.static(clientPath));
+
+  // Serve uploaded files
+  app.use('/uploads', express.static(path.join(__dirname, '../../uploads')));
+}
+
+// CORS — restrict origins in production/staging (API routes only)
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
   : null;
@@ -45,7 +54,7 @@ if (!allowedOrigins && process.env.NODE_ENV === 'production') {
   logger.warn('ALLOWED_ORIGINS is not set — CORS will allow all origins. Set ALLOWED_ORIGINS in production.');
 }
 
-app.use(cors({
+app.use('/api', cors({
   origin: (origin, callback) => {
     // Allow requests with no origin (server-to-server, curl, mobile apps)
     if (!origin) return callback(null, true);
@@ -60,6 +69,12 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
+
+// In dev, serve uploads and allow all CORS
+if (process.env.NODE_ENV !== 'production') {
+  app.use('/uploads', express.static(path.join(__dirname, '../../uploads')));
+  app.use(cors());
+}
 
 // Rate limiting
 const rateLimitOptions = {
@@ -109,9 +124,6 @@ app.use('/api/applicants', (req, _res, next) => {
 app.use(requestLogger);
 app.use(express.json());
 
-// Serve uploaded files
-app.use('/uploads', express.static(path.join(__dirname, '../../uploads')));
-
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/jobs', jobRoutes);
@@ -132,24 +144,9 @@ app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Serve static frontend in production
+// SPA fallback — serve index.html for all non-API routes in production
 if (process.env.NODE_ENV === 'production') {
   const clientPath = path.join(__dirname, '../client');
-  import('fs').then(fs => {
-    console.log(`[BOOT] __dirname: ${__dirname}`);
-    console.log(`[BOOT] clientPath: ${clientPath}`);
-    console.log(`[BOOT] clientPath exists: ${fs.existsSync(clientPath)}`);
-    if (fs.existsSync(clientPath)) {
-      console.log(`[BOOT] clientPath contents: ${fs.readdirSync(clientPath).join(', ')}`);
-      const assetsPath = path.join(clientPath, 'assets');
-      if (fs.existsSync(assetsPath)) {
-        console.log(`[BOOT] assets contents: ${fs.readdirSync(assetsPath).join(', ')}`);
-      }
-    }
-  });
-  app.use(express.static(clientPath));
-
-  // Handle SPA routing - serve index.html for all non-API routes
   app.get('*', (_req, res) => {
     res.sendFile(path.join(clientPath, 'index.html'));
   });
