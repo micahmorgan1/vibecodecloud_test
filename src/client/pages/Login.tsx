@@ -104,15 +104,6 @@ export default function Login() {
             </button>
           </form>
 
-          {/* Demo credentials hint */}
-          <div className="mt-6 p-4 bg-gray-50 rounded border border-gray-200">
-            <p className="text-sm text-gray-600 font-medium mb-2">Demo Credentials:</p>
-            <div className="text-xs text-gray-500 space-y-1 font-sans">
-              <p><span className="font-medium">Admin:</span> admin@archfirm.com / admin123</p>
-              <p><span className="font-medium">Manager:</span> manager@archfirm.com / manager123</p>
-              <p><span className="font-medium">Reviewer:</span> reviewer@archfirm.com / reviewer123</p>
-            </div>
-          </div>
         </div>
 
         {/* Footer */}
