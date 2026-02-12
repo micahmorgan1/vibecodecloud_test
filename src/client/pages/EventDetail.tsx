@@ -399,6 +399,8 @@ function IntakeForm({
   const [phone, setPhone] = useState('');
   const [portfolioUrl, setPortfolioUrl] = useState('');
   const [resumeFile, setResumeFile] = useState<File | null>(null);
+  const [portfolioFile, setPortfolioFile] = useState<File | null>(null);
+  const portfolioInputRef = useRef<HTMLInputElement>(null);
   const [jobId, setJobId] = useState('');
   const [rating, setRating] = useState(0);
   const [recommendation, setRecommendation] = useState('');
@@ -442,7 +444,9 @@ function IntakeForm({
     setPhone('');
     setPortfolioUrl('');
     setResumeFile(null);
+    setPortfolioFile(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
+    if (portfolioInputRef.current) portfolioInputRef.current.value = '';
     if (!keepJob) setJobId('');
     setRating(0);
     setRecommendation('');
@@ -492,6 +496,7 @@ function IntakeForm({
       if (comments) fd.append('comments', comments);
       fd.append('source', eventName);
       if (resumeFile) fd.append('resume', resumeFile);
+      if (portfolioFile) fd.append('portfolio', portfolioFile);
       await api.upload(`/events/${eventId}/intake`, fd);
 
       setSessionCount(prev => prev + 1);
@@ -722,6 +727,31 @@ function IntakeForm({
             </div>
           )}
           <p className="text-xs text-gray-400 mt-1">PDF, DOC, DOCX, or photo (JPG/PNG)</p>
+        </div>
+
+        {/* Portfolio Upload */}
+        <div>
+          <label className="label">Portfolio</label>
+          <input
+            ref={portfolioInputRef}
+            type="file"
+            accept=".pdf,.jpg,.jpeg,.png,.zip"
+            onChange={(e) => setPortfolioFile(e.target.files?.[0] || null)}
+            className="input text-sm file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:bg-gray-100 file:text-gray-700 file:font-medium file:cursor-pointer"
+          />
+          {portfolioFile && (
+            <div className="flex items-center gap-2 mt-1.5">
+              <span className="text-xs text-gray-500">{portfolioFile.name}</span>
+              <button
+                type="button"
+                onClick={() => { setPortfolioFile(null); if (portfolioInputRef.current) portfolioInputRef.current.value = ''; }}
+                className="text-xs text-red-500 hover:text-red-700"
+              >
+                Remove
+              </button>
+            </div>
+          )}
+          <p className="text-xs text-gray-400 mt-1">PDF, JPG, PNG, or ZIP</p>
         </div>
 
         <div className="flex items-center gap-3 pt-2">

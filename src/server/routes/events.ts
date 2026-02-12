@@ -369,6 +369,7 @@ router.post('/:id/intake', authenticate, uploadApplicationFiles, validateUploade
     // Get uploaded file paths
     const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
     const resumePath = files?.resume?.[0]?.filename ? `/uploads/resumes/${files.resume[0].filename}` : null;
+    const portfolioPath = files?.portfolio?.[0]?.filename ? `/uploads/portfolios/${files.portfolio[0].filename}` : null;
 
     // Validate job if provided
     if (jobId) {
@@ -388,6 +389,7 @@ router.post('/:id/intake', authenticate, uploadApplicationFiles, validateUploade
           phone: phone || null,
           portfolioUrl: portfolioUrl || null,
           resumePath,
+          portfolioPath,
           jobId: jobId || null,
           eventId: id,
           source: source || event.name,
