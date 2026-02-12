@@ -28,7 +28,7 @@ No test framework is configured.
 
 **Server** (`src/server/`): Express on port 3001. Routes are in `src/server/routes/` (auth, jobs, applicants, reviews, users, dashboard, emailSettings, events). JWT authentication middleware is in `src/server/middleware/auth.ts`. File uploads (multer) go to `uploads/resumes/` and `uploads/portfolios/`.
 
-**Database**: SQLite (`prisma/dev.db`). Schema is in `prisma/schema.prisma`. Models: User, Job, Applicant, Review, Note, EmailTemplate, JobReviewer, JobNotificationSub, Office, RecruitmentEvent, EventAttendee, BlockedEmail. One review per reviewer per applicant (upsert pattern).
+**Database**: SQLite (`prisma/dev.db`). Schema is in `prisma/schema.prisma`. Models: User, Job, Applicant, Review, Note, EmailTemplate, JobReviewer, JobNotificationSub, NotificationSub, Office, RecruitmentEvent, EventAttendee, BlockedEmail, SiteSetting, ActivityLog, Notification, Interview, InterviewParticipant. One review per reviewer per applicant (upsert pattern).
 
 **Dev proxy**: Vite proxies `/api` and `/uploads` to `localhost:3001`. In production, Express serves the built client and handles SPA fallback.
 
@@ -36,10 +36,12 @@ No test framework is configured.
 
 Three roles with cascading permissions:
 - **admin**: Full access including user management and applicant deletion
-- **hiring_manager**: Job/applicant CRUD, can manually add applicants
+- **hiring_manager**: Job/applicant CRUD, can manually add applicants. Can be **scoped** to specific departments and/or offices (see below).
 - **reviewer**: Read-only jobs/applicants, can add reviews. Reviewers are scoped to assigned jobs via `JobReviewer` — unassigned reviewers see nothing. Assigned reviewers can also manually add applicants to their jobs.
 
-Auth uses `authenticate`, `requireRole(...roles)`, `getAccessibleJobIds(user)`, `getAccessibleEventIds(user)`, and `getAccessibleApplicantFilter(user)` middleware. `getAccessibleJobIds` returns `null` for admin/hiring_manager (no filter) or an array of job IDs for reviewers. `getAccessibleApplicantFilter` returns a compound Prisma WHERE clause combining job + event access for applicant queries. Demo logins: `admin@archfirm.com`, `manager@archfirm.com`, `reviewer@archfirm.com` (all use password `admin123`/`manager123`/`reviewer123`).
+Auth uses `authenticate`, `requireRole(...roles)`, `getAccessibleJobIds(user)`, `getAccessibleEventIds(user)`, and `getAccessibleApplicantFilter(user)` middleware. `getAccessibleJobIds` returns `null` for admin/global HM (no filter) or an array of job IDs for reviewers and scoped HMs. `getAccessibleApplicantFilter` returns a compound Prisma WHERE clause combining job + event access for applicant queries. Demo logins: `admin@archfirm.com`, `manager@archfirm.com`, `reviewer@archfirm.com` (all use password `admin123`/`manager123`/`reviewer123`).
+
+**Scoped Hiring Managers**: User model has `scopedDepartments` (nullable JSON string of department names) and `scopedOffices` (nullable JSON string of office IDs). `null` = global access (default). When scoped, the HM only sees jobs matching their assigned departments OR offices. The `authenticate` middleware parses these JSON fields and attaches them to `req.user` for downstream use. Scope is managed via the Users page admin UI. Events remain globally accessible for all HMs.
 
 ## Job Archiving & General Applicant Pool
 
@@ -59,7 +61,7 @@ Seven stages: `new` → `screening` → `interview` → `offer` → `hired` / `r
 - Custom CSS badge classes for stages defined in `src/client/index.css` (e.g., `.badge-new`, `.badge-rejected`)
 - Stage color mappings are duplicated in Dashboard.tsx, Applicants.tsx, JobDetail.tsx, and ApplicantDetail.tsx
 - Email service (`src/server/services/email.ts`) is a mock/console-logged stub ready for a real provider (e.g., Postmark)
-- Email templates (`EmailTemplate` model) are configurable via the Settings page (`/email-settings`); `getTemplate(type)` loads from DB with hardcoded fallbacks
+- Email templates (`EmailTemplate` model) are configurable via the Settings page (`/settings`); `getTemplate(type)` loads from DB with hardcoded fallbacks
 - Template types: `thank_you`, `event_thank_you`, `review_request`, `rejection` — all editable via dropdown in Settings
 - Template variable resolution: `{{firstName}}`, `{{lastName}}`, `{{jobTitle}}`, `{{eventName}}`, etc. via `resolveTemplate()`
 
@@ -71,9 +73,9 @@ Seven stages: `new` → `screening` → `interview` → `offer` → `hired` / `r
 - `review_request` — sent when requesting a user review an applicant (`{{recipientName}}`, `{{applicantName}}`, `{{jobTitle}}`, `{{senderName}}`, `{{applicantUrl}}`)
 - `rejection` — pre-fills rejection modal (`{{firstName}}`, `{{lastName}}`, `{{jobTitle}}`)
 
-**Notification subscriptions** (`JobNotificationSub`): Per-user, per-job. Any role can subscribe. When a public application is submitted, subscribed users receive a notification email (mock). Configured separately from reviewer access.
+**Notification subscriptions** (`NotificationSub`): Per-user subscriptions supporting three types: `job` (specific job ID), `department` (department name), `office` (office ID). Managed by each user on the Settings Notifications tab via `GET/PUT /email-settings/notification-subs`. `notifySubscribers()` in `src/server/services/notifications.ts` queries both `NotificationSub` and legacy `JobNotificationSub` tables. Legacy `JobNotificationSub` is preserved for backwards compatibility and admin per-job subscriber management.
 
-**Reviewer job access** (`JobReviewer`): Controls which jobs reviewers can see. Purely access control — does not affect notifications. Managed at `/email-settings`.
+**Reviewer job access** (`JobReviewer`): Controls which jobs reviewers can see. Purely access control — does not affect notifications. Managed at `/settings?tab=access`.
 
 **Request Review**: Admin/hiring_manager can send a specific applicant to specific users for review via a modal on the applicant detail page. Sends template-driven email and creates a note on the applicant.
 
@@ -148,10 +150,10 @@ Jobs have a `slug` (unique, auto-generated from title) and `publishToWebsite` fl
 
 **`SiteSetting` model**: Key-value store (`key` unique, `value` text, `updatedAt`). Routes at `/api/settings`: `GET /public/:key` (no auth, whitelisted keys: `about_whlc`, `positions_intro`, `events_intro`), `GET /:key` and `PUT /:key` (admin/HM, upsert). Schema in `src/server/schemas/siteSettings.ts`.
 
-**Settings page** (`EmailSettings.tsx`): Reorganized into dropdown-based cards:
-- **Site Content** — dropdown selector for `about_whlc` (job listings/apply page), `positions_intro` (above positions list), `events_intro` (above events list). Single RichTextEditor switches per selection.
-- **Email Templates** — dropdown selector for `thank_you`, `event_thank_you`, `review_request`, `rejection`. Subject + body editor with per-template variable hints.
-- **Reviewer Job Access** — job selector + reviewer checkboxes (unchanged)
-- **New Application Notifications** — job selector + user checkboxes (unchanged)
+**Settings page** (`Settings.tsx`, route `/settings`): Tabbed layout with URL search params (`?tab=content`):
+- **Site Content** — dropdown selector for `about_whlc`, `positions_intro`, `events_intro`. RichTextEditor per selection.
+- **Email Templates** — dropdown selector for all four template types. Subject + body editor with variable hints.
+- **Access Control** — reviewer job assignments (job selector + reviewer checkboxes).
+- **Notifications** — two sections: (1) "My Notification Subscriptions" — per-user checkboxes for jobs, departments, offices via `NotificationSub`; (2) "Per-Job Email Notifications" — legacy admin per-job subscriber management via `JobNotificationSub`.
 
-**Nav rename**: "Notifications" → "Settings" in Layout.tsx for the `/email-settings` page.
+Old `/email-settings` route redirects to `/settings`. Nav link updated to `/settings`.

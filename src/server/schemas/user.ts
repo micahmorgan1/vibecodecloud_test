@@ -25,11 +25,17 @@ export const passwordChangeSchema = z.object({
   newPassword: passwordSchema,
 });
 
+const scopeArraySchema = z.array(z.string().trim().max(100).transform(stripHtml)).optional().nullable();
+
 export const userCreateSchema = z.object({
   email: z.string().trim().email('Invalid email address').transform(stripHtml),
   name: z.string().trim().min(1, 'Name is required').max(200).transform(stripHtml),
   password: passwordSchema,
   role: z.enum(['admin', 'hiring_manager', 'reviewer']),
+  scopedDepartments: scopeArraySchema,
+  scopedOffices: scopeArraySchema,
+  scopeMode: z.enum(['or', 'and']).default('or'),
+  eventAccess: z.boolean().optional(),
 });
 
 export const userUpdateSchema = z.object({
@@ -37,4 +43,8 @@ export const userUpdateSchema = z.object({
   name: z.string().trim().min(1).max(200).transform(stripHtml).optional(),
   password: passwordSchema.optional(),
   role: z.enum(['admin', 'hiring_manager', 'reviewer']).optional(),
+  scopedDepartments: scopeArraySchema,
+  scopedOffices: scopeArraySchema,
+  scopeMode: z.enum(['or', 'and']).optional(),
+  eventAccess: z.boolean().optional(),
 });

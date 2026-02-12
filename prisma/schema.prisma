@@ -30,6 +30,14 @@ model User {
   notifications     Notification[]
   createdInterviews     Interview[]            @relation("InterviewCreator")
   interviewParticipants InterviewParticipant[] @relation("InterviewParticipant")
+  notificationSubsNew   NotificationSub[]      @relation("NotificationSubs")
+  eventReviewers        EventReviewer[]
+
+  // Scoping for hiring managers (null = global access)
+  scopedDepartments  String?  // JSON array e.g. '["Design","Engineering"]'
+  scopedOffices      String?  // JSON array of office IDs e.g. '["uuid1","uuid2"]'
+  scopeMode          String   @default("or") // 'or' = any match, 'and' = must match both department AND office
+  eventAccess        Boolean  @default(true) // For HMs: false = cannot see/access events
 }
 
 // Job postings
@@ -240,6 +248,7 @@ model RecruitmentEvent {
   createdBy        User     @relation("EventCreator", fields: [createdById], references: [id])
   applicants       Applicant[]
   attendees        EventAttendee[]
+  eventReviewers   EventReviewer[]
 
   @@index([date])
   @@index([publishToWebsite, date])
@@ -247,6 +256,18 @@ model RecruitmentEvent {
 
 // Event attendee assignments (which users attend which events)
 model EventAttendee {
+  id        String   @id @default(uuid())
+  userId    String
+  eventId   String
+  createdAt DateTime @default(now())
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event     RecruitmentEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  @@unique([userId, eventId])
+  @@index([userId])
+}
+
+// Reviewer-to-event assignments for access control (mirrors JobReviewer pattern)
+model EventReviewer {
   id        String   @id @default(uuid())
   userId    String
   eventId   String
@@ -368,4 +389,16 @@ model Office {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   jobs      Job[]
+}
+
+// Notification subscriptions (job, department, or office)
+model NotificationSub {
+  id        String   @id @default(uuid())
+  type      String   // 'job', 'department', 'office'
+  value     String   // jobId, department name, or officeId
+  userId    String
+  user      User     @relation("NotificationSubs", fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  @@unique([userId, type, value])
+  @@index([type, value])
 }

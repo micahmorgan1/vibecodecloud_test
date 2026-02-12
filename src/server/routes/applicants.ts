@@ -25,7 +25,7 @@ import { formatCsvRow } from '../utils/csv.js';
 import { parsePagination, prismaSkipTake, paginatedResponse } from '../utils/pagination.js';
 import logger from '../lib/logger.js';
 import { logActivity } from '../services/activityLog.js';
-import { notifyJobSubscribers } from '../services/notifications.js';
+import { notifySubscribers } from '../services/notifications.js';
 
 const router = Router();
 
@@ -377,11 +377,11 @@ router.post('/', uploadApplicationFiles, validateUploadedFiles, validateBody(pub
     // Spam detection
     const spamResult = await checkSpam({ firstName, lastName, email, coverLetter, website2 }, req);
 
-    let job: { id: string; title: string; status: string } | null = null;
+    let job: { id: string; title: string; status: string; department: string; officeId: string | null } | null = null;
 
     if (jobId) {
       // Verify job exists and is open
-      job = await prisma.job.findUnique({ where: { id: jobId }, select: { id: true, title: true, status: true } });
+      job = await prisma.job.findUnique({ where: { id: jobId }, select: { id: true, title: true, status: true, department: true, officeId: true } });
       if (!job) {
         return res.status(404).json({ error: 'Job not found' });
       }
@@ -478,9 +478,11 @@ router.post('/', uploadApplicationFiles, validateUploadedFiles, validateBody(pub
         })();
       }
 
-      // Fire-and-forget: in-app notifications for job subscribers
-      notifyJobSubscribers({
+      // Fire-and-forget: in-app notifications for subscribers (job, department, office)
+      notifySubscribers({
         jobId: jobId || null,
+        department: job?.department,
+        officeId: job?.officeId,
         type: 'new_application',
         title: 'New Application',
         message: `${firstName} ${lastName} applied for ${jobTitle}`,
@@ -812,7 +814,7 @@ router.patch('/:id/stage', authenticate, validateBody(stageUpdateSchema), async 
       data: { stage },
       include: {
         job: {
-          select: { id: true, title: true },
+          select: { id: true, title: true, department: true, officeId: true },
         },
       },
     });
@@ -824,8 +826,10 @@ router.patch('/:id/stage', authenticate, validateBody(stageUpdateSchema), async 
     });
 
     // Fire-and-forget: in-app notification for stage change
-    notifyJobSubscribers({
+    notifySubscribers({
       jobId: applicant.job?.id || null,
+      department: applicant.job?.department,
+      officeId: applicant.job?.officeId,
       type: 'stage_changed',
       title: 'Stage Changed',
       message: `${applicant.firstName} ${applicant.lastName} moved to ${stage}`,

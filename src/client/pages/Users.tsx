@@ -5,12 +5,21 @@ import Avatar from '../components/Avatar';
 import Pagination from '../components/Pagination';
 import { PaginatedResponse, isPaginated } from '../lib/pagination';
 
+interface Office {
+  id: string;
+  name: string;
+}
+
 interface User {
   id: string;
   name: string;
   email: string;
   role: string;
   createdAt: string;
+  scopedDepartments: string[] | null;
+  scopedOffices: string[] | null;
+  scopeMode: string;
+  eventAccess: boolean;
 }
 
 interface UserFormData {
@@ -18,6 +27,11 @@ interface UserFormData {
   email: string;
   password: string;
   role: string;
+  scopedDepartments: string[];
+  scopedOffices: string[];
+  scopeGlobal: boolean;
+  scopeMode: string;
+  eventAccess: boolean;
 }
 
 const roles = [
@@ -57,14 +71,32 @@ export default function Users() {
     email: '',
     password: '',
     role: 'reviewer',
+    scopedDepartments: [],
+    scopedOffices: [],
+    scopeGlobal: true,
+    scopeMode: 'or',
+    eventAccess: true,
   });
   const [formError, setFormError] = useState('');
+  const [departments, setDepartments] = useState<string[]>([]);
+  const [offices, setOffices] = useState<Office[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const pageSize = 25;
+
+  const [officeMap, setOfficeMap] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    // Fetch offices for scope display
+    api.get<Office[]>('/offices').then(res => {
+      const map: Record<string, string> = {};
+      for (const o of res.data) map[o.id] = o.name;
+      setOfficeMap(map);
+    }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     fetchUsers();
@@ -100,17 +132,38 @@ export default function Users() {
     fetchUsers();
   };
 
+  const fetchScopeOptions = async () => {
+    try {
+      const res = await api.get<{ departments: string[]; offices: Office[] }>('/email-settings/notification-subs/options');
+      setDepartments(res.data.departments);
+      setOffices(res.data.offices);
+    } catch { /* ignore */ }
+  };
+
   const openCreateModal = () => {
     setEditingUser(null);
-    setFormData({ name: '', email: '', password: '', role: 'reviewer' });
+    setFormData({ name: '', email: '', password: '', role: 'reviewer', scopedDepartments: [], scopedOffices: [], scopeGlobal: true, scopeMode: 'or', eventAccess: true });
     setFormError('');
+    fetchScopeOptions();
     setShowModal(true);
   };
 
   const openEditModal = (user: User) => {
     setEditingUser(user);
-    setFormData({ name: user.name, email: user.email, password: '', role: user.role });
+    const isGlobal = !user.scopedDepartments && !user.scopedOffices;
+    setFormData({
+      name: user.name,
+      email: user.email,
+      password: '',
+      role: user.role,
+      scopedDepartments: user.scopedDepartments || [],
+      scopedOffices: user.scopedOffices || [],
+      scopeGlobal: isGlobal,
+      scopeMode: user.scopeMode || 'or',
+      eventAccess: user.eventAccess !== false,
+    });
     setFormError('');
+    fetchScopeOptions();
     setShowModal(true);
   };
 
@@ -126,11 +179,20 @@ export default function Users() {
     setSubmitting(true);
 
     try {
+      const scopeFields = formData.role === 'hiring_manager' && !formData.scopeGlobal
+        ? { scopedDepartments: formData.scopedDepartments, scopedOffices: formData.scopedOffices, scopeMode: formData.scopeMode }
+        : { scopedDepartments: null, scopedOffices: null, scopeMode: 'or' };
+      const eventAccessField = formData.role === 'hiring_manager'
+        ? { eventAccess: formData.eventAccess }
+        : { eventAccess: true };
+
       if (editingUser) {
-        const data: Record<string, string> = {
+        const data: Record<string, unknown> = {
           name: formData.name,
           email: formData.email,
           role: formData.role,
+          ...scopeFields,
+          ...eventAccessField,
         };
         if (formData.password) {
           data.password = formData.password;
@@ -142,7 +204,7 @@ export default function Users() {
           setSubmitting(false);
           return;
         }
-        await api.post('/users', formData);
+        await api.post('/users', { ...formData, ...scopeFields, ...eventAccessField });
       }
       closeModal();
       fetchUsers();
@@ -246,6 +308,7 @@ export default function Users() {
                   <th className="px-6 py-4 font-medium">Name</th>
                   <th className="px-6 py-4 font-medium">Email</th>
                   <th className="px-6 py-4 font-medium">Role</th>
+                  <th className="px-6 py-4 font-medium">Scope</th>
                   <th className="px-6 py-4 font-medium">Created</th>
                   <th className="px-6 py-4 font-medium"></th>
                 </tr>
@@ -264,6 +327,41 @@ export default function Users() {
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${roleBadge(user.role)}`}>
                         {roleLabel(user.role)}
                       </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-500">
+                      {user.role === 'hiring_manager' ? (
+                        <div>
+                          <div className="flex flex-wrap gap-1 items-center">
+                            {!user.scopedDepartments && !user.scopedOffices ? (
+                              <span className="text-gray-400">Global</span>
+                            ) : (
+                              <>
+                                {user.scopedDepartments?.map((d, i) => (
+                                  <span key={d}>
+                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-blue-50 text-blue-700">{d}</span>
+                                    {(i < (user.scopedDepartments?.length || 0) - 1 || (user.scopedOffices && user.scopedOffices.length > 0)) && (
+                                      <span className="text-xs text-gray-400 mx-0.5">{user.scopeMode === 'and' ? '&' : '/'}</span>
+                                    )}
+                                  </span>
+                                ))}
+                                {user.scopedOffices?.map((o, i) => (
+                                  <span key={o}>
+                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-green-50 text-green-700">{officeMap[o] || o}</span>
+                                    {i < (user.scopedOffices?.length || 0) - 1 && (
+                                      <span className="text-xs text-gray-400 mx-0.5">{user.scopeMode === 'and' ? '&' : '/'}</span>
+                                    )}
+                                  </span>
+                                ))}
+                              </>
+                            )}
+                          </div>
+                          {user.eventAccess === false && (
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-red-50 text-red-600 mt-1">No Events</span>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-gray-300">--</span>
+                      )}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500">
                       {new Date(user.createdAt).toLocaleDateString()}
@@ -388,6 +486,126 @@ export default function Users() {
                   ))}
                 </select>
               </div>
+
+              {/* Scope section (only for hiring managers) */}
+              {formData.role === 'hiring_manager' && (
+                <div className="border rounded p-4 space-y-3 bg-gray-50">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-semibold text-gray-700">Hiring Manager Scope</h3>
+                  </div>
+                  <p className="text-xs text-gray-400">
+                    Global access sees all jobs. Scoped access limits to specific departments and/or offices.
+                  </p>
+
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.scopeGlobal}
+                      onChange={(e) => setFormData({ ...formData, scopeGlobal: e.target.checked })}
+                      className="h-4 w-4 rounded border-gray-300"
+                    />
+                    <span className="text-sm text-gray-700 font-medium">Global Access (all departments & offices)</span>
+                  </label>
+
+                  {!formData.scopeGlobal && (
+                    <div className="space-y-3 pt-1">
+                      {/* AND/OR mode toggle */}
+                      <div>
+                        <label className="label text-xs">Scope Mode</label>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setFormData({ ...formData, scopeMode: 'or' })}
+                            className={`px-3 py-1.5 text-xs font-medium rounded border ${formData.scopeMode === 'or' ? 'bg-black text-white border-black' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'}`}
+                          >
+                            OR
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setFormData({ ...formData, scopeMode: 'and' })}
+                            className={`px-3 py-1.5 text-xs font-medium rounded border ${formData.scopeMode === 'and' ? 'bg-black text-white border-black' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'}`}
+                          >
+                            AND
+                          </button>
+                        </div>
+                        <p className="text-xs text-gray-400 mt-1">
+                          {formData.scopeMode === 'or'
+                            ? 'User sees jobs matching any selected department or office.'
+                            : 'User sees only jobs matching both a selected department and office.'}
+                        </p>
+                      </div>
+
+                      <div>
+                        <label className="label text-xs">Departments</label>
+                        {departments.length === 0 ? (
+                          <p className="text-xs text-gray-400">No departments found in jobs.</p>
+                        ) : (
+                          <div className="border rounded divide-y bg-white max-h-40 overflow-y-auto">
+                            {departments.map((dept) => (
+                              <label key={dept} className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={formData.scopedDepartments.includes(dept)}
+                                  onChange={() => {
+                                    const next = formData.scopedDepartments.includes(dept)
+                                      ? formData.scopedDepartments.filter(d => d !== dept)
+                                      : [...formData.scopedDepartments, dept];
+                                    setFormData({ ...formData, scopedDepartments: next });
+                                  }}
+                                  className="h-4 w-4 rounded border-gray-300"
+                                />
+                                <span className="text-sm">{dept}</span>
+                              </label>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      <div>
+                        <label className="label text-xs">Offices</label>
+                        {offices.length === 0 ? (
+                          <p className="text-xs text-gray-400">No offices found.</p>
+                        ) : (
+                          <div className="border rounded divide-y bg-white max-h-40 overflow-y-auto">
+                            {offices.map((office) => (
+                              <label key={office.id} className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={formData.scopedOffices.includes(office.id)}
+                                  onChange={() => {
+                                    const next = formData.scopedOffices.includes(office.id)
+                                      ? formData.scopedOffices.filter(o => o !== office.id)
+                                      : [...formData.scopedOffices, office.id];
+                                    setFormData({ ...formData, scopedOffices: next });
+                                  }}
+                                  className="h-4 w-4 rounded border-gray-300"
+                                />
+                                <span className="text-sm">{office.name}</span>
+                              </label>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Event Access toggle */}
+                  <div className="border-t pt-3 mt-3">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={formData.eventAccess}
+                        onChange={(e) => setFormData({ ...formData, eventAccess: e.target.checked })}
+                        className="h-4 w-4 rounded border-gray-300"
+                      />
+                      <span className="text-sm text-gray-700 font-medium">Event Access</span>
+                    </label>
+                    <p className="text-xs text-gray-400 mt-1">
+                      When enabled, this hiring manager can see and manage all recruitment events. Notification preferences are managed separately in Settings.
+                    </p>
+                  </div>
+                </div>
+              )}
 
               <div className="flex justify-end gap-3 pt-4">
                 <button type="button" onClick={closeModal} className="btn btn-secondary">

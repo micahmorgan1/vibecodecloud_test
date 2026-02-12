@@ -28,8 +28,11 @@ export async function createNotification(params: CreateNotificationParams): Prom
   }
 }
 
-interface NotifyJobSubscribersParams {
+interface NotifySubscribersParams {
   jobId: string | null;
+  eventId?: string;
+  department?: string;
+  officeId?: string | null;
   type: string;
   title: string;
   message: string;
@@ -38,25 +41,93 @@ interface NotifyJobSubscribersParams {
 }
 
 /**
- * Notify all users subscribed to a job. Fire-and-forget — never throws.
+ * Notify all users who match any subscription: job, department, office, or "all".
+ * "all" subscribers are included if the triggering job falls within their access scope.
+ * Also checks legacy JobNotificationSub for backwards compatibility.
+ * Fire-and-forget — never throws.
  */
-export async function notifyJobSubscribers(params: NotifyJobSubscribersParams): Promise<void> {
+export async function notifySubscribers(params: NotifySubscribersParams): Promise<void> {
   try {
-    if (!params.jobId) return;
+    const conditions: { type: string; value: string }[] = [];
+    if (params.jobId) conditions.push({ type: 'job', value: params.jobId });
+    if (params.department) conditions.push({ type: 'department', value: params.department });
+    if (params.officeId) conditions.push({ type: 'office', value: params.officeId });
+    if (params.eventId) conditions.push({ type: 'event', value: params.eventId });
 
-    const subs = await prisma.jobNotificationSub.findMany({
-      where: { jobId: params.jobId },
-      select: { userId: true },
+    const userIdSet = new Set<string>();
+
+    // Check new NotificationSub table (specific subscriptions)
+    if (conditions.length > 0) {
+      const subs = await prisma.notificationSub.findMany({
+        where: { OR: conditions },
+        select: { userId: true },
+      });
+      subs.forEach(s => userIdSet.add(s.userId));
+    }
+
+    // Check "all" subscribers — they get notified for everything they have access to
+    const allSubs = await prisma.notificationSub.findMany({
+      where: { type: 'all' },
+      select: { userId: true, user: { select: { id: true, role: true, scopedDepartments: true, scopedOffices: true, scopeMode: true } } },
     });
+    for (const sub of allSubs) {
+      const u = sub.user;
+      // Admin and global HMs get everything
+      if (u.role === 'admin') {
+        userIdSet.add(u.id);
+        continue;
+      }
+      if (u.role === 'hiring_manager') {
+        if (!u.scopedDepartments && !u.scopedOffices) {
+          userIdSet.add(u.id); // global HM
+          continue;
+        }
+        // Scoped HM — check if job matches their scope, respecting AND/OR mode
+        const depts: string[] = u.scopedDepartments ? JSON.parse(u.scopedDepartments) : [];
+        const offices: string[] = u.scopedOffices ? JSON.parse(u.scopedOffices) : [];
+        const deptMatch = depts.length === 0 || (params.department && depts.includes(params.department));
+        const officeMatch = offices.length === 0 || (params.officeId && offices.includes(params.officeId));
 
-    const userIds = subs
-      .map(s => s.userId)
-      .filter(id => id !== params.excludeUserId);
+        if (u.scopeMode === 'and') {
+          if (deptMatch && officeMatch) userIdSet.add(u.id);
+        } else {
+          if (deptMatch || officeMatch) userIdSet.add(u.id);
+        }
+        continue;
+      }
+      // Reviewer — check if assigned to this job or event
+      if (u.role === 'reviewer') {
+        if (params.jobId) {
+          const jobAssigned = await prisma.jobReviewer.findUnique({
+            where: { userId_jobId: { userId: u.id, jobId: params.jobId } },
+          });
+          if (jobAssigned) { userIdSet.add(u.id); continue; }
+        }
+        if (params.eventId) {
+          const eventAssigned = await prisma.eventReviewer.findUnique({
+            where: { userId_eventId: { userId: u.id, eventId: params.eventId } },
+          });
+          if (eventAssigned) userIdSet.add(u.id);
+        }
+      }
+    }
 
-    if (userIds.length === 0) return;
+    // Also check legacy JobNotificationSub for backwards compatibility
+    if (params.jobId) {
+      const legacySubs = await prisma.jobNotificationSub.findMany({
+        where: { jobId: params.jobId },
+        select: { userId: true },
+      });
+      legacySubs.forEach(s => userIdSet.add(s.userId));
+    }
+
+    // Exclude acting user
+    if (params.excludeUserId) userIdSet.delete(params.excludeUserId);
+
+    if (userIdSet.size === 0) return;
 
     await prisma.notification.createMany({
-      data: userIds.map(userId => ({
+      data: [...userIdSet].map(userId => ({
         userId,
         type: params.type,
         title: params.title,
@@ -65,8 +136,22 @@ export async function notifyJobSubscribers(params: NotifyJobSubscribersParams): 
       })),
     });
   } catch (err) {
-    logger.error({ err, params }, 'Failed to notify job subscribers');
+    logger.error({ err, params }, 'Failed to notify subscribers');
   }
+}
+
+/**
+ * @deprecated Use notifySubscribers instead. Kept for backwards compatibility.
+ */
+export async function notifyJobSubscribers(params: {
+  jobId: string | null;
+  type: string;
+  title: string;
+  message: string;
+  link?: string;
+  excludeUserId?: string;
+}): Promise<void> {
+  return notifySubscribers(params);
 }
 
 interface NotifyUsersParams {

@@ -10,7 +10,7 @@ import ApplicantDetail from './pages/ApplicantDetail';
 import ApplyPage from './pages/ApplyPage';
 import PublicJobs from './pages/PublicJobs';
 import Users from './pages/Users';
-import EmailSettings from './pages/EmailSettings';
+import Settings from './pages/Settings';
 import Offices from './pages/Offices';
 import Events from './pages/Events';
 import EventDetail from './pages/EventDetail';
@@ -55,7 +55,8 @@ function AppRoutes() {
         <Route path="applicants/:id" element={<ApplicantDetail />} />
         <Route path="events" element={<Events />} />
         <Route path="events/:id" element={<EventDetail />} />
-        <Route path="email-settings" element={<EmailSettings />} />
+        <Route path="settings" element={<Settings />} />
+        <Route path="email-settings" element={<Navigate to="/settings" replace />} />
         <Route path="offices" element={<Offices />} />
         <Route path="users" element={<Users />} />
       </Route>

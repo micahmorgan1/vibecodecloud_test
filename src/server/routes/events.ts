@@ -6,6 +6,7 @@ import { uploadApplicationFiles } from '../middleware/upload.js';
 import { validateUploadedFiles } from '../middleware/validateFiles.js';
 import { eventCreateSchema, eventUpdateSchema, fairIntakeSchema, attendeesSchema } from '../schemas/index.js';
 import { getTemplate, resolveTemplate, sendThankYouEmail } from '../services/email.js';
+import { notifySubscribers } from '../services/notifications.js';
 import logger from '../lib/logger.js';
 import { activityLogData } from '../services/activityLog.js';
 import { parsePagination, prismaSkipTake, paginatedResponse } from '../utils/pagination.js';
@@ -154,6 +155,18 @@ router.post(
             eventId: event.id,
           })),
         });
+
+        // Auto-create EventReviewer for reviewer-role attendees
+        const reviewerAttendees = await prisma.user.findMany({
+          where: { id: { in: attendeeIds }, role: 'reviewer' },
+          select: { id: true },
+        });
+        if (reviewerAttendees.length > 0) {
+          await prisma.eventReviewer.createMany({
+            data: reviewerAttendees.map(u => ({ userId: u.id, eventId: event.id })),
+            skipDuplicates: true,
+          });
+        }
       }
 
       const created = await prisma.recruitmentEvent.findUnique({
@@ -246,6 +259,7 @@ router.delete(
       }
 
       await prisma.eventAttendee.deleteMany({ where: { eventId: id } });
+      await prisma.eventReviewer.deleteMany({ where: { eventId: id } });
       await prisma.recruitmentEvent.delete({ where: { id } });
 
       res.json({ message: 'Event deleted successfully' });
@@ -272,7 +286,14 @@ router.put(
         return res.status(404).json({ error: 'Event not found' });
       }
 
-      // Delete and recreate
+      // Get old reviewer attendees to diff
+      const oldAttendees = await prisma.eventAttendee.findMany({
+        where: { eventId: id },
+        include: { user: { select: { id: true, role: true } } },
+      });
+      const oldReviewerIds = new Set(oldAttendees.filter(a => a.user.role === 'reviewer').map(a => a.userId));
+
+      // Delete and recreate attendees
       await prisma.eventAttendee.deleteMany({ where: { eventId: id } });
       if (attendeeIds && attendeeIds.length > 0) {
         await prisma.eventAttendee.createMany({
@@ -280,6 +301,29 @@ router.put(
             userId,
             eventId: id,
           })),
+        });
+      }
+
+      // Determine new reviewer attendees
+      const newReviewerAttendees = attendeeIds && attendeeIds.length > 0
+        ? await prisma.user.findMany({ where: { id: { in: attendeeIds }, role: 'reviewer' }, select: { id: true } })
+        : [];
+      const newReviewerIds = new Set(newReviewerAttendees.map(u => u.id));
+
+      // Auto-create EventReviewer for newly added reviewer attendees
+      const addedReviewers = [...newReviewerIds].filter(id => !oldReviewerIds.has(id));
+      if (addedReviewers.length > 0) {
+        await prisma.eventReviewer.createMany({
+          data: addedReviewers.map(userId => ({ userId, eventId: id })),
+          skipDuplicates: true,
+        });
+      }
+
+      // Auto-remove EventReviewer for removed reviewer attendees
+      const removedReviewers = [...oldReviewerIds].filter(id => !newReviewerIds.has(id));
+      if (removedReviewers.length > 0) {
+        await prisma.eventReviewer.deleteMany({
+          where: { eventId: id, userId: { in: removedReviewers } },
         });
       }
 
@@ -391,6 +435,17 @@ router.post('/:id/intake', authenticate, uploadApplicationFiles, validateUploade
         logger.error({ err }, 'Event thank-you email failed');
       }
     })();
+
+    // Fire-and-forget: notify event subscribers
+    notifySubscribers({
+      jobId: jobId || null,
+      eventId: id,
+      type: 'new_application',
+      title: 'New Fair Intake',
+      message: `${firstName} ${lastName} was added at ${event.name}`,
+      link: `/applicants/${result.id}`,
+      excludeUserId: req.user!.id,
+    });
 
     res.status(201).json(result);
   } catch (error) {

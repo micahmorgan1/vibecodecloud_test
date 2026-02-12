@@ -3,7 +3,7 @@ import prisma from '../db.js';
 import { authenticate, requireRole, AuthRequest } from '../middleware/auth.js';
 import { getTemplate, sendReviewRequest } from '../services/email.js';
 import { validateBody } from '../middleware/validateBody.js';
-import { templateUpdateSchema, reviewerAssignmentSchema, subscriberSchema, requestReviewSchema } from '../schemas/index.js';
+import { templateUpdateSchema, reviewerAssignmentSchema, subscriberSchema, requestReviewSchema, bulkNotificationSubSchema } from '../schemas/index.js';
 import logger from '../lib/logger.js';
 import { notifyUsers } from '../services/notifications.js';
 
@@ -213,6 +213,157 @@ router.put(
     } catch (error) {
       logger.error({ err: error }, 'Set subscribers error');
       res.status(500).json({ error: 'Failed to save subscribers' });
+    }
+  }
+);
+
+// Get assigned reviewers for an event (access control only)
+router.get(
+  '/events/:eventId/reviewers',
+  authenticate,
+  requireRole('admin', 'hiring_manager'),
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const { eventId } = req.params;
+      const assignments = await prisma.eventReviewer.findMany({
+        where: { eventId },
+        include: {
+          user: { select: { id: true, name: true, email: true } },
+        },
+      });
+      res.json(assignments);
+    } catch (error) {
+      logger.error({ err: error }, 'Get event reviewers error');
+      res.status(500).json({ error: 'Failed to fetch event reviewers' });
+    }
+  }
+);
+
+// Set reviewer assignments for an event (access control only, delete-and-recreate)
+router.put(
+  '/events/:eventId/reviewers',
+  authenticate,
+  requireRole('admin', 'hiring_manager'),
+  validateBody(reviewerAssignmentSchema),
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const { eventId } = req.params;
+      const { userIds } = req.body;
+
+      await prisma.eventReviewer.deleteMany({ where: { eventId } });
+
+      if (userIds.length > 0) {
+        await prisma.eventReviewer.createMany({
+          data: userIds.map((userId: string) => ({ userId, eventId })),
+        });
+      }
+
+      const result = await prisma.eventReviewer.findMany({
+        where: { eventId },
+        include: {
+          user: { select: { id: true, name: true, email: true } },
+        },
+      });
+
+      res.json(result);
+    } catch (error) {
+      logger.error({ err: error }, 'Set event reviewers error');
+      res.status(500).json({ error: 'Failed to save event reviewer assignments' });
+    }
+  }
+);
+
+// Get available subscription options (jobs, departments, offices, events)
+router.get(
+  '/notification-subs/options',
+  authenticate,
+  async (_req: AuthRequest, res: Response) => {
+    try {
+      const [jobs, departments, offices, events] = await Promise.all([
+        prisma.job.findMany({
+          where: { archived: false },
+          select: { id: true, title: true },
+          orderBy: { title: 'asc' },
+        }),
+        prisma.job.findMany({
+          where: { archived: false },
+          select: { department: true },
+          distinct: ['department'],
+          orderBy: { department: 'asc' },
+        }),
+        prisma.office.findMany({
+          select: { id: true, name: true },
+          orderBy: { name: 'asc' },
+        }),
+        prisma.recruitmentEvent.findMany({
+          select: { id: true, name: true, date: true },
+          orderBy: { date: 'desc' },
+        }),
+      ]);
+
+      res.json({
+        jobs,
+        departments: departments.map(d => d.department),
+        offices,
+        events,
+      });
+    } catch (error) {
+      logger.error({ err: error }, 'Get notification sub options error');
+      res.status(500).json({ error: 'Failed to fetch subscription options' });
+    }
+  }
+);
+
+// Get current user's notification subscriptions
+router.get(
+  '/notification-subs',
+  authenticate,
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const subs = await prisma.notificationSub.findMany({
+        where: { userId: req.user!.id },
+        select: { id: true, type: true, value: true },
+      });
+      res.json(subs);
+    } catch (error) {
+      logger.error({ err: error }, 'Get notification subs error');
+      res.status(500).json({ error: 'Failed to fetch subscriptions' });
+    }
+  }
+);
+
+// Bulk replace current user's notification subscriptions
+router.put(
+  '/notification-subs',
+  authenticate,
+  validateBody(bulkNotificationSubSchema),
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const { subscriptions } = req.body;
+      const userId = req.user!.id;
+
+      // Delete-and-recreate pattern
+      await prisma.notificationSub.deleteMany({ where: { userId } });
+
+      if (subscriptions.length > 0) {
+        await prisma.notificationSub.createMany({
+          data: subscriptions.map((s: { type: string; value: string }) => ({
+            userId,
+            type: s.type,
+            value: s.value,
+          })),
+        });
+      }
+
+      const result = await prisma.notificationSub.findMany({
+        where: { userId },
+        select: { id: true, type: true, value: true },
+      });
+
+      res.json(result);
+    } catch (error) {
+      logger.error({ err: error }, 'Set notification subs error');
+      res.status(500).json({ error: 'Failed to save subscriptions' });
     }
   }
 );

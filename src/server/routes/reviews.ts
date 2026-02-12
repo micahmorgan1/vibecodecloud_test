@@ -5,7 +5,7 @@ import { validateBody } from '../middleware/validateBody.js';
 import { reviewCreateSchema } from '../schemas/index.js';
 import logger from '../lib/logger.js';
 import { logActivity } from '../services/activityLog.js';
-import { notifyJobSubscribers } from '../services/notifications.js';
+import { notifySubscribers } from '../services/notifications.js';
 
 const router = Router();
 
@@ -148,7 +148,10 @@ router.post('/applicant/:applicantId', authenticate, validateBody(reviewCreateSc
 
     // Access control
     const accessFilter = await getAccessibleApplicantFilter(req.user!);
-    const applicant = await prisma.applicant.findFirst({ where: { id: applicantId, ...accessFilter } });
+    const applicant = await prisma.applicant.findFirst({
+      where: { id: applicantId, ...accessFilter },
+      include: { job: { select: { id: true, department: true, officeId: true } } },
+    });
     if (!applicant) {
       return res.status(404).json({ error: 'Applicant not found' });
     }
@@ -197,8 +200,10 @@ router.post('/applicant/:applicantId', authenticate, validateBody(reviewCreateSc
     });
 
     // Fire-and-forget: in-app notification for review
-    notifyJobSubscribers({
+    notifySubscribers({
       jobId: applicant.jobId,
+      department: applicant.job?.department,
+      officeId: applicant.job?.officeId,
       type: 'review_added',
       title: 'New Review',
       message: `${review.reviewer.name} reviewed ${applicant.firstName} ${applicant.lastName} (${rating}\u2605)`,

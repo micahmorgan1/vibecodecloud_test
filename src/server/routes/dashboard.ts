@@ -89,7 +89,12 @@ router.get('/pipeline', authenticate, async (req: AuthRequest, res: Response) =>
           where,
           take: 5,
           orderBy: { createdAt: 'desc' },
-          include: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            createdAt: true,
             job: {
               select: { id: true, title: true },
             },

@@ -6,6 +6,9 @@ interface User {
   email: string;
   name: string;
   role: string;
+  scopedDepartments?: string[] | null;
+  scopedOffices?: string[] | null;
+  eventAccess?: boolean;
 }
 
 interface AuthContextType {

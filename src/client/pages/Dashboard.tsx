@@ -21,16 +21,20 @@ interface UpcomingEvent {
   _count: { applicants: number };
 }
 
+interface PipelineApplicant {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  createdAt: string;
+  job: { id: string; title: string } | null;
+  _count: { reviews: number };
+}
+
 interface PipelineStage {
   stage: string;
   count: number;
-  applicants: Array<{
-    id: string;
-    firstName: string;
-    lastName: string;
-    job: { id: string; title: string } | null;
-    _count: { reviews: number };
-  }>;
+  applicants: PipelineApplicant[];
 }
 
 interface Activity {
@@ -67,6 +71,8 @@ export default function Dashboard() {
   const [upcomingEvents, setUpcomingEvents] = useState<UpcomingEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedStage, setExpandedStage] = useState<string | null>(null);
+  const [draggedApplicant, setDraggedApplicant] = useState<{ id: string; fromStage: string } | null>(null);
+  const [dropTargetStage, setDropTargetStage] = useState<string | null>(null);
 
   useEffect(() => {
     Promise.all([
@@ -85,6 +91,43 @@ export default function Dashboard() {
       })
       .finally(() => setLoading(false));
   }, []);
+
+  const refreshPipeline = async () => {
+    try {
+      const res = await api.get<PipelineStage[]>('/dashboard/pipeline');
+      setPipeline(res.data);
+    } catch { /* ignore */ }
+  };
+
+  const handleDrop = async (targetStage: string) => {
+    if (!draggedApplicant || draggedApplicant.fromStage === targetStage) {
+      setDraggedApplicant(null);
+      setDropTargetStage(null);
+      return;
+    }
+    try {
+      await api.patch(`/applicants/${draggedApplicant.id}/stage`, { stage: targetStage });
+      // Optimistic: move applicant in local state
+      setPipeline(prev => {
+        const fromIdx = prev.findIndex(s => s.stage === draggedApplicant.fromStage);
+        const toIdx = prev.findIndex(s => s.stage === targetStage);
+        if (fromIdx === -1 || toIdx === -1) return prev;
+        const next = prev.map(s => ({ ...s, applicants: [...s.applicants], count: s.count }));
+        const appIdx = next[fromIdx].applicants.findIndex(a => a.id === draggedApplicant.id);
+        if (appIdx !== -1) {
+          const [moved] = next[fromIdx].applicants.splice(appIdx, 1);
+          next[fromIdx].count--;
+          next[toIdx].applicants.unshift(moved);
+          next[toIdx].count++;
+        }
+        return next;
+      });
+      // Also refresh from server to keep counts accurate
+      refreshPipeline();
+    } catch { /* ignore - will refresh */ }
+    setDraggedApplicant(null);
+    setDropTargetStage(null);
+  };
 
   if (loading) {
     return (
@@ -220,9 +263,20 @@ export default function Dashboard() {
               className={`text-center cursor-pointer rounded-lg p-2 transition-all ${
                 expandedStage === stage.stage
                   ? 'ring-2 ring-black bg-gray-50'
-                  : 'hover:bg-gray-50'
+                  : dropTargetStage === stage.stage && draggedApplicant
+                    ? 'ring-2 ring-blue-500 bg-blue-50'
+                    : 'hover:bg-gray-50'
               }`}
               onClick={() => setExpandedStage(expandedStage === stage.stage ? null : stage.stage)}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setDropTargetStage(stage.stage);
+              }}
+              onDragLeave={() => setDropTargetStage(null)}
+              onDrop={(e) => {
+                e.preventDefault();
+                handleDrop(stage.stage);
+              }}
             >
               <div className={`w-full h-2 ${stageColors[stage.stage]} rounded-full mb-2`}></div>
               <p className="text-2xl font-display font-bold text-gray-900">{stage.count}</p>
@@ -238,9 +292,12 @@ export default function Dashboard() {
           return (
             <div className="mt-4 pt-4 border-t">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-display font-semibold text-gray-900 uppercase tracking-wide">
-                  {stageLabels[expandedStage]} — Top {Math.min(stageData.applicants.length, 5)} of {stageData.count}
-                </h3>
+                <div>
+                  <h3 className="text-sm font-display font-semibold text-gray-900 uppercase tracking-wide">
+                    {stageLabels[expandedStage]} — Top {Math.min(stageData.applicants.length, 5)} of {stageData.count}
+                  </h3>
+                  <p className="text-xs text-gray-400 mt-0.5">Drag applicants to a stage above to move them</p>
+                </div>
                 <Link
                   to={`/applicants?stage=${expandedStage}`}
                   className="text-sm text-gray-900 hover:text-gray-600 font-medium"
@@ -251,25 +308,47 @@ export default function Dashboard() {
               {stageData.applicants.length === 0 ? (
                 <p className="text-sm text-gray-500 py-2">No applicants in this stage</p>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-1">
                   {stageData.applicants.map((applicant) => (
-                    <Link
+                    <div
                       key={applicant.id}
-                      to={`/applicants/${applicant.id}`}
-                      className="flex items-center justify-between p-3 hover:bg-gray-50 rounded transition-colors"
+                      draggable
+                      onDragStart={(e) => {
+                        setDraggedApplicant({ id: applicant.id, fromStage: expandedStage! });
+                        e.dataTransfer.effectAllowed = 'move';
+                      }}
+                      onDragEnd={() => {
+                        setDraggedApplicant(null);
+                        setDropTargetStage(null);
+                      }}
+                      className={`flex items-center justify-between p-3 rounded transition-colors cursor-grab active:cursor-grabbing ${
+                        draggedApplicant?.id === applicant.id ? 'opacity-50 bg-gray-100' : 'hover:bg-gray-50'
+                      }`}
                     >
-                      <div>
-                        <p className="font-medium text-gray-900">
-                          {applicant.firstName} {applicant.lastName}
+                      <Link
+                        to={`/applicants/${applicant.id}`}
+                        className="flex items-center gap-3 min-w-0 flex-1"
+                        onClick={(e) => { if (draggedApplicant) e.preventDefault(); }}
+                      >
+                        <Avatar name={`${applicant.firstName} ${applicant.lastName}`} email={applicant.email} size={36} />
+                        <div className="min-w-0">
+                          <p className="font-medium text-gray-900 truncate">
+                            {applicant.firstName} {applicant.lastName}
+                          </p>
+                          <p className="text-sm text-gray-500 truncate">
+                            {applicant.job?.title || 'General Application'}
+                          </p>
+                        </div>
+                      </Link>
+                      <div className="text-right shrink-0 ml-4">
+                        <p className="text-xs text-gray-400">
+                          {new Date(applicant.createdAt).toLocaleDateString()}
                         </p>
-                        <p className="text-sm text-gray-500">
-                          {applicant.job?.title || 'General Application'}
+                        <p className="text-xs text-gray-400">
+                          {applicant._count.reviews} review{applicant._count.reviews !== 1 ? 's' : ''}
                         </p>
                       </div>
-                      <p className="text-sm text-gray-400">
-                        {applicant._count.reviews} review{applicant._count.reviews !== 1 ? 's' : ''}
-                      </p>
-                    </Link>
+                    </div>
                   ))}
                 </div>
               )}

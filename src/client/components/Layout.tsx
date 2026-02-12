@@ -14,13 +14,15 @@ export default function Layout() {
     navigate('/login');
   };
 
+  const showEvents = user?.role !== 'hiring_manager' || user?.eventAccess !== false;
+
   const navItems = [
     { to: '/', label: 'Dashboard' },
     { to: '/jobs', label: 'Jobs' },
     { to: '/applicants', label: 'Applicants' },
-    { to: '/events', label: 'Events' },
+    ...(showEvents ? [{ to: '/events', label: 'Events' }] : []),
     ...(user?.role === 'admin' || user?.role === 'hiring_manager'
-      ? [{ to: '/email-settings', label: 'Settings' }]
+      ? [{ to: '/settings', label: 'Settings' }]
       : []),
     ...(user?.role === 'admin' ? [{ to: '/offices', label: 'Offices' }] : []),
     ...(user?.role === 'admin' ? [{ to: '/users', label: 'Users' }] : []),

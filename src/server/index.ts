@@ -37,12 +37,14 @@ app.use(helmet({
 // CORS — restrict origins in production/staging
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
-  : ['http://localhost:3004', 'http://localhost:3000'];
+  : null; // null = allow all origins in development
 
 app.use(cors({
   origin: (origin, callback) => {
     // Allow requests with no origin (server-to-server, curl, mobile apps)
-    if (!origin || allowedOrigins.includes(origin)) {
+    if (!origin) return callback(null, true);
+    // In dev (no ALLOWED_ORIGINS set), allow all origins
+    if (!allowedOrigins || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
@@ -54,9 +56,15 @@ app.use(cors({
 }));
 
 // Rate limiting
+const rateLimitOptions = {
+  // Disable trust proxy validation — we handle proxy trust at the Express level
+  validate: { trustProxy: false },
+};
+
 const apiLimiter = rateLimit({
+  ...rateLimitOptions,
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 200,
+  max: process.env.NODE_ENV === 'production' ? 200 : 1000,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many requests, please try again later.' },
@@ -65,6 +73,7 @@ app.use('/api/', apiLimiter);
 
 // Strict rate limit on auth endpoints
 const authLimiter = rateLimit({
+  ...rateLimitOptions,
   windowMs: 15 * 60 * 1000,
   max: 10, // 10 attempts per 15 min
   standardHeaders: true,
@@ -76,6 +85,7 @@ app.use('/api/auth/login', authLimiter);
 
 // Strict rate limit on public form submissions
 const publicFormLimiter = rateLimit({
+  ...rateLimitOptions,
   windowMs: 15 * 60 * 1000,
   max: 15,
   standardHeaders: true,

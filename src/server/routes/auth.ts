@@ -99,6 +99,10 @@ router.get('/me', authenticate, async (req: AuthRequest, res: Response) => {
         name: true,
         role: true,
         createdAt: true,
+        scopedDepartments: true,
+        scopedOffices: true,
+        scopeMode: true,
+        eventAccess: true,
       },
     });
 
@@ -106,7 +110,14 @@ router.get('/me', authenticate, async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    res.json(user);
+    // Parse JSON scope fields for the response
+    const response = {
+      ...user,
+      scopedDepartments: user.scopedDepartments ? JSON.parse(user.scopedDepartments) : null,
+      scopedOffices: user.scopedOffices ? JSON.parse(user.scopedOffices) : null,
+    };
+
+    res.json(response);
   } catch (error) {
     logger.error({ err: error }, 'Get user error');
     res.status(500).json({ error: 'Failed to get user' });

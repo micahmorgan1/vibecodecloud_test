@@ -5,7 +5,7 @@ import { validateBody } from '../middleware/validateBody.js';
 import { interviewCreateSchema, interviewUpdateSchema, interviewFeedbackSchema } from '../schemas/index.js';
 import logger from '../lib/logger.js';
 import { logActivity } from '../services/activityLog.js';
-import { notifyUsers } from '../services/notifications.js';
+import { notifyUsers, notifySubscribers } from '../services/notifications.js';
 
 const router = Router();
 
@@ -58,11 +58,15 @@ router.post(
       // Verify applicant exists
       const applicant = await prisma.applicant.findUnique({
         where: { id: applicantId },
-        select: { id: true, firstName: true, lastName: true, jobId: true, job: { select: { title: true } } },
+        select: { id: true, firstName: true, lastName: true, stage: true, jobId: true, job: { select: { id: true, title: true, department: true, officeId: true } } },
       });
       if (!applicant) {
         return res.status(404).json({ error: 'Applicant not found' });
       }
+
+      // Auto-advance to interview stage if in an earlier stage
+      const earlyStages = ['fair_intake', 'new', 'screening'];
+      const shouldAdvance = earlyStages.includes(applicant.stage);
 
       const interview = await prisma.$transaction(async (tx) => {
         const created = await tx.interview.create({
@@ -94,6 +98,20 @@ router.post(
           },
         });
 
+        // Auto-advance to interview stage
+        if (shouldAdvance) {
+          await tx.applicant.update({
+            where: { id: applicantId },
+            data: { stage: 'interview' },
+          });
+          await tx.note.create({
+            data: {
+              applicantId,
+              content: `Automatically moved from ${applicant.stage} to interview (interview scheduled)`,
+            },
+          });
+        }
+
         return created;
       });
 
@@ -102,6 +120,27 @@ router.post(
         userId: req.user!.id,
         metadata: { interviewId: interview.id, type, scheduledAt },
       });
+
+      // Log stage change if auto-advanced
+      if (shouldAdvance) {
+        logActivity('stage_changed', {
+          applicantId,
+          userId: req.user!.id,
+          metadata: { from: applicant.stage, to: 'interview', auto: true },
+        });
+
+        // Notify subscribers about stage change
+        notifySubscribers({
+          jobId: applicant.job?.id || null,
+          department: applicant.job?.department,
+          officeId: applicant.job?.officeId,
+          type: 'stage_changed',
+          title: 'Stage Changed',
+          message: `${applicant.firstName} ${applicant.lastName} moved to interview`,
+          link: `/applicants/${applicantId}`,
+          excludeUserId: req.user!.id,
+        });
+      }
 
       // Fire-and-forget: notify participants
       const participantUserIds = participantIds.filter((id: string) => id !== req.user!.id);
@@ -115,7 +154,11 @@ router.post(
         link: `/applicants/${applicantId}`,
       });
 
-      res.status(201).json(interview);
+      // Return updated stage in response so client can reflect it
+      const responseData = shouldAdvance
+        ? { ...interview, applicantStageChanged: true, newStage: 'interview' }
+        : interview;
+      res.status(201).json(responseData);
     } catch (error) {
       logger.error({ err: error }, 'Schedule interview error');
       res.status(500).json({ error: 'Failed to schedule interview' });
