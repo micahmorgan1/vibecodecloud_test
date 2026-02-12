@@ -33,15 +33,14 @@ RUN npx prisma generate
 # Copy built files
 COPY --from=builder /app/dist ./dist
 
-# Create uploads directory
-RUN mkdir -p uploads/resumes uploads/portfolios
+# Create uploads directories
+RUN mkdir -p uploads/resumes uploads/portfolios uploads/offers
 
 # Set environment variables
 ENV NODE_ENV=production
-ENV PORT=3001
 
-# Expose port
-EXPOSE 3001
+# Expose port (Railway injects PORT at runtime)
+EXPOSE ${PORT:-3005}
 
 # Start the server (run db:push to ensure schema is applied, then start)
 CMD ["sh", "-c", "npx prisma db push --skip-generate && node dist/server/index.js"]
