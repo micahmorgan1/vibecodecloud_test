@@ -135,6 +135,18 @@ app.get('/api/health', (_req, res) => {
 // Serve static frontend in production
 if (process.env.NODE_ENV === 'production') {
   const clientPath = path.join(__dirname, '../client');
+  import('fs').then(fs => {
+    console.log(`[BOOT] __dirname: ${__dirname}`);
+    console.log(`[BOOT] clientPath: ${clientPath}`);
+    console.log(`[BOOT] clientPath exists: ${fs.existsSync(clientPath)}`);
+    if (fs.existsSync(clientPath)) {
+      console.log(`[BOOT] clientPath contents: ${fs.readdirSync(clientPath).join(', ')}`);
+      const assetsPath = path.join(clientPath, 'assets');
+      if (fs.existsSync(assetsPath)) {
+        console.log(`[BOOT] assets contents: ${fs.readdirSync(assetsPath).join(', ')}`);
+      }
+    }
+  });
   app.use(express.static(clientPath));
 
   // Handle SPA routing - serve index.html for all non-API routes
