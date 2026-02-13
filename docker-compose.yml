@@ -1,23 +1,15 @@
 services:
-  app:
-    build: .
+  postgres:
+    image: postgres:16
     ports:
-      - "3001:3001"
+      - "5432:5432"
     environment:
-      - NODE_ENV=production
-      - JWT_SECRET=${JWT_SECRET:-change-this-secret-in-production}
-      - DATABASE_URL=file:/app/data/prod.db
+      POSTGRES_DB: ats_dev
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
     volumes:
-      - app-data:/app/data
-      - app-uploads:/app/uploads
+      - pgdata:/var/lib/postgresql/data
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3001/api/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
 
 volumes:
-  app-data:
-  app-uploads:
+  pgdata:

@@ -131,7 +131,63 @@ export default function Offices() {
           </button>
         </div>
       ) : (
-        <div className="card overflow-hidden p-0">
+        <>
+        {/* Mobile card-rows */}
+        <div className="md:hidden space-y-2">
+          {offices.map((office) => (
+            <div key={office.id} className="card-row">
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium text-gray-900 truncate">{office.name}</p>
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 shrink-0">
+                      {office._count.jobs} {office._count.jobs === 1 ? 'job' : 'jobs'}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 mt-0.5 text-sm text-gray-500">
+                    <span className="truncate">{office.city}, {office.state}</span>
+                    <span>&middot;</span>
+                    <span className="shrink-0">{office.phone}</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={() => openEditModal(office)}
+                    className="text-gray-600 hover:text-gray-900 text-sm font-medium"
+                  >
+                    Edit
+                  </button>
+                  {deleteConfirm === office.id ? (
+                    <span className="flex items-center gap-1">
+                      <button
+                        onClick={() => handleDelete(office.id)}
+                        className="text-red-600 hover:text-red-800 text-sm font-medium"
+                      >
+                        Confirm
+                      </button>
+                      <button
+                        onClick={() => setDeleteConfirm(null)}
+                        className="text-gray-400 hover:text-gray-600 text-sm font-medium"
+                      >
+                        Cancel
+                      </button>
+                    </span>
+                  ) : (
+                    <button
+                      onClick={() => setDeleteConfirm(office.id)}
+                      className="text-red-500 hover:text-red-700 text-sm font-medium"
+                    >
+                      Delete
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Desktop table */}
+        <div className="hidden md:block card overflow-hidden p-0">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50">
@@ -191,6 +247,7 @@ export default function Offices() {
             </table>
           </div>
         </div>
+        </>
       )}
 
       {/* Create/Edit Modal */}

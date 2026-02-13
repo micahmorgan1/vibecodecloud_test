@@ -1,6 +1,6 @@
 import BoringAvatar from 'boring-avatars';
 
-const STYLES = ['marble', 'pixel', 'sunset', 'ring'] as const;
+const STYLES = ['marble', 'pixel', 'ring'] as const;
 
 const PALETTES = [
   ['#5b1d99', '#0074b4', '#00b34c', '#ffd41f', '#fc6e3d'], // marble pop
@@ -37,7 +37,7 @@ export default function Avatar({ name, email, size, className }: AvatarProps) {
   const palette = PALETTES[Math.floor(hash / STYLES.length) % PALETTES.length];
 
   return (
-    <div className={className} style={{ width: size, height: size, borderRadius: '50%', overflow: 'hidden', flexShrink: 0 }}>
+    <div className={className} style={{ width: size, height: size, minWidth: size, minHeight: size, borderRadius: '50%', overflow: 'hidden', flexShrink: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
       <BoringAvatar
         size={size}
         name={seed}
