@@ -116,7 +116,7 @@ export default function JobDetail() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black dark:border-white"></div>
       </div>
     );
   }
@@ -124,7 +124,7 @@ export default function JobDetail() {
   if (!job) {
     return (
       <div className="card text-center py-12">
-        <p className="text-gray-500">Job not found</p>
+        <p className="text-neutral-500 dark:text-neutral-400">Job not found</p>
         <Link to="/jobs" className="btn btn-primary mt-4">
           Back to Jobs
         </Link>
@@ -169,18 +169,18 @@ export default function JobDetail() {
   return (
     <div className="space-y-6">
       {/* Breadcrumb */}
-      <nav className="text-sm text-gray-500">
-        <Link to="/jobs" className="hover:text-gray-900">Jobs</Link>
+      <nav className="text-sm text-neutral-500 dark:text-neutral-400">
+        <Link to="/jobs" className="hover:text-neutral-900 dark:hover:text-neutral-100">Jobs</Link>
         <span className="mx-2">/</span>
-        <span className="text-gray-900">{job.title}</span>
+        <span className="text-neutral-900 dark:text-neutral-100">{job.title}</span>
       </nav>
 
       {/* Archived Banner */}
       {job.archived && (
-        <div className="bg-gray-200 border border-gray-300 rounded p-4 flex items-center justify-between">
+        <div className="bg-neutral-200 border border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600 rounded p-4 flex items-center justify-between">
           <div>
-            <p className="font-display font-semibold text-gray-700 uppercase tracking-wide">This job is archived</p>
-            <p className="text-sm text-gray-500">
+            <p className="font-display font-semibold text-neutral-700 dark:text-neutral-300 uppercase tracking-wide">This job is archived</p>
+            <p className="text-sm text-neutral-500 dark:text-neutral-400">
               Archived on {job.archivedAt ? new Date(job.archivedAt).toLocaleDateString() : 'unknown date'}.
               All applicant data has been preserved.
             </p>
@@ -198,16 +198,16 @@ export default function JobDetail() {
         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-2xl font-display font-bold text-gray-900 uppercase tracking-wide">{job.title}</h1>
+              <h1 className="text-2xl font-display font-bold text-neutral-900 dark:text-neutral-100 uppercase tracking-wide">{job.title}</h1>
               <span className={`badge ${
-                job.status === 'open' ? 'bg-black text-white' :
-                job.status === 'closed' ? 'bg-gray-200 text-gray-500' :
-                'bg-gray-300 text-gray-700'
+                job.status === 'open' ? 'bg-black text-white dark:bg-white dark:text-black' :
+                job.status === 'closed' ? 'bg-neutral-200 text-neutral-500 dark:bg-neutral-600 dark:text-neutral-300' :
+                'bg-neutral-300 text-neutral-700 dark:bg-neutral-600 dark:text-neutral-300'
               }`}>
                 {job.status}
               </span>
             </div>
-            <div className="flex flex-wrap gap-4 text-sm text-gray-500">
+            <div className="flex flex-wrap gap-4 text-sm text-neutral-500 dark:text-neutral-400">
               <span className="flex items-center">
                 <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
@@ -251,7 +251,7 @@ export default function JobDetail() {
                   onClick={() => setLinkedInModalOpen(true)}
                   className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
                     job.postedToLinkedIn
-                      ? 'bg-blue-100 text-blue-800 hover:bg-blue-200'
+                      ? 'bg-blue-100 text-blue-800 hover:bg-blue-200 dark:bg-blue-900 dark:text-blue-200 dark:hover:bg-blue-800'
                       : 'bg-blue-600 text-white hover:bg-blue-700'
                   }`}
                 >
@@ -303,7 +303,7 @@ export default function JobDetail() {
               {isAdmin && !job.archived && (
                 <button
                   onClick={archiveJob}
-                  className="text-sm text-gray-500 hover:text-gray-700 underline"
+                  className="text-sm text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-300 underline"
                 >
                   Archive Job
                 </button>
@@ -313,14 +313,14 @@ export default function JobDetail() {
         </div>
 
         {/* Application Link */}
-        <div className="mt-6 p-4 bg-gray-50 rounded border border-gray-200">
-          <p className="text-sm font-medium text-gray-700 mb-2">Application Link</p>
+        <div className="mt-6 p-4 bg-neutral-50 dark:bg-neutral-700 rounded border border-neutral-200 dark:border-neutral-600">
+          <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">Application Link</p>
           <div className="flex items-center gap-2">
             <input
               type="text"
               value={applicationUrl}
               readOnly
-              className="input flex-1 text-sm bg-white"
+              className="input flex-1 text-sm bg-white dark:bg-neutral-800"
             />
             <button
               onClick={() => {
@@ -357,7 +357,7 @@ export default function JobDetail() {
       {canEdit && (
         <div className="card">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-display font-semibold text-gray-900 uppercase tracking-wide">Website Publishing</h2>
+            <h2 className="text-lg font-display font-semibold text-neutral-900 dark:text-neutral-100 uppercase tracking-wide">Website Publishing</h2>
           </div>
           <div className="flex items-center gap-4 mb-4">
             <label className="flex items-center gap-3 cursor-pointer">
@@ -374,21 +374,21 @@ export default function JobDetail() {
                     console.error('Failed to toggle website publish:', err);
                   }
                 }}
-                className="h-4 w-4 rounded border-gray-300"
+                className="h-4 w-4 rounded border-neutral-300 dark:border-neutral-600"
               />
-              <span className="text-sm font-medium text-gray-700">
+              <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
                 Publish to WHLC Website
               </span>
             </label>
             {job.publishToWebsite && (
-              <span className="badge bg-green-100 text-green-800 border border-green-200">
+              <span className="badge bg-green-100 text-green-800 border border-green-200 dark:bg-green-900 dark:text-green-200 dark:border-green-800">
                 Live
               </span>
             )}
           </div>
           <div className="space-y-3">
             <div>
-              <label className="text-sm text-gray-500">Slug</label>
+              <label className="text-sm text-neutral-500 dark:text-neutral-400">Slug</label>
               <div className="flex items-center gap-2 mt-1">
                 <input
                   type="text"
@@ -412,9 +412,9 @@ export default function JobDetail() {
               </div>
             </div>
             {job.publishToWebsite && (
-              <div className="p-3 bg-green-50 rounded border border-green-200">
-                <p className="text-xs text-gray-500 mb-1">Website URL</p>
-                <p className="text-sm font-medium text-green-800">
+              <div className="p-3 bg-green-50 dark:bg-green-900/30 rounded border border-green-200 dark:border-green-800">
+                <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">Website URL</p>
+                <p className="text-sm font-medium text-green-800 dark:text-green-300">
                   whlcarchitecture.com/careers/{job.slug}
                 </p>
               </div>
@@ -427,37 +427,37 @@ export default function JobDetail() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           <div className="card">
-            <h2 className="text-lg font-display font-semibold text-gray-900 mb-4 uppercase tracking-wide">Description</h2>
-            <div className="prose prose-sm max-w-none text-gray-600" dangerouslySetInnerHTML={{ __html: renderContent(job.description) }} />
+            <h2 className="text-lg font-display font-semibold text-neutral-900 dark:text-neutral-100 mb-4 uppercase tracking-wide">Description</h2>
+            <div className="prose prose-sm max-w-none text-neutral-600 dark:text-neutral-300" dangerouslySetInnerHTML={{ __html: renderContent(job.description) }} />
           </div>
 
           {job.responsibilities && (
             <div className="card">
-              <h2 className="text-lg font-display font-semibold text-gray-900 mb-4 uppercase tracking-wide">Responsibilities</h2>
-              <div className="prose prose-sm max-w-none text-gray-600" dangerouslySetInnerHTML={{ __html: renderContent(job.responsibilities) }} />
+              <h2 className="text-lg font-display font-semibold text-neutral-900 dark:text-neutral-100 mb-4 uppercase tracking-wide">Responsibilities</h2>
+              <div className="prose prose-sm max-w-none text-neutral-600 dark:text-neutral-300" dangerouslySetInnerHTML={{ __html: renderContent(job.responsibilities) }} />
             </div>
           )}
 
           <div className="card">
-            <h2 className="text-lg font-display font-semibold text-gray-900 mb-4 uppercase tracking-wide">Desired Qualifications</h2>
-            <div className="prose prose-sm max-w-none text-gray-600" dangerouslySetInnerHTML={{ __html: renderContent(job.requirements) }} />
+            <h2 className="text-lg font-display font-semibold text-neutral-900 dark:text-neutral-100 mb-4 uppercase tracking-wide">Desired Qualifications</h2>
+            <div className="prose prose-sm max-w-none text-neutral-600 dark:text-neutral-300" dangerouslySetInnerHTML={{ __html: renderContent(job.requirements) }} />
           </div>
 
           {job.benefits && (
             <div className="card">
-              <h2 className="text-lg font-display font-semibold text-gray-900 mb-4 uppercase tracking-wide">Benefits</h2>
-              <div className="prose prose-sm max-w-none text-gray-600" dangerouslySetInnerHTML={{ __html: renderContent(job.benefits) }} />
+              <h2 className="text-lg font-display font-semibold text-neutral-900 dark:text-neutral-100 mb-4 uppercase tracking-wide">Benefits</h2>
+              <div className="prose prose-sm max-w-none text-neutral-600 dark:text-neutral-300" dangerouslySetInnerHTML={{ __html: renderContent(job.benefits) }} />
             </div>
           )}
         </div>
 
         <div className="space-y-6">
           <div className="card">
-            <h2 className="text-lg font-display font-semibold text-gray-900 mb-4 uppercase tracking-wide">Details</h2>
+            <h2 className="text-lg font-display font-semibold text-neutral-900 dark:text-neutral-100 mb-4 uppercase tracking-wide">Details</h2>
             <dl className="space-y-3 text-sm">
               <div>
-                <dt className="text-gray-500">Office</dt>
-                <dd className="font-medium text-gray-900">
+                <dt className="text-neutral-500 dark:text-neutral-400">Office</dt>
+                <dd className="font-medium text-neutral-900 dark:text-neutral-100">
                   {canEdit ? (
                     <select
                       value={job.officeId || ''}
@@ -483,18 +483,18 @@ export default function JobDetail() {
                 </dd>
               </div>
               <div>
-                <dt className="text-gray-500">Posted by</dt>
-                <dd className="font-medium text-gray-900">{job.createdBy.name}</dd>
+                <dt className="text-neutral-500 dark:text-neutral-400">Posted by</dt>
+                <dd className="font-medium text-neutral-900 dark:text-neutral-100">{job.createdBy.name}</dd>
               </div>
               <div>
-                <dt className="text-gray-500">Posted on</dt>
-                <dd className="font-medium text-gray-900">
+                <dt className="text-neutral-500 dark:text-neutral-400">Posted on</dt>
+                <dd className="font-medium text-neutral-900 dark:text-neutral-100">
                   {new Date(job.createdAt).toLocaleDateString()}
                 </dd>
               </div>
               <div>
-                <dt className="text-gray-500">Total Applicants</dt>
-                <dd className="font-medium text-gray-900">{job.applicants.length}</dd>
+                <dt className="text-neutral-500 dark:text-neutral-400">Total Applicants</dt>
+                <dd className="font-medium text-neutral-900 dark:text-neutral-100">{job.applicants.length}</dd>
               </div>
             </dl>
           </div>
@@ -509,13 +509,13 @@ export default function JobDetail() {
       {/* Applicants */}
       <div className="card">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-display font-semibold text-gray-900 uppercase tracking-wide">
+          <h2 className="text-lg font-display font-semibold text-neutral-900 dark:text-neutral-100 uppercase tracking-wide">
             Applicants ({job.applicants.length})
           </h2>
         </div>
 
         {job.applicants.length === 0 ? (
-          <p className="text-gray-500 text-center py-8">No applicants yet</p>
+          <p className="text-neutral-500 dark:text-neutral-400 text-center py-8">No applicants yet</p>
         ) : (
           <>
           {/* Mobile card-rows */}
@@ -530,7 +530,7 @@ export default function JobDetail() {
                   <Avatar name={`${applicant.firstName} ${applicant.lastName}`} email={applicant.email} size={36} />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
-                      <p className="font-medium text-gray-900 truncate">
+                      <p className="font-medium text-neutral-900 dark:text-neutral-100 truncate">
                         {applicant.firstName} {applicant.lastName}
                       </p>
                       <div className="flex items-center gap-2 shrink-0">
@@ -538,14 +538,14 @@ export default function JobDetail() {
                           {stageLabels[applicant.stage]}
                         </span>
                         {applicant.reviews.length > 0 && (
-                          <span className="text-sm text-gray-600">
-                            <span className="text-gray-900">★</span>{getAverageRating(applicant.reviews)}
+                          <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                            <span className="text-neutral-900 dark:text-neutral-100">★</span>{getAverageRating(applicant.reviews)}
                           </span>
                         )}
-                        <span className="text-gray-400 text-sm">&rsaquo;</span>
+                        <span className="text-neutral-400 dark:text-neutral-500 text-sm">&rsaquo;</span>
                       </div>
                     </div>
-                    <p className="text-xs text-gray-400 mt-0.5">
+                    <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-0.5">
                       {new Date(applicant.createdAt).toLocaleDateString()}
                     </p>
                   </div>
@@ -558,7 +558,7 @@ export default function JobDetail() {
           <div className="hidden md:block overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-gray-200 text-left text-sm text-gray-500">
+                <tr className="border-b border-neutral-200 dark:border-neutral-700 text-left text-sm text-neutral-500 dark:text-neutral-400">
                   <th className="pb-3 font-medium">Applicant</th>
                   <th className="pb-3 font-medium">Stage</th>
                   <th className="pb-3 font-medium">Rating</th>
@@ -566,17 +566,17 @@ export default function JobDetail() {
                   <th className="pb-3 font-medium"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-neutral-100 dark:divide-neutral-700">
                 {job.applicants.map((applicant) => (
-                  <tr key={applicant.id} className="hover:bg-gray-50">
+                  <tr key={applicant.id} className="hover:bg-neutral-50 dark:hover:bg-neutral-700">
                     <td className="py-3">
                       <div className="flex items-center gap-3">
                         <Avatar name={`${applicant.firstName} ${applicant.lastName}`} email={applicant.email} size={32} />
                         <div>
-                          <p className="font-medium text-gray-900">
+                          <p className="font-medium text-neutral-900 dark:text-neutral-100">
                             {applicant.firstName} {applicant.lastName}
                           </p>
-                          <p className="text-sm text-gray-500">{applicant.email}</p>
+                          <p className="text-sm text-neutral-500 dark:text-neutral-400">{applicant.email}</p>
                         </div>
                       </div>
                     </td>
@@ -588,23 +588,23 @@ export default function JobDetail() {
                     <td className="py-3">
                       {applicant.reviews.length > 0 ? (
                         <div className="flex items-center">
-                          <span className="text-gray-900 mr-1">★</span>
+                          <span className="text-neutral-900 dark:text-neutral-100 mr-1">★</span>
                           <span className="font-medium">{getAverageRating(applicant.reviews)}</span>
-                          <span className="text-gray-400 text-sm ml-1">
+                          <span className="text-neutral-400 dark:text-neutral-500 text-sm ml-1">
                             ({applicant.reviews.length})
                           </span>
                         </div>
                       ) : (
-                        <span className="text-gray-400 text-sm">No reviews</span>
+                        <span className="text-neutral-400 dark:text-neutral-500 text-sm">No reviews</span>
                       )}
                     </td>
-                    <td className="py-3 text-sm text-gray-500">
+                    <td className="py-3 text-sm text-neutral-500 dark:text-neutral-400">
                       {new Date(applicant.createdAt).toLocaleDateString()}
                     </td>
                     <td className="py-3">
                       <Link
                         to={`/applicants/${applicant.id}`}
-                        className="text-gray-900 hover:text-gray-600 text-sm font-medium"
+                        className="text-neutral-900 hover:text-neutral-600 dark:text-neutral-100 dark:hover:text-neutral-300 text-sm font-medium"
                       >
                         View &rarr;
                       </Link>
@@ -689,10 +689,10 @@ function EditJobModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
-          <h2 className="text-xl font-display font-bold uppercase tracking-wide">Edit Job</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+      <div className="bg-white dark:bg-neutral-800 rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 bg-white dark:bg-neutral-800 border-b border-neutral-200 dark:border-neutral-700 px-6 py-4 flex justify-between items-center">
+          <h2 className="text-xl font-display font-bold uppercase tracking-wide text-neutral-900 dark:text-neutral-100">Edit Job</h2>
+          <button onClick={onClose} className="text-neutral-400 hover:text-neutral-600 dark:text-neutral-500 dark:hover:text-neutral-300">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -701,7 +701,7 @@ function EditJobModal({
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
+            <div className="bg-red-50 border border-red-200 text-red-700 dark:bg-red-900/30 dark:border-red-800 dark:text-red-300 px-4 py-3 rounded text-sm">
               {error}
             </div>
           )}

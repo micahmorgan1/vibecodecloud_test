@@ -132,15 +132,15 @@ export default function QRScanner({ onScan }: QRScannerProps) {
   };
 
   return (
-    <div className="bg-gray-50 border border-gray-200 rounded p-4 mb-4">
+    <div className="bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded p-4 mb-4">
       <div className="flex items-center justify-between mb-3">
-        <p className="text-sm font-medium text-gray-700">QR / Badge Scanner</p>
+        <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300">QR / Badge Scanner</p>
         <div className="flex gap-1">
           <button
             type="button"
             onClick={() => handleModeSwitch('usb')}
             className={`px-2.5 py-1 rounded text-xs font-medium transition-colors ${
-              mode === 'usb' ? 'bg-gray-900 text-white' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+              mode === 'usb' ? 'bg-neutral-900 text-white dark:bg-white dark:text-black' : 'bg-neutral-200 text-neutral-600 hover:bg-neutral-300 dark:bg-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-600'
             }`}
           >
             USB/Bluetooth
@@ -149,7 +149,7 @@ export default function QRScanner({ onScan }: QRScannerProps) {
             type="button"
             onClick={() => handleModeSwitch('camera')}
             className={`px-2.5 py-1 rounded text-xs font-medium transition-colors ${
-              mode === 'camera' ? 'bg-gray-900 text-white' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+              mode === 'camera' ? 'bg-neutral-900 text-white dark:bg-white dark:text-black' : 'bg-neutral-200 text-neutral-600 hover:bg-neutral-300 dark:bg-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-600'
             }`}
           >
             Camera
@@ -158,7 +158,7 @@ export default function QRScanner({ onScan }: QRScannerProps) {
       </div>
 
       {mode === 'usb' && (
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-neutral-500 dark:text-neutral-400">
           Ready for USB/Bluetooth scanner input. Scan a badge QR code to auto-populate fields.
         </p>
       )}
@@ -187,11 +187,11 @@ export default function QRScanner({ onScan }: QRScannerProps) {
       )}
 
       {error && (
-        <p className="text-red-600 text-xs mt-2">{error}</p>
+        <p className="text-red-600 dark:text-red-400 text-xs mt-2">{error}</p>
       )}
 
       {lastScan && !error && (
-        <p className="text-green-600 text-xs mt-2">Scan data applied to form.</p>
+        <p className="text-green-600 dark:text-green-400 text-xs mt-2">Scan data applied to form.</p>
       )}
     </div>
   );

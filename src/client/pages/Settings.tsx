@@ -52,11 +52,11 @@ const roleLabel = (role: string) => {
 
 const roleBadge = (role: string) => {
   const styles: Record<string, string> = {
-    admin: 'bg-gray-900 text-white',
-    hiring_manager: 'bg-blue-100 text-blue-800',
-    reviewer: 'bg-green-100 text-green-800',
+    admin: 'bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900',
+    hiring_manager: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+    reviewer: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
   };
-  return styles[role] || 'bg-gray-100 text-gray-800';
+  return styles[role] || 'bg-neutral-100 text-neutral-800 dark:bg-neutral-700 dark:text-neutral-300';
 };
 
 // --- Tabs ---
@@ -120,7 +120,7 @@ function SiteContentEditor() {
   return (
     <div className="card">
       <h2 className="text-lg font-display font-semibold uppercase tracking-wide mb-1">Site Content</h2>
-      <p className="text-sm text-gray-500 mb-4">Public text blocks displayed on the careers page and job listings.</p>
+      <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-4">Public text blocks displayed on the careers page and job listings.</p>
 
       <div className="space-y-4">
         <div>
@@ -136,22 +136,22 @@ function SiteContentEditor() {
           </select>
         </div>
 
-        <p className="text-xs text-gray-400">{selected.description}</p>
+        <p className="text-xs text-neutral-400 dark:text-neutral-500">{selected.description}</p>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
+          <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded text-sm">
             {error}
           </div>
         )}
         {saved && (
-          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded text-sm">
+          <div className="bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 px-4 py-3 rounded text-sm">
             Saved successfully.
           </div>
         )}
 
         {loading ? (
           <div className="flex items-center justify-center h-32">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black dark:border-white"></div>
           </div>
         ) : (
           <>
@@ -250,7 +250,7 @@ function EmailTemplateEditor() {
   return (
     <div className="card">
       <h2 className="text-lg font-display font-semibold uppercase tracking-wide mb-1">Email Templates</h2>
-      <p className="text-sm text-gray-500 mb-4">Auto-responders and notification emails sent to applicants.</p>
+      <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-4">Auto-responders and notification emails sent to applicants.</p>
 
       <div className="space-y-4">
         <div>
@@ -266,22 +266,22 @@ function EmailTemplateEditor() {
           </select>
         </div>
 
-        <p className="text-xs text-gray-400">{selected.description}</p>
+        <p className="text-xs text-neutral-400 dark:text-neutral-500">{selected.description}</p>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
+          <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded text-sm">
             {error}
           </div>
         )}
         {saved && (
-          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded text-sm">
+          <div className="bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 px-4 py-3 rounded text-sm">
             Template saved successfully.
           </div>
         )}
 
         {loading ? (
           <div className="flex items-center justify-center h-32">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black dark:border-white"></div>
           </div>
         ) : (
           <>
@@ -306,12 +306,12 @@ function EmailTemplateEditor() {
             </div>
 
             <div className="flex items-center justify-between">
-              <p className="text-xs text-gray-400">
+              <p className="text-xs text-neutral-400 dark:text-neutral-500">
                 Variables:{' '}
                 {selected.variables.map((v, i) => (
                   <span key={v}>
                     {i > 0 && ' '}
-                    <code className="bg-gray-100 px-1 rounded">{`{{${v}}}`}</code>
+                    <code className="bg-neutral-100 dark:bg-neutral-700 px-1 rounded">{`{{${v}}}`}</code>
                   </span>
                 ))}
               </p>
@@ -430,7 +430,7 @@ function ReviewerAccess() {
       <div className="card">
         <h2 className="text-lg font-display font-semibold uppercase tracking-wide mb-2">Reviewer Access</h2>
         <div className="flex items-center justify-center h-32">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black dark:border-white"></div>
         </div>
       </div>
     );
@@ -439,17 +439,17 @@ function ReviewerAccess() {
   return (
     <div className="card">
       <h2 className="text-lg font-display font-semibold uppercase tracking-wide mb-1">Reviewer Access</h2>
-      <p className="text-sm text-gray-500 mb-4">
+      <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-4">
         Control which jobs and events each reviewer can see. Reviewers only see applicants for their assigned jobs and events.
       </p>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm mb-4">
+        <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded text-sm mb-4">
           {error}
         </div>
       )}
       {saved && (
-        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded text-sm mb-4">
+        <div className="bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 px-4 py-3 rounded text-sm mb-4">
           Assignments saved successfully.
         </div>
       )}
@@ -460,14 +460,14 @@ function ReviewerAccess() {
           <button
             type="button"
             onClick={() => setMode('jobs')}
-            className={`px-4 py-2 text-sm font-medium rounded border ${mode === 'jobs' ? 'bg-black text-white border-black' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'}`}
+            className={`px-4 py-2 text-sm font-medium rounded border ${mode === 'jobs' ? 'bg-black text-white border-black dark:bg-white dark:text-black dark:border-white' : 'bg-white dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 border-neutral-300 dark:border-neutral-600 hover:bg-neutral-50 dark:hover:bg-neutral-700'}`}
           >
             Job Access
           </button>
           <button
             type="button"
             onClick={() => setMode('events')}
-            className={`px-4 py-2 text-sm font-medium rounded border ${mode === 'events' ? 'bg-black text-white border-black' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'}`}
+            className={`px-4 py-2 text-sm font-medium rounded border ${mode === 'events' ? 'bg-black text-white border-black dark:bg-white dark:text-black dark:border-white' : 'bg-white dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 border-neutral-300 dark:border-neutral-600 hover:bg-neutral-50 dark:hover:bg-neutral-700'}`}
           >
             Event Access
           </button>
@@ -498,23 +498,23 @@ function ReviewerAccess() {
           <>
             {loadingAssignments ? (
               <div className="flex items-center justify-center h-20">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black dark:border-white"></div>
               </div>
             ) : reviewers.length === 0 ? (
-              <p className="text-sm text-gray-500">No reviewers found. Create reviewer accounts in the Users page first.</p>
+              <p className="text-sm text-neutral-500 dark:text-neutral-400">No reviewers found. Create reviewer accounts in the Users page first.</p>
             ) : (
-              <div className="border rounded divide-y">
+              <div className="border border-neutral-200 dark:border-neutral-700 rounded divide-y divide-neutral-200 dark:divide-neutral-700">
                 {reviewers.map((reviewer) => (
                   <div key={reviewer.id} className="flex items-center gap-3 px-4 py-3">
                     <input
                       type="checkbox"
                       checked={assignedIds.has(reviewer.id)}
                       onChange={() => toggleAssignment(reviewer.id)}
-                      className="h-4 w-4 rounded border-gray-300"
+                      className="h-4 w-4 rounded border-neutral-300 dark:border-neutral-600"
                     />
                     <div>
-                      <p className="text-sm font-medium text-gray-900">{reviewer.name}</p>
-                      <p className="text-xs text-gray-500">{reviewer.email}</p>
+                      <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">{reviewer.name}</p>
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400">{reviewer.email}</p>
                     </div>
                   </div>
                 ))}
@@ -619,7 +619,7 @@ function NotificationSubscriptions() {
       <div className="card">
         <h2 className="text-lg font-display font-semibold uppercase tracking-wide mb-2">My Notification Subscriptions</h2>
         <div className="flex items-center justify-center h-32">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black dark:border-white"></div>
         </div>
       </div>
     );
@@ -628,54 +628,54 @@ function NotificationSubscriptions() {
   return (
     <div className="card">
       <h2 className="text-lg font-display font-semibold uppercase tracking-wide mb-1">My Notification Subscriptions</h2>
-      <p className="text-sm text-gray-500 mb-4">
+      <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-4">
         Choose what triggers in-app notifications for you. Subscribe to specific jobs, entire departments, or offices.
       </p>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm mb-4">
+        <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded text-sm mb-4">
           {error}
         </div>
       )}
       {saved && (
-        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded text-sm mb-4">
+        <div className="bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 px-4 py-3 rounded text-sm mb-4">
           Subscriptions saved successfully.
         </div>
       )}
 
       <div className="space-y-6">
         {/* All Notifications Toggle */}
-        <div className="border rounded px-4 py-3 bg-gray-50">
+        <div className="border border-neutral-200 dark:border-neutral-700 rounded px-4 py-3 bg-neutral-50 dark:bg-neutral-700">
           <label className="flex items-center gap-3 cursor-pointer">
             <input
               type="checkbox"
               checked={allNotifications}
               onChange={() => setAllNotifications(!allNotifications)}
-              className="h-4 w-4 rounded border-gray-300"
+              className="h-4 w-4 rounded border-neutral-300 dark:border-neutral-600"
             />
             <div>
-              <span className="text-sm font-semibold text-gray-900">All Notifications</span>
-              <p className="text-xs text-gray-500">Receive notifications for all applicants you have access to, including future jobs.</p>
+              <span className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">All Notifications</span>
+              <p className="text-xs text-neutral-500 dark:text-neutral-400">Receive notifications for all applicants you have access to, including future jobs.</p>
             </div>
           </label>
         </div>
 
         {/* Job Subscriptions */}
         <div className={allNotifications ? 'opacity-40 pointer-events-none' : ''}>
-          <h3 className="text-sm font-semibold text-gray-700 mb-2">Jobs</h3>
+          <h3 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-2">Jobs</h3>
           {options.jobs.length === 0 ? (
-            <p className="text-sm text-gray-400">No open jobs available.</p>
+            <p className="text-sm text-neutral-400 dark:text-neutral-500">No open jobs available.</p>
           ) : (
-            <div className="border rounded divide-y max-h-64 overflow-y-auto">
+            <div className="border border-neutral-200 dark:border-neutral-700 rounded divide-y divide-neutral-200 dark:divide-neutral-700 max-h-64 overflow-y-auto">
               {options.jobs.map((job) => (
-                <label key={job.id} className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 cursor-pointer">
+                <label key={job.id} className="flex items-center gap-3 px-4 py-2.5 hover:bg-neutral-50 dark:hover:bg-neutral-700 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={checkedJobs.has(job.id)}
                     onChange={() => toggle(checkedJobs, setCheckedJobs, job.id)}
-                    className="h-4 w-4 rounded border-gray-300"
+                    className="h-4 w-4 rounded border-neutral-300 dark:border-neutral-600"
                   />
-                  <span className="text-sm text-gray-900">{job.title}</span>
+                  <span className="text-sm text-neutral-900 dark:text-neutral-100">{job.title}</span>
                 </label>
               ))}
             </div>
@@ -684,20 +684,20 @@ function NotificationSubscriptions() {
 
         {/* Department Subscriptions */}
         <div className={allNotifications ? 'opacity-40 pointer-events-none' : ''}>
-          <h3 className="text-sm font-semibold text-gray-700 mb-2">Departments</h3>
+          <h3 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-2">Departments</h3>
           {options.departments.length === 0 ? (
-            <p className="text-sm text-gray-400">No departments found.</p>
+            <p className="text-sm text-neutral-400 dark:text-neutral-500">No departments found.</p>
           ) : (
-            <div className="border rounded divide-y">
+            <div className="border border-neutral-200 dark:border-neutral-700 rounded divide-y divide-neutral-200 dark:divide-neutral-700">
               {options.departments.map((dept) => (
-                <label key={dept} className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 cursor-pointer">
+                <label key={dept} className="flex items-center gap-3 px-4 py-2.5 hover:bg-neutral-50 dark:hover:bg-neutral-700 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={checkedDepts.has(dept)}
                     onChange={() => toggle(checkedDepts, setCheckedDepts, dept)}
-                    className="h-4 w-4 rounded border-gray-300"
+                    className="h-4 w-4 rounded border-neutral-300 dark:border-neutral-600"
                   />
-                  <span className="text-sm text-gray-900">{dept}</span>
+                  <span className="text-sm text-neutral-900 dark:text-neutral-100">{dept}</span>
                 </label>
               ))}
             </div>
@@ -706,20 +706,20 @@ function NotificationSubscriptions() {
 
         {/* Office Subscriptions */}
         <div className={allNotifications ? 'opacity-40 pointer-events-none' : ''}>
-          <h3 className="text-sm font-semibold text-gray-700 mb-2">Offices</h3>
+          <h3 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-2">Offices</h3>
           {options.offices.length === 0 ? (
-            <p className="text-sm text-gray-400">No offices found.</p>
+            <p className="text-sm text-neutral-400 dark:text-neutral-500">No offices found.</p>
           ) : (
-            <div className="border rounded divide-y">
+            <div className="border border-neutral-200 dark:border-neutral-700 rounded divide-y divide-neutral-200 dark:divide-neutral-700">
               {options.offices.map((office) => (
-                <label key={office.id} className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 cursor-pointer">
+                <label key={office.id} className="flex items-center gap-3 px-4 py-2.5 hover:bg-neutral-50 dark:hover:bg-neutral-700 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={checkedOffices.has(office.id)}
                     onChange={() => toggle(checkedOffices, setCheckedOffices, office.id)}
-                    className="h-4 w-4 rounded border-gray-300"
+                    className="h-4 w-4 rounded border-neutral-300 dark:border-neutral-600"
                   />
-                  <span className="text-sm text-gray-900">{office.name}</span>
+                  <span className="text-sm text-neutral-900 dark:text-neutral-100">{office.name}</span>
                 </label>
               ))}
             </div>
@@ -728,23 +728,23 @@ function NotificationSubscriptions() {
 
         {/* Event Subscriptions */}
         <div className={allNotifications ? 'opacity-40 pointer-events-none' : ''}>
-          <h3 className="text-sm font-semibold text-gray-700 mb-2">Events</h3>
-          <p className="text-xs text-gray-400 mb-2">Get notified when applicants are added via fair intake for these events.</p>
+          <h3 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-2">Events</h3>
+          <p className="text-xs text-neutral-400 dark:text-neutral-500 mb-2">Get notified when applicants are added via fair intake for these events.</p>
           {options.events.length === 0 ? (
-            <p className="text-sm text-gray-400">No events found.</p>
+            <p className="text-sm text-neutral-400 dark:text-neutral-500">No events found.</p>
           ) : (
-            <div className="border rounded divide-y max-h-64 overflow-y-auto">
+            <div className="border border-neutral-200 dark:border-neutral-700 rounded divide-y divide-neutral-200 dark:divide-neutral-700 max-h-64 overflow-y-auto">
               {options.events.map((event) => (
-                <label key={event.id} className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 cursor-pointer">
+                <label key={event.id} className="flex items-center gap-3 px-4 py-2.5 hover:bg-neutral-50 dark:hover:bg-neutral-700 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={checkedEvents.has(event.id)}
                     onChange={() => toggle(checkedEvents, setCheckedEvents, event.id)}
-                    className="h-4 w-4 rounded border-gray-300"
+                    className="h-4 w-4 rounded border-neutral-300 dark:border-neutral-600"
                   />
                   <div>
-                    <span className="text-sm text-gray-900">{event.name}</span>
-                    <span className="text-xs text-gray-400 ml-2">{new Date(event.date).toLocaleDateString()}</span>
+                    <span className="text-sm text-neutral-900 dark:text-neutral-100">{event.name}</span>
+                    <span className="text-xs text-neutral-400 dark:text-neutral-500 ml-2">{new Date(event.date).toLocaleDateString()}</span>
                   </div>
                 </label>
               ))}
@@ -844,7 +844,7 @@ function LegacyNotificationSubscriptions() {
       <div className="card mt-6">
         <h2 className="text-lg font-display font-semibold uppercase tracking-wide mb-2">Per-Job Email Notifications</h2>
         <div className="flex items-center justify-center h-32">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black dark:border-white"></div>
         </div>
       </div>
     );
@@ -853,17 +853,17 @@ function LegacyNotificationSubscriptions() {
   return (
     <div className="card mt-6">
       <h2 className="text-lg font-display font-semibold uppercase tracking-wide mb-1">Per-Job Email Notifications</h2>
-      <p className="text-sm text-gray-500 mb-4">
+      <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-4">
         Choose which users receive an email notification when a new application is submitted for each job.
       </p>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm mb-4">
+        <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded text-sm mb-4">
           {error}
         </div>
       )}
       {saved && (
-        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded text-sm mb-4">
+        <div className="bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 px-4 py-3 rounded text-sm mb-4">
           Subscribers saved successfully.
         </div>
       )}
@@ -887,12 +887,12 @@ function LegacyNotificationSubscriptions() {
           <>
             {loadingSubs ? (
               <div className="flex items-center justify-center h-20">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black dark:border-white"></div>
               </div>
             ) : allUsers.length === 0 ? (
-              <p className="text-sm text-gray-500">No users found.</p>
+              <p className="text-sm text-neutral-500 dark:text-neutral-400">No users found.</p>
             ) : (
-              <div className="border rounded divide-y">
+              <div className="border border-neutral-200 dark:border-neutral-700 rounded divide-y divide-neutral-200 dark:divide-neutral-700">
                 {allUsers.map((user) => (
                   <div key={user.id} className="flex items-center justify-between px-4 py-3">
                     <div className="flex items-center gap-3">
@@ -900,11 +900,11 @@ function LegacyNotificationSubscriptions() {
                         type="checkbox"
                         checked={subscribedIds.has(user.id)}
                         onChange={() => toggleSubscription(user.id)}
-                        className="h-4 w-4 rounded border-gray-300"
+                        className="h-4 w-4 rounded border-neutral-300 dark:border-neutral-600"
                       />
                       <div>
-                        <p className="text-sm font-medium text-gray-900">{user.name}</p>
-                        <p className="text-xs text-gray-500">{user.email}</p>
+                        <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">{user.name}</p>
+                        <p className="text-xs text-neutral-500 dark:text-neutral-400">{user.email}</p>
                       </div>
                     </div>
                     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${roleBadge(user.role)}`}>
@@ -937,8 +937,8 @@ export default function Settings() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-display font-bold text-gray-900 uppercase tracking-wide">Settings</h1>
-        <p className="text-gray-500 mt-1">Manage site content, email templates, access control, and notification preferences</p>
+        <h1 className="text-3xl font-display font-bold text-neutral-900 dark:text-neutral-100 uppercase tracking-wide">Settings</h1>
+        <p className="text-neutral-500 dark:text-neutral-400 mt-1">Manage site content, email templates, access control, and notification preferences</p>
       </div>
 
       {/* Tab Bar */}
@@ -949,8 +949,8 @@ export default function Settings() {
             onClick={() => setTab(tab.id)}
             className={`px-4 py-2 rounded text-sm font-medium font-display uppercase tracking-wider transition-colors whitespace-nowrap shrink-0 ${
               activeTab === tab.id
-                ? 'bg-black text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'bg-black text-white dark:bg-white dark:text-black'
+                : 'bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-600'
             }`}
           >
             {tab.label}

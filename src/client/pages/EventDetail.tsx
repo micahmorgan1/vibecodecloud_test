@@ -65,9 +65,9 @@ const typeLabels: Record<string, string> = {
 };
 
 const typeBadgeStyles: Record<string, string> = {
-  job_fair: 'bg-blue-100 text-blue-800',
-  campus_visit: 'bg-purple-100 text-purple-800',
-  info_session: 'bg-green-100 text-green-800',
+  job_fair: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+  campus_visit: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
+  info_session: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
 };
 
 const stageLabels: Record<string, string> = {
@@ -149,7 +149,7 @@ export default function EventDetail() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black dark:border-white"></div>
       </div>
     );
   }
@@ -157,7 +157,7 @@ export default function EventDetail() {
   if (!event) {
     return (
       <div className="card text-center py-12">
-        <p className="text-gray-500">Event not found</p>
+        <p className="text-neutral-500 dark:text-neutral-400">Event not found</p>
         <Link to="/events" className="btn btn-primary mt-4">Back to Events</Link>
       </div>
     );
@@ -171,10 +171,10 @@ export default function EventDetail() {
   return (
     <div className="space-y-6">
       {/* Breadcrumb */}
-      <nav className="text-sm text-gray-500">
-        <Link to="/events" className="hover:text-gray-900">Events</Link>
+      <nav className="text-sm text-neutral-500 dark:text-neutral-400">
+        <Link to="/events" className="hover:text-neutral-900 dark:hover:text-neutral-100">Events</Link>
         <span className="mx-2">/</span>
-        <span className="text-gray-900">{event.name}</span>
+        <span className="text-neutral-900 dark:text-neutral-100">{event.name}</span>
       </nav>
 
       {/* Event Header */}
@@ -182,19 +182,19 @@ export default function EventDetail() {
         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-2xl font-display font-bold text-gray-900 uppercase tracking-wide">
+              <h1 className="text-2xl font-display font-bold text-neutral-900 dark:text-neutral-100 uppercase tracking-wide">
                 {event.name}
               </h1>
-              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${typeBadgeStyles[event.type] || 'bg-gray-100 text-gray-800'}`}>
+              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${typeBadgeStyles[event.type] || 'bg-neutral-100 text-neutral-800 dark:bg-neutral-700 dark:text-neutral-300'}`}>
                 {typeLabels[event.type] || event.type}
               </span>
               {event.publishToWebsite && (
-                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-100 text-emerald-700">
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300">
                   Website
                 </span>
               )}
             </div>
-            <div className="flex items-center gap-4 text-sm text-gray-500">
+            <div className="flex items-center gap-4 text-sm text-neutral-500 dark:text-neutral-400">
               <span>{new Date(event.date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
               {event.location && <span>{event.location}</span>}
               {event.university && <span>{event.university}</span>}
@@ -217,25 +217,25 @@ export default function EventDetail() {
         </div>
 
         {event.description && (
-          <p className="text-sm text-gray-600 mt-4">{event.description}</p>
+          <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-4">{event.description}</p>
         )}
         {event.eventUrl && (
-          <a href={event.eventUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-gray-900 hover:text-gray-600 font-medium mt-2 inline-block">
+          <a href={event.eventUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-neutral-900 hover:text-neutral-600 dark:text-neutral-100 dark:hover:text-neutral-400 font-medium mt-2 inline-block">
             Event Page &rarr;
           </a>
         )}
         {event.notes && (
-          <p className="text-sm text-gray-500 mt-3 italic">{event.notes}</p>
+          <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-3 italic">{event.notes}</p>
         )}
 
         {/* Attendees */}
-        <div className="mt-6 pt-6 border-t border-gray-200">
+        <div className="mt-6 pt-6 border-t border-neutral-200 dark:border-neutral-700">
           <div className="flex items-center justify-between mb-3">
-            <p className="text-sm font-medium text-gray-700">Attendees ({event.attendees.length})</p>
+            <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Attendees ({event.attendees.length})</p>
             {canManage && (
               <button
                 onClick={() => setShowManageAttendees(true)}
-                className="text-sm text-gray-900 hover:text-gray-600 font-medium"
+                className="text-sm text-neutral-900 hover:text-neutral-600 dark:text-neutral-100 dark:hover:text-neutral-400 font-medium"
               >
                 Manage
               </button>
@@ -243,13 +243,13 @@ export default function EventDetail() {
           </div>
           <div className="flex flex-wrap gap-2">
             {event.attendees.map((a) => (
-              <div key={a.id} className="flex items-center gap-2 bg-gray-50 rounded px-3 py-1.5">
+              <div key={a.id} className="flex items-center gap-2 bg-neutral-50 dark:bg-neutral-700 rounded px-3 py-1.5">
                 <Avatar name={a.user.name} email={a.user.email} size={24} />
                 <span className="text-sm">{a.user.name}</span>
               </div>
             ))}
             {event.attendees.length === 0 && (
-              <p className="text-sm text-gray-400">No attendees assigned</p>
+              <p className="text-sm text-neutral-400 dark:text-neutral-500">No attendees assigned</p>
             )}
           </div>
         </div>
@@ -270,12 +270,12 @@ export default function EventDetail() {
 
       {/* Applicants Table */}
       <div className="card">
-        <h2 className="text-lg font-display font-semibold text-gray-900 mb-4 uppercase tracking-wide">
+        <h2 className="text-lg font-display font-semibold text-neutral-900 dark:text-neutral-100 mb-4 uppercase tracking-wide">
           Event Applicants ({appTotal})
         </h2>
 
         {applicants.length === 0 ? (
-          <p className="text-gray-500 text-center py-8">No applicants added to this event yet</p>
+          <p className="text-neutral-500 dark:text-neutral-400 text-center py-8">No applicants added to this event yet</p>
         ) : (
           <>
           {/* Mobile card-rows */}
@@ -290,7 +290,7 @@ export default function EventDetail() {
                   <Avatar name={`${applicant.firstName} ${applicant.lastName}`} email={applicant.email} size={36} />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
-                      <p className="font-medium text-gray-900 truncate">
+                      <p className="font-medium text-neutral-900 dark:text-neutral-100 truncate">
                         {applicant.firstName} {applicant.lastName}
                       </p>
                       <div className="flex items-center gap-2 shrink-0">
@@ -298,14 +298,14 @@ export default function EventDetail() {
                           {stageLabels[applicant.stage]}
                         </span>
                         {applicant.reviews.length > 0 && (
-                          <span className="text-sm text-gray-600">
-                            <span className="text-gray-900">★</span>{getAverageRating(applicant.reviews)}
+                          <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                            <span className="text-neutral-900 dark:text-neutral-100">★</span>{getAverageRating(applicant.reviews)}
                           </span>
                         )}
-                        <span className="text-gray-400 text-sm">&rsaquo;</span>
+                        <span className="text-neutral-400 dark:text-neutral-500 text-sm">&rsaquo;</span>
                       </div>
                     </div>
-                    <p className="text-sm text-gray-500 truncate mt-0.5">
+                    <p className="text-sm text-neutral-500 dark:text-neutral-400 truncate mt-0.5">
                       {applicant.job ? applicant.job.title : 'General Interest'}
                     </p>
                   </div>
@@ -317,8 +317,8 @@ export default function EventDetail() {
           {/* Desktop table */}
           <div className="hidden md:block overflow-x-auto -mx-6">
             <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr className="text-left text-sm text-gray-500">
+              <thead className="bg-neutral-50 dark:bg-neutral-800">
+                <tr className="text-left text-sm text-neutral-500 dark:text-neutral-400">
                   <th className="px-6 py-3 font-medium">Applicant</th>
                   <th className="px-6 py-3 font-medium">Position</th>
                   <th className="px-6 py-3 font-medium">Stage</th>
@@ -327,25 +327,25 @@ export default function EventDetail() {
                   <th className="px-6 py-3 font-medium"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-neutral-100 dark:divide-neutral-700">
                 {applicants.map((applicant) => (
-                  <tr key={applicant.id} className="hover:bg-gray-50">
+                  <tr key={applicant.id} className="hover:bg-neutral-50 dark:hover:bg-neutral-700">
                     <td className="px-6 py-3">
                       <div className="flex items-center gap-3">
                         <Avatar name={`${applicant.firstName} ${applicant.lastName}`} email={applicant.email} size={32} />
                         <div>
-                          <p className="font-medium text-gray-900 text-sm">
+                          <p className="font-medium text-neutral-900 dark:text-neutral-100 text-sm">
                             {applicant.firstName} {applicant.lastName}
                           </p>
-                          <p className="text-xs text-gray-500">{applicant.email}</p>
+                          <p className="text-xs text-neutral-500 dark:text-neutral-400">{applicant.email}</p>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-3 text-sm">
                       {applicant.job ? (
-                        <span className="text-gray-900">{applicant.job.title}</span>
+                        <span className="text-neutral-900 dark:text-neutral-100">{applicant.job.title}</span>
                       ) : (
-                        <span className="text-gray-500 italic">General Interest</span>
+                        <span className="text-neutral-500 dark:text-neutral-400 italic">General Interest</span>
                       )}
                     </td>
                     <td className="px-6 py-3">
@@ -356,20 +356,20 @@ export default function EventDetail() {
                     <td className="px-6 py-3">
                       {applicant.reviews.length > 0 ? (
                         <div className="flex items-center text-sm">
-                          <span className="text-gray-900 mr-1">★</span>
+                          <span className="text-neutral-900 dark:text-neutral-100 mr-1">★</span>
                           <span className="font-medium">{getAverageRating(applicant.reviews)}</span>
                         </div>
                       ) : (
-                        <span className="text-gray-400 text-sm">—</span>
+                        <span className="text-neutral-400 dark:text-neutral-500 text-sm">—</span>
                       )}
                     </td>
-                    <td className="px-6 py-3 text-xs text-gray-500">
+                    <td className="px-6 py-3 text-xs text-neutral-500 dark:text-neutral-400">
                       {new Date(applicant.createdAt).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-3">
                       <Link
                         to={`/applicants/${applicant.id}`}
-                        className="text-gray-900 hover:text-gray-600 text-sm font-medium"
+                        className="text-neutral-900 hover:text-neutral-600 dark:text-neutral-100 dark:hover:text-neutral-400 text-sm font-medium"
                       >
                         View &rarr;
                       </Link>
@@ -557,26 +557,26 @@ function IntakeForm({
   };
 
   return (
-    <div className="card border-2 border-gray-900">
+    <div className="card border-2 border-neutral-900 dark:border-neutral-100">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-display font-semibold text-gray-900 uppercase tracking-wide">
+        <h2 className="text-lg font-display font-semibold text-neutral-900 dark:text-neutral-100 uppercase tracking-wide">
           Fair Intake Form
         </h2>
         {sessionCount > 0 && (
-          <span className="text-sm text-gray-500">
+          <span className="text-sm text-neutral-500 dark:text-neutral-400">
             {sessionCount} applicant{sessionCount !== 1 ? 's' : ''} added this session
           </span>
         )}
       </div>
 
       {successMessage && (
-        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-2 rounded text-sm mb-4">
+        <div className="bg-green-50 border border-green-200 text-green-700 dark:bg-green-900/30 dark:border-green-800 dark:text-green-300 px-4 py-2 rounded text-sm mb-4">
           {successMessage}
         </div>
       )}
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded text-sm mb-4">
+        <div className="bg-red-50 border border-red-200 text-red-700 dark:bg-red-900/30 dark:border-red-800 dark:text-red-300 px-4 py-2 rounded text-sm mb-4">
           {error}
         </div>
       )}
@@ -617,19 +617,19 @@ function IntakeForm({
               required
             />
             {fieldErrors.email && (
-              <p className="text-red-600 text-xs mt-1">{fieldErrors.email}</p>
+              <p className="text-red-600 dark:text-red-400 text-xs mt-1">{fieldErrors.email}</p>
             )}
           </div>
         </div>
 
         {duplicateWarnings.length > 0 && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded p-3">
-            <p className="text-sm font-medium text-yellow-800">
+          <div className="bg-yellow-50 border border-yellow-200 dark:bg-yellow-900/30 dark:border-yellow-800 rounded p-3">
+            <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
               Existing applications found for this email:
             </p>
             <ul className="mt-1 space-y-1">
               {duplicateWarnings.map((d) => (
-                <li key={d.id} className="text-xs text-yellow-700">
+                <li key={d.id} className="text-xs text-yellow-700 dark:text-yellow-300">
                   {d.firstName} {d.lastName} — {d.job?.title || 'General Application'} ({d.stage})
                 </li>
               ))}
@@ -648,7 +648,7 @@ function IntakeForm({
               className={`input ${fieldErrors.phone ? 'border-red-400' : ''}`}
             />
             {fieldErrors.phone && (
-              <p className="text-red-600 text-xs mt-1">{fieldErrors.phone}</p>
+              <p className="text-red-600 dark:text-red-400 text-xs mt-1">{fieldErrors.phone}</p>
             )}
           </div>
           <div>
@@ -684,7 +684,7 @@ function IntakeForm({
                   type="button"
                   onClick={() => setRating(star)}
                   className={`text-3xl transition-colors ${
-                    star <= rating ? 'text-gray-900' : 'text-gray-300 hover:text-gray-500'
+                    star <= rating ? 'text-neutral-900 dark:text-neutral-100' : 'text-neutral-300 dark:text-neutral-600 hover:text-neutral-500 dark:hover:text-neutral-400'
                   }`}
                 >
                   ★
@@ -729,7 +729,7 @@ function IntakeForm({
                 type="file"
                 accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
                 onChange={(e) => setResumeFile(e.target.files?.[0] || null)}
-                className="input text-sm file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:bg-gray-100 file:text-gray-700 file:font-medium file:cursor-pointer"
+                className="input text-sm file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:bg-neutral-100 file:text-neutral-700 dark:file:bg-neutral-700 dark:file:text-neutral-300 file:font-medium file:cursor-pointer"
               />
             </div>
             <label className="btn btn-secondary text-sm cursor-pointer flex items-center gap-1.5 shrink-0">
@@ -755,17 +755,17 @@ function IntakeForm({
           </div>
           {resumeFile && (
             <div className="flex items-center gap-2 mt-1.5">
-              <span className="text-xs text-gray-500">{resumeFile.name}</span>
+              <span className="text-xs text-neutral-500 dark:text-neutral-400">{resumeFile.name}</span>
               <button
                 type="button"
                 onClick={() => { setResumeFile(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
-                className="text-xs text-red-500 hover:text-red-700"
+                className="text-xs text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
               >
                 Remove
               </button>
             </div>
           )}
-          <p className="text-xs text-gray-400 mt-1">PDF, DOC, DOCX, or photo (JPG/PNG)</p>
+          <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">PDF, DOC, DOCX, or photo (JPG/PNG)</p>
         </div>
 
         {/* Portfolio Upload */}
@@ -776,21 +776,21 @@ function IntakeForm({
             type="file"
             accept=".pdf,.jpg,.jpeg,.png,.zip"
             onChange={(e) => setPortfolioFile(e.target.files?.[0] || null)}
-            className="input text-sm file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:bg-gray-100 file:text-gray-700 file:font-medium file:cursor-pointer"
+            className="input text-sm file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:bg-neutral-100 file:text-neutral-700 dark:file:bg-neutral-700 dark:file:text-neutral-300 file:font-medium file:cursor-pointer"
           />
           {portfolioFile && (
             <div className="flex items-center gap-2 mt-1.5">
-              <span className="text-xs text-gray-500">{portfolioFile.name}</span>
+              <span className="text-xs text-neutral-500 dark:text-neutral-400">{portfolioFile.name}</span>
               <button
                 type="button"
                 onClick={() => { setPortfolioFile(null); if (portfolioInputRef.current) portfolioInputRef.current.value = ''; }}
-                className="text-xs text-red-500 hover:text-red-700"
+                className="text-xs text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
               >
                 Remove
               </button>
             </div>
           )}
-          <p className="text-xs text-gray-400 mt-1">PDF, JPG, PNG, or ZIP</p>
+          <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">PDF, JPG, PNG, or ZIP</p>
         </div>
 
         <div className="flex items-center gap-3 pt-2">
@@ -811,7 +811,7 @@ function IntakeForm({
           <button
             onClick={onDone}
             disabled={submitting}
-            className="text-sm text-gray-500 hover:text-gray-700"
+            className="text-sm text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-300"
           >
             Cancel
           </button>
@@ -876,10 +876,10 @@ function ManageAttendeesModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg w-full max-w-md">
-        <div className="border-b px-6 py-4 flex justify-between items-center">
+      <div className="bg-white dark:bg-neutral-800 rounded-lg w-full max-w-md">
+        <div className="border-b dark:border-neutral-700 px-6 py-4 flex justify-between items-center">
           <h2 className="text-xl font-display font-bold uppercase tracking-wide">Manage Attendees</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+          <button onClick={onClose} className="text-neutral-400 hover:text-neutral-600 dark:text-neutral-500 dark:hover:text-neutral-300">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -888,17 +888,17 @@ function ManageAttendeesModal({
 
         <div className="p-6 space-y-4">
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
+            <div className="bg-red-50 border border-red-200 text-red-700 dark:bg-red-900/30 dark:border-red-800 dark:text-red-300 px-4 py-3 rounded text-sm">
               {error}
             </div>
           )}
 
           {loading ? (
             <div className="flex items-center justify-center h-20">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black dark:border-white"></div>
             </div>
           ) : (
-            <div className="border rounded divide-y max-h-[300px] overflow-y-auto">
+            <div className="border dark:border-neutral-700 rounded divide-y dark:divide-neutral-700 max-h-[300px] overflow-y-auto">
               {users.map((u) => (
                 <div key={u.id} className="flex items-center justify-between px-4 py-3">
                   <div className="flex items-center gap-3">
@@ -906,14 +906,14 @@ function ManageAttendeesModal({
                       type="checkbox"
                       checked={selectedIds.has(u.id)}
                       onChange={() => toggleUser(u.id)}
-                      className="h-4 w-4 rounded border-gray-300"
+                      className="h-4 w-4 rounded border-neutral-300 dark:border-neutral-600"
                     />
                     <div>
-                      <p className="text-sm font-medium text-gray-900">{u.name}</p>
-                      <p className="text-xs text-gray-500">{u.email}</p>
+                      <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">{u.name}</p>
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400">{u.email}</p>
                     </div>
                   </div>
-                  <span className="text-xs text-gray-400 capitalize">{u.role.replace('_', ' ')}</span>
+                  <span className="text-xs text-neutral-400 dark:text-neutral-500 capitalize">{u.role.replace('_', ' ')}</span>
                 </div>
               ))}
             </div>

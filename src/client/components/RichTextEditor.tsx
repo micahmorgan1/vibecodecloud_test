@@ -22,7 +22,7 @@ export default function RichTextEditor({ value, onChange, placeholder, minHeight
     },
     editorProps: {
       attributes: {
-        class: 'prose prose-sm max-w-none focus:outline-none',
+        class: 'prose prose-sm dark:prose-invert max-w-none focus:outline-none',
         style: `min-height: ${minHeight}; padding: 0.5rem`,
       },
     },
@@ -54,8 +54,8 @@ export default function RichTextEditor({ value, onChange, placeholder, minHeight
       title={title}
       className={`px-2 py-1 rounded text-sm font-medium transition-colors ${
         isActive
-          ? 'bg-black text-white'
-          : 'text-gray-600 hover:bg-gray-100'
+          ? 'bg-black text-white dark:bg-white dark:text-black'
+          : 'text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-700'
       }`}
     >
       {children}
@@ -63,9 +63,9 @@ export default function RichTextEditor({ value, onChange, placeholder, minHeight
   );
 
   return (
-    <div className="border border-gray-300 rounded-md overflow-hidden focus-within:ring-2 focus-within:ring-black focus-within:border-transparent">
+    <div className="border border-neutral-300 dark:border-neutral-600 rounded-md overflow-hidden focus-within:ring-2 focus-within:ring-black dark:focus-within:ring-white focus-within:border-transparent">
       {/* Toolbar */}
-      <div className="flex items-center gap-1 px-2 py-1.5 border-b border-gray-200 bg-gray-50">
+      <div className="flex items-center gap-1 px-2 py-1.5 border-b border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800">
         <ToolbarButton
           isActive={editor.isActive('bold')}
           onClick={() => editor.chain().focus().toggleBold().run()}
@@ -88,7 +88,7 @@ export default function RichTextEditor({ value, onChange, placeholder, minHeight
           <span className="underline">U</span>
         </ToolbarButton>
 
-        <div className="w-px h-5 bg-gray-300 mx-1" />
+        <div className="w-px h-5 bg-neutral-300 dark:bg-neutral-600 mx-1" />
 
         <ToolbarButton
           isActive={editor.isActive('bulletList')}
@@ -117,10 +117,10 @@ export default function RichTextEditor({ value, onChange, placeholder, minHeight
       </div>
 
       {/* Editor */}
-      <div className="bg-white">
+      <div className="bg-white dark:bg-neutral-800">
         <EditorContent editor={editor} />
         {!value && placeholder && (
-          <div className="pointer-events-none absolute text-gray-400 text-sm px-2 py-1">
+          <div className="pointer-events-none absolute text-neutral-400 text-sm px-2 py-1">
             {/* Placeholder handled by empty state */}
           </div>
         )}

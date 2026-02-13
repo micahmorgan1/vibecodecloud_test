@@ -37,19 +37,19 @@ export default function Login() {
             <WhlcMark height={48} />
             <WhlcWordmark height={22} />
           </div>
-          <p className="text-gray-500 uppercase tracking-[0.2em] text-xs mt-3 font-display">
+          <p className="text-neutral-500 uppercase tracking-[0.2em] text-xs mt-3 font-display">
             Applicant Tracking System
           </p>
         </div>
 
         {/* Login Form */}
-        <div className="bg-white rounded shadow-2xl p-8">
-          <h2 className="text-2xl font-display font-bold text-gray-900 mb-6 text-center uppercase tracking-wide">
+        <div className="bg-white dark:bg-neutral-800 rounded shadow-2xl p-8">
+          <h2 className="text-2xl font-display font-bold text-neutral-900 dark:text-neutral-100 mb-6 text-center uppercase tracking-wide">
             Sign In
           </h2>
 
           {error && (
-            <div className="bg-gray-100 border border-gray-300 text-gray-800 px-4 py-3 rounded mb-4 text-sm">
+            <div className="bg-neutral-100 dark:bg-neutral-700 border border-neutral-300 dark:border-neutral-600 text-neutral-800 dark:text-neutral-300 px-4 py-3 rounded mb-4 text-sm">
               {error}
             </div>
           )}
@@ -107,7 +107,7 @@ export default function Login() {
         </div>
 
         {/* Footer */}
-        <p className="text-center text-gray-600 text-sm mt-6">
+        <p className="text-center text-neutral-600 dark:text-neutral-400 text-sm mt-6">
           &copy; {new Date().getFullYear()} WHLC Architecture. All rights reserved.
         </p>
       </div>

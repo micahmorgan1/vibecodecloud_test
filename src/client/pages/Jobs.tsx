@@ -69,21 +69,21 @@ export default function Jobs() {
 
   const statusBadge = (status: string) => {
     const styles: Record<string, string> = {
-      open: 'bg-black text-white',
-      closed: 'bg-gray-200 text-gray-500',
-      'on-hold': 'bg-gray-300 text-gray-700',
+      open: 'bg-black text-white dark:bg-white dark:text-black',
+      closed: 'bg-neutral-200 text-neutral-500 dark:bg-neutral-600 dark:text-neutral-300',
+      'on-hold': 'bg-neutral-300 text-neutral-700 dark:bg-neutral-600 dark:text-neutral-300',
     };
     return styles[status] || styles.open;
   };
 
   const typeBadge = (type: string) => {
     const styles: Record<string, string> = {
-      'full-time': 'bg-gray-100 text-gray-800 border border-gray-300',
-      'part-time': 'bg-gray-100 text-gray-600 border border-gray-300',
-      contract: 'bg-gray-100 text-gray-600 border border-gray-300',
-      internship: 'bg-gray-100 text-gray-600 border border-gray-300',
+      'full-time': 'bg-neutral-100 text-neutral-800 border border-neutral-300 dark:bg-neutral-700 dark:text-neutral-300 dark:border-neutral-600',
+      'part-time': 'bg-neutral-100 text-neutral-600 border border-neutral-300 dark:bg-neutral-700 dark:text-neutral-400 dark:border-neutral-600',
+      contract: 'bg-neutral-100 text-neutral-600 border border-neutral-300 dark:bg-neutral-700 dark:text-neutral-400 dark:border-neutral-600',
+      internship: 'bg-neutral-100 text-neutral-600 border border-neutral-300 dark:bg-neutral-700 dark:text-neutral-400 dark:border-neutral-600',
     };
-    return styles[type] || 'bg-gray-100 text-gray-800';
+    return styles[type] || 'bg-neutral-100 text-neutral-800 dark:bg-neutral-700 dark:text-neutral-300';
   };
 
   return (
@@ -91,8 +91,8 @@ export default function Jobs() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-display font-bold text-gray-900 uppercase tracking-wide">Jobs</h1>
-          <p className="text-gray-500 mt-1">Manage job postings and track applicants</p>
+          <h1 className="text-3xl font-display font-bold text-neutral-900 dark:text-neutral-100 uppercase tracking-wide">Jobs</h1>
+          <p className="text-neutral-500 dark:text-neutral-400 mt-1">Manage job postings and track applicants</p>
         </div>
         {canCreateJob && (
           <button
@@ -112,8 +112,8 @@ export default function Jobs() {
             onClick={() => { setStatusFilter(status); setPage(1); }}
             className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
               statusFilter === status
-                ? 'bg-black text-white'
-                : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
+                ? 'bg-black text-white dark:bg-white dark:text-black'
+                : 'bg-white text-neutral-700 hover:bg-neutral-100 border border-neutral-200 dark:bg-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-600 dark:border-neutral-700'
             }`}
           >
             {status === '' ? 'All' : status.charAt(0).toUpperCase() + status.slice(1)}
@@ -128,8 +128,8 @@ export default function Jobs() {
             }}
             className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
               showArchived
-                ? 'bg-gray-700 text-white'
-                : 'bg-white text-gray-500 hover:bg-gray-100 border border-gray-200'
+                ? 'bg-neutral-700 text-white dark:bg-neutral-300 dark:text-black'
+                : 'bg-white text-neutral-500 hover:bg-neutral-100 border border-neutral-200 dark:bg-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-600 dark:border-neutral-700'
             }`}
           >
             {showArchived ? 'Hide Archived' : 'Show Archived'}
@@ -140,11 +140,11 @@ export default function Jobs() {
       {/* Jobs Grid */}
       {loading ? (
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black dark:border-white"></div>
         </div>
       ) : jobs.length === 0 ? (
         <div className="card text-center py-12">
-          <p className="text-gray-500">No jobs found</p>
+          <p className="text-neutral-500 dark:text-neutral-400">No jobs found</p>
           {canCreateJob && (
             <button
               onClick={() => setShowCreateModal(true)}
@@ -165,19 +165,19 @@ export default function Jobs() {
               <div className="flex items-start justify-between mb-3">
                 <div className="flex gap-2">
                   {job.archived ? (
-                    <span className="badge bg-gray-300 text-gray-600">Archived</span>
+                    <span className="badge bg-neutral-300 text-neutral-600 dark:bg-neutral-600 dark:text-neutral-300">Archived</span>
                   ) : (
                     <span className={`badge ${statusBadge(job.status)}`}>
                       {job.status}
                     </span>
                   )}
                   {job.publishToWebsite && (
-                    <span className="badge bg-green-100 text-green-800 border border-green-200">
+                    <span className="badge bg-green-100 text-green-800 border border-green-200 dark:bg-green-900 dark:text-green-200 dark:border-green-800">
                       Website
                     </span>
                   )}
                   {job.postedToLinkedIn && (
-                    <span className="badge bg-blue-100 text-blue-800 border border-blue-200">
+                    <span className="badge bg-blue-100 text-blue-800 border border-blue-200 dark:bg-blue-900 dark:text-blue-200 dark:border-blue-800">
                       LinkedIn
                     </span>
                   )}
@@ -187,10 +187,10 @@ export default function Jobs() {
                 </span>
               </div>
 
-              <h3 className="text-lg font-display font-semibold text-gray-900 mb-1">{job.title}</h3>
-              <p className="text-gray-500 text-sm mb-3">{job.department}</p>
+              <h3 className="text-lg font-display font-semibold text-neutral-900 dark:text-neutral-100 mb-1">{job.title}</h3>
+              <p className="text-neutral-500 dark:text-neutral-400 text-sm mb-3">{job.department}</p>
 
-              <div className="flex items-center text-sm text-gray-500 mb-3">
+              <div className="flex items-center text-sm text-neutral-500 dark:text-neutral-400 mb-3">
                 <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -199,15 +199,15 @@ export default function Jobs() {
               </div>
 
               {job.salary && (
-                <p className="text-sm text-gray-500 mb-3">{job.salary}</p>
+                <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-3">{job.salary}</p>
               )}
 
-              <div className="flex items-center justify-between pt-3 border-t border-gray-200">
+              <div className="flex items-center justify-between pt-3 border-t border-neutral-200 dark:border-neutral-700">
                 <div className="flex items-center text-sm">
-                  <span className="text-gray-900 font-medium">{job._count.applicants}</span>
-                  <span className="text-gray-500 ml-1">applicants</span>
+                  <span className="text-neutral-900 dark:text-neutral-100 font-medium">{job._count.applicants}</span>
+                  <span className="text-neutral-500 dark:text-neutral-400 ml-1">applicants</span>
                 </div>
-                <p className="text-xs text-gray-400">
+                <p className="text-xs text-neutral-400 dark:text-neutral-500">
                   {new Date(job.createdAt).toLocaleDateString()}
                 </p>
               </div>
@@ -295,11 +295,11 @@ function CreateJobModal({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6 border-b border-gray-200 sticky top-0 bg-white">
+      <div className="bg-white dark:bg-neutral-800 rounded max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="p-6 border-b border-neutral-200 dark:border-neutral-700 sticky top-0 bg-white dark:bg-neutral-800">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-display font-semibold uppercase tracking-wide">Create New Job</h2>
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <h2 className="text-xl font-display font-semibold uppercase tracking-wide text-neutral-900 dark:text-neutral-100">Create New Job</h2>
+            <button onClick={onClose} className="text-neutral-400 hover:text-neutral-600 dark:text-neutral-500 dark:hover:text-neutral-300">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -309,7 +309,7 @@ function CreateJobModal({
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {error && (
-            <div className="bg-gray-100 border border-gray-300 text-gray-800 px-4 py-3 rounded">
+            <div className="bg-neutral-100 border border-neutral-300 text-neutral-800 dark:bg-neutral-700 dark:border-neutral-600 dark:text-neutral-300 px-4 py-3 rounded">
               {error}
             </div>
           )}
@@ -399,7 +399,7 @@ function CreateJobModal({
               className="input"
               placeholder="auto-generated from title"
             />
-            <p className="text-xs text-gray-400 mt-1">
+            <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">
               Leave blank to auto-generate from the title
             </p>
           </div>
@@ -410,9 +410,9 @@ function CreateJobModal({
               id="publishToWebsite"
               checked={formData.publishToWebsite}
               onChange={(e) => setFormData({ ...formData, publishToWebsite: e.target.checked })}
-              className="h-4 w-4 rounded border-gray-300"
+              className="h-4 w-4 rounded border-neutral-300 dark:border-neutral-600"
             />
-            <label htmlFor="publishToWebsite" className="text-sm font-medium text-gray-700">
+            <label htmlFor="publishToWebsite" className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
               Publish to WHLC Website
             </label>
           </div>

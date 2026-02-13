@@ -118,31 +118,31 @@ export function TrackingLinks({ jobId, onUpdate }: TrackingLinksProps) {
   const getColorClasses = (color: string, posted: boolean) => {
     if (posted) {
       const colorMap: Record<string, string> = {
-        blue: 'bg-blue-50 border-blue-200',
-        green: 'bg-green-50 border-green-200',
-        purple: 'bg-purple-50 border-purple-200',
-        orange: 'bg-orange-50 border-orange-200',
+        blue: 'bg-blue-50 border-blue-200 dark:bg-blue-900/30 dark:border-blue-800',
+        green: 'bg-green-50 border-green-200 dark:bg-green-900/30 dark:border-green-800',
+        purple: 'bg-purple-50 border-purple-200 dark:bg-purple-900/30 dark:border-purple-800',
+        orange: 'bg-orange-50 border-orange-200 dark:bg-orange-900/30 dark:border-orange-800',
       };
-      return colorMap[color] || 'bg-gray-50 border-gray-200';
+      return colorMap[color] || 'bg-neutral-50 border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700';
     }
-    return 'bg-white border-gray-200';
+    return 'bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700';
   };
 
   const getBadgeColorClasses = (color: string) => {
     const colorMap: Record<string, string> = {
-      blue: 'bg-blue-100 text-blue-800 border-blue-200',
-      green: 'bg-green-100 text-green-800 border-green-200',
-      purple: 'bg-purple-100 text-purple-800 border-purple-200',
-      orange: 'bg-orange-100 text-orange-800 border-orange-200',
+      blue: 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900 dark:text-blue-200 dark:border-blue-800',
+      green: 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900 dark:text-green-200 dark:border-green-800',
+      purple: 'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900 dark:text-purple-200 dark:border-purple-800',
+      orange: 'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900 dark:text-orange-200 dark:border-orange-800',
     };
-    return colorMap[color] || 'bg-gray-100 text-gray-800 border-gray-200';
+    return colorMap[color] || 'bg-neutral-100 text-neutral-800 border-neutral-200 dark:bg-neutral-700 dark:text-neutral-200 dark:border-neutral-600';
   };
 
   if (loading) {
     return (
       <div className="card">
         <div className="flex items-center justify-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black dark:border-white"></div>
         </div>
       </div>
     );
@@ -150,10 +150,10 @@ export function TrackingLinks({ jobId, onUpdate }: TrackingLinksProps) {
 
   return (
     <div className="card">
-      <h2 className="text-lg font-display font-semibold text-gray-900 mb-4 uppercase tracking-wide">
+      <h2 className="text-lg font-display font-semibold text-neutral-900 dark:text-neutral-100 mb-4 uppercase tracking-wide">
         Application Tracking Links
       </h2>
-      <p className="text-sm text-gray-600 mb-4">
+      <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-4">
         Copy these tracking URLs when posting this job to external platforms. Each link includes
         tracking parameters to measure application sources.
       </p>
@@ -167,23 +167,23 @@ export function TrackingLinks({ jobId, onUpdate }: TrackingLinksProps) {
             <div className="flex items-start justify-between mb-2">
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
-                  <h3 className="font-semibold text-gray-900">{platform.name}</h3>
+                  <h3 className="font-semibold text-neutral-900 dark:text-neutral-100">{platform.name}</h3>
                   {platform.posted && (
                     <span className={`text-xs px-2 py-0.5 rounded border ${getBadgeColorClasses(platform.color)}`}>
                       Posted
                     </span>
                   )}
                 </div>
-                <p className="text-sm text-gray-600">{platform.description}</p>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">{platform.description}</p>
               </div>
             </div>
 
             <div className="flex flex-wrap gap-2 mt-3">
               <button
                 onClick={() => copyToClipboard(platform)}
-                className="px-3 py-1.5 bg-gray-900 text-white text-sm rounded hover:bg-gray-700 transition-colors"
+                className="px-3 py-1.5 bg-neutral-900 text-white text-sm rounded hover:bg-neutral-700 dark:bg-white dark:text-black dark:hover:bg-neutral-200 transition-colors"
               >
-                {copiedId === platform.id ? '✓ Copied!' : 'Copy Link'}
+                {copiedId === platform.id ? '\u2713 Copied!' : 'Copy Link'}
               </button>
 
               {platform.externalUrl && (
@@ -204,7 +204,7 @@ export function TrackingLinks({ jobId, onUpdate }: TrackingLinksProps) {
                 onClick={() => togglePosted(platform)}
                 className={`px-3 py-1.5 text-sm rounded transition-colors ${
                   platform.posted
-                    ? 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                    ? 'bg-white text-neutral-700 border border-neutral-300 hover:bg-neutral-50 dark:bg-neutral-800 dark:text-neutral-300 dark:border-neutral-600 dark:hover:bg-neutral-700'
                     : 'bg-green-600 text-white hover:bg-green-700'
                 }`}
               >
@@ -214,7 +214,7 @@ export function TrackingLinks({ jobId, onUpdate }: TrackingLinksProps) {
               {platform.posted && (
                 <button
                   onClick={() => setExpandedId(expandedId === platform.id ? null : platform.id)}
-                  className="px-3 py-1.5 bg-white text-gray-700 text-sm rounded border border-gray-300 hover:bg-gray-50"
+                  className="px-3 py-1.5 bg-white text-neutral-700 text-sm rounded border border-neutral-300 hover:bg-neutral-50 dark:bg-neutral-800 dark:text-neutral-300 dark:border-neutral-600 dark:hover:bg-neutral-700"
                 >
                   {expandedId === platform.id ? 'Hide Details' : 'Add URL'}
                 </button>
@@ -223,8 +223,8 @@ export function TrackingLinks({ jobId, onUpdate }: TrackingLinksProps) {
 
             {/* Expanded section for post URL */}
             {expandedId === platform.id && platform.posted && (
-              <div className="mt-3 pt-3 border-t border-gray-200">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+              <div className="mt-3 pt-3 border-t border-neutral-200 dark:border-neutral-700">
+                <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
                   {platform.name} Post URL (optional)
                 </label>
                 <div className="flex gap-2">
@@ -232,7 +232,7 @@ export function TrackingLinks({ jobId, onUpdate }: TrackingLinksProps) {
                     type="url"
                     defaultValue={platform.postUrl || ''}
                     placeholder={`https://${platform.name.toLowerCase()}.com/...`}
-                    className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-black focus:border-transparent"
+                    className="input text-sm"
                     onBlur={(e) => {
                       if (e.target.value !== platform.postUrl) {
                         savePostUrl(platform, e.target.value);
@@ -241,7 +241,7 @@ export function TrackingLinks({ jobId, onUpdate }: TrackingLinksProps) {
                   />
                 </div>
                 {platform.postDate && (
-                  <p className="text-xs text-gray-500 mt-2">
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-2">
                     Posted on {new Date(platform.postDate).toLocaleDateString()}
                   </p>
                 )}
@@ -250,8 +250,8 @@ export function TrackingLinks({ jobId, onUpdate }: TrackingLinksProps) {
 
             {/* Show tracking URL preview when not expanded */}
             {expandedId !== platform.id && (
-              <div className="mt-3 pt-3 border-t border-gray-200">
-                <p className="text-xs text-gray-500 font-mono break-all">
+              <div className="mt-3 pt-3 border-t border-neutral-200 dark:border-neutral-700">
+                <p className="text-xs text-neutral-500 dark:text-neutral-400 font-mono break-all">
                   {platform.trackingUrl}
                 </p>
               </div>
@@ -260,8 +260,8 @@ export function TrackingLinks({ jobId, onUpdate }: TrackingLinksProps) {
         ))}
       </div>
 
-      <div className="mt-4 p-3 bg-gray-50 rounded border border-gray-200">
-        <p className="text-xs text-gray-600">
+      <div className="mt-4 p-3 bg-neutral-50 dark:bg-neutral-800 rounded border border-neutral-200 dark:border-neutral-700">
+        <p className="text-xs text-neutral-600 dark:text-neutral-400">
           <strong>Tip:</strong> Copy the tracking link, paste it into the job posting on the external
           platform, then mark it as "Posted" here to track where applicants come from.
         </p>

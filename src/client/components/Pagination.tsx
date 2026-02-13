@@ -28,28 +28,28 @@ export default function Pagination({ page, totalPages, total, pageSize, onPageCh
 
   return (
     <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mt-4">
-      <p className="text-sm text-gray-500">
+      <p className="text-sm text-neutral-500 dark:text-neutral-400">
         Showing {start}–{end} of {total}
       </p>
       <div className="flex items-center gap-1">
         <button
           onClick={() => onPageChange(page - 1)}
           disabled={page <= 1}
-          className="px-3 py-2 sm:px-2 sm:py-1 text-sm rounded border border-gray-300 disabled:opacity-40 hover:bg-gray-50"
+          className="px-3 py-2 sm:px-2 sm:py-1 text-sm rounded border border-neutral-300 dark:border-neutral-600 disabled:opacity-40 hover:bg-neutral-50 dark:hover:bg-neutral-700 dark:text-neutral-200"
         >
           Prev
         </button>
         {pages.map((p, i) =>
           p === '...' ? (
-            <span key={`ellipsis-${i}`} className="px-2 py-1 text-sm text-gray-400">...</span>
+            <span key={`ellipsis-${i}`} className="px-2 py-1 text-sm text-neutral-400">...</span>
           ) : (
             <button
               key={p}
               onClick={() => onPageChange(p)}
               className={`px-3 py-2 sm:px-2 sm:py-1 text-sm rounded border ${
                 p === page
-                  ? 'bg-black text-white border-black'
-                  : 'border-gray-300 hover:bg-gray-50'
+                  ? 'bg-black text-white border-black dark:bg-white dark:text-black dark:border-white'
+                  : 'border-neutral-300 dark:border-neutral-600 hover:bg-neutral-50 dark:hover:bg-neutral-700 dark:text-neutral-200'
               }`}
             >
               {p}
@@ -59,7 +59,7 @@ export default function Pagination({ page, totalPages, total, pageSize, onPageCh
         <button
           onClick={() => onPageChange(page + 1)}
           disabled={page >= totalPages}
-          className="px-3 py-2 sm:px-2 sm:py-1 text-sm rounded border border-gray-300 disabled:opacity-40 hover:bg-gray-50"
+          className="px-3 py-2 sm:px-2 sm:py-1 text-sm rounded border border-neutral-300 dark:border-neutral-600 disabled:opacity-40 hover:bg-neutral-50 dark:hover:bg-neutral-700 dark:text-neutral-200"
         >
           Next
         </button>

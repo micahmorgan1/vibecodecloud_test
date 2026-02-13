@@ -44,11 +44,11 @@ const roles = [
 
 const roleBadge = (role: string) => {
   const styles: Record<string, string> = {
-    admin: 'bg-gray-900 text-white',
-    hiring_manager: 'bg-blue-100 text-blue-800',
-    reviewer: 'bg-green-100 text-green-800',
+    admin: 'bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900',
+    hiring_manager: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+    reviewer: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
   };
-  return styles[role] || 'bg-gray-100 text-gray-800';
+  return styles[role] || 'bg-neutral-100 text-neutral-800 dark:bg-neutral-700 dark:text-neutral-300';
 };
 
 const roleLabel = (role: string) => {
@@ -235,8 +235,8 @@ export default function Users() {
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-start">
         <div>
-          <h1 className="text-3xl font-display font-bold text-gray-900 uppercase tracking-wide">Users</h1>
-          <p className="text-gray-500 mt-1">Manage system users and roles</p>
+          <h1 className="text-3xl font-display font-bold text-neutral-900 dark:text-neutral-100 uppercase tracking-wide">Users</h1>
+          <p className="text-neutral-500 dark:text-neutral-400 mt-1">Manage system users and roles</p>
         </div>
         <button onClick={openCreateModal} className="btn btn-primary">
           + Create User
@@ -256,7 +256,7 @@ export default function Users() {
                 className="input pl-10"
               />
               <svg
-                className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-neutral-400 dark:text-neutral-500"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -284,8 +284,8 @@ export default function Users() {
               onClick={() => { setRoleFilter(filter.value); setPage(1); }}
               className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
                 roleFilter === filter.value
-                  ? 'bg-black text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-black text-white dark:bg-white dark:text-black'
+                  : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200 dark:bg-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-600'
               }`}
             >
               {filter.label}
@@ -297,11 +297,11 @@ export default function Users() {
       {/* Users Table */}
       {loading ? (
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black dark:border-white"></div>
         </div>
       ) : users.length === 0 ? (
         <div className="card text-center py-12">
-          <p className="text-gray-500">No users found</p>
+          <p className="text-neutral-500 dark:text-neutral-400">No users found</p>
         </div>
       ) : (
         <>
@@ -316,32 +316,32 @@ export default function Users() {
                 <Avatar name={user.name} email={user.email} size={36} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2">
-                    <p className="font-medium text-gray-900 truncate">{user.name}</p>
+                    <button onClick={() => openEditModal(user)} className="font-medium text-neutral-900 dark:text-neutral-100 truncate hover:underline text-left">{user.name}</button>
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium shrink-0 ${roleBadge(user.role)}`}>
                       {roleLabel(user.role)}
                     </span>
                   </div>
-                  <p className="text-sm text-gray-500 truncate mt-0.5">{user.email}</p>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400 truncate mt-0.5">{user.email}</p>
                 </div>
               </div>
-              <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-100">
+              <div className="flex items-center justify-between mt-2 pt-2 border-t border-neutral-100 dark:border-neutral-700">
                 <div className="flex flex-wrap gap-1">
                   {user.role === 'hiring_manager' && (
                     <>
                       {!user.scopedDepartments && !user.scopedOffices ? (
-                        <span className="text-xs text-gray-400">Global</span>
+                        <span className="text-xs text-neutral-400 dark:text-neutral-500">Global</span>
                       ) : (
                         <>
                           {user.scopedDepartments?.map((d) => (
-                            <span key={d} className="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-blue-50 text-blue-700">{d}</span>
+                            <span key={d} className="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-200">{d}</span>
                           ))}
                           {user.scopedOffices?.map((o) => (
-                            <span key={o} className="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-green-50 text-green-700">{officeMap[o] || o}</span>
+                            <span key={o} className="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-green-50 text-green-700 dark:bg-green-900 dark:text-green-200">{officeMap[o] || o}</span>
                           ))}
                         </>
                       )}
                       {user.offerAccess === true && (
-                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-purple-50 text-purple-600">Offers</span>
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-purple-50 text-purple-600 dark:bg-purple-900 dark:text-purple-200">Offers</span>
                       )}
                     </>
                   )}
@@ -349,18 +349,18 @@ export default function Users() {
                 <div className="flex items-center gap-3">
                   <button
                     onClick={() => openEditModal(user)}
-                    className="text-gray-600 hover:text-gray-900 text-sm font-medium px-2 py-1"
+                    className="text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100 text-sm font-medium px-2 py-1"
                   >
                     Edit
                   </button>
                   {currentUser?.id !== user.id && (
                     deleteConfirm === user.id ? (
                       <span className="flex items-center gap-2">
-                        <button onClick={() => handleDelete(user.id)} className="text-red-600 text-sm font-medium px-2 py-1">Confirm</button>
-                        <button onClick={() => setDeleteConfirm(null)} className="text-gray-400 text-sm font-medium px-2 py-1">Cancel</button>
+                        <button onClick={() => handleDelete(user.id)} className="text-red-600 dark:text-red-400 text-sm font-medium px-2 py-1">Confirm</button>
+                        <button onClick={() => setDeleteConfirm(null)} className="text-neutral-400 dark:text-neutral-500 text-sm font-medium px-2 py-1">Cancel</button>
                       </span>
                     ) : (
-                      <button onClick={() => setDeleteConfirm(user.id)} className="text-red-500 text-sm font-medium px-2 py-1">Delete</button>
+                      <button onClick={() => setDeleteConfirm(user.id)} className="text-red-500 dark:text-red-400 text-sm font-medium px-2 py-1">Delete</button>
                     )
                   )}
                 </div>
@@ -373,8 +373,8 @@ export default function Users() {
         <div className="hidden md:block card overflow-hidden p-0">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr className="text-left text-sm text-gray-500">
+              <thead className="bg-neutral-50 dark:bg-neutral-700">
+                <tr className="text-left text-sm text-neutral-500 dark:text-neutral-400">
                   <th className="px-6 py-4 font-medium">Name</th>
                   <th className="px-6 py-4 font-medium">Email</th>
                   <th className="px-6 py-4 font-medium">Role</th>
@@ -383,42 +383,42 @@ export default function Users() {
                   <th className="px-6 py-4 font-medium"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-neutral-100 dark:divide-neutral-700">
                 {users.map((user) => (
-                  <tr key={user.id} className="hover:bg-gray-50">
+                  <tr key={user.id} className="hover:bg-neutral-50 dark:hover:bg-neutral-700">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <Avatar name={user.name} email={user.email} size={40} />
-                        <span className="font-medium text-gray-900">{user.name}</span>
+                        <button onClick={() => openEditModal(user)} className="font-medium text-neutral-900 dark:text-neutral-100 hover:underline text-left">{user.name}</button>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-500">{user.email}</td>
+                    <td className="px-6 py-4 text-sm text-neutral-500 dark:text-neutral-400">{user.email}</td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${roleBadge(user.role)}`}>
                         {roleLabel(user.role)}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-500">
+                    <td className="px-6 py-4 text-sm text-neutral-500 dark:text-neutral-400">
                       {user.role === 'hiring_manager' ? (
                         <div>
                           <div className="flex flex-wrap gap-1 items-center">
                             {!user.scopedDepartments && !user.scopedOffices ? (
-                              <span className="text-gray-400">Global</span>
+                              <span className="text-neutral-400 dark:text-neutral-500">Global</span>
                             ) : (
                               <>
                                 {user.scopedDepartments?.map((d, i) => (
                                   <span key={d}>
-                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-blue-50 text-blue-700">{d}</span>
+                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-200">{d}</span>
                                     {(i < (user.scopedDepartments?.length || 0) - 1 || (user.scopedOffices && user.scopedOffices.length > 0)) && (
-                                      <span className="text-xs text-gray-400 mx-0.5">{user.scopeMode === 'and' ? '&' : '/'}</span>
+                                      <span className="text-xs text-neutral-400 dark:text-neutral-500 mx-0.5">{user.scopeMode === 'and' ? '&' : '/'}</span>
                                     )}
                                   </span>
                                 ))}
                                 {user.scopedOffices?.map((o, i) => (
                                   <span key={o}>
-                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-green-50 text-green-700">{officeMap[o] || o}</span>
+                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-green-50 text-green-700 dark:bg-green-900 dark:text-green-200">{officeMap[o] || o}</span>
                                     {i < (user.scopedOffices?.length || 0) - 1 && (
-                                      <span className="text-xs text-gray-400 mx-0.5">{user.scopeMode === 'and' ? '&' : '/'}</span>
+                                      <span className="text-xs text-neutral-400 dark:text-neutral-500 mx-0.5">{user.scopeMode === 'and' ? '&' : '/'}</span>
                                     )}
                                   </span>
                                 ))}
@@ -426,24 +426,24 @@ export default function Users() {
                             )}
                           </div>
                           {user.eventAccess === false && (
-                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-red-50 text-red-600 mt-1">No Events</span>
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-300 mt-1">No Events</span>
                           )}
                           {user.offerAccess === true && (
-                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-purple-50 text-purple-600 mt-1">Offers</span>
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-purple-50 text-purple-600 dark:bg-purple-900 dark:text-purple-200 mt-1">Offers</span>
                           )}
                         </div>
                       ) : (
-                        <span className="text-gray-300">--</span>
+                        <span className="text-neutral-300 dark:text-neutral-600">--</span>
                       )}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-500">
+                    <td className="px-6 py-4 text-sm text-neutral-500 dark:text-neutral-400">
                       {new Date(user.createdAt).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2 justify-end">
                         <button
                           onClick={() => openEditModal(user)}
-                          className="text-gray-600 hover:text-gray-900 text-sm font-medium"
+                          className="text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100 text-sm font-medium"
                         >
                           Edit
                         </button>
@@ -453,13 +453,13 @@ export default function Users() {
                               <span className="flex items-center gap-1">
                                 <button
                                   onClick={() => handleDelete(user.id)}
-                                  className="text-red-600 hover:text-red-800 text-sm font-medium"
+                                  className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 text-sm font-medium"
                                 >
                                   Confirm
                                 </button>
                                 <button
                                   onClick={() => setDeleteConfirm(null)}
-                                  className="text-gray-400 hover:text-gray-600 text-sm font-medium"
+                                  className="text-neutral-400 hover:text-neutral-600 dark:text-neutral-500 dark:hover:text-neutral-400 text-sm font-medium"
                                 >
                                   Cancel
                                 </button>
@@ -467,7 +467,7 @@ export default function Users() {
                             ) : (
                               <button
                                 onClick={() => setDeleteConfirm(user.id)}
-                                className="text-red-500 hover:text-red-700 text-sm font-medium"
+                                className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-sm font-medium"
                               >
                                 Delete
                               </button>
@@ -490,12 +490,12 @@ export default function Users() {
       {/* Create/Edit Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
-              <h2 className="text-xl font-display font-bold uppercase tracking-wide">
+          <div className="bg-white dark:bg-neutral-800 rounded-lg w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white dark:bg-neutral-800 border-b dark:border-neutral-700 px-6 py-4 flex justify-between items-center">
+              <h2 className="text-xl font-display font-bold uppercase tracking-wide dark:text-neutral-100">
                 {editingUser ? 'Edit User' : 'Create User'}
               </h2>
-              <button onClick={closeModal} className="text-gray-400 hover:text-gray-600">
+              <button onClick={closeModal} className="text-neutral-400 hover:text-neutral-600 dark:text-neutral-500 dark:hover:text-neutral-400">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -504,7 +504,7 @@ export default function Users() {
 
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               {formError && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
+                <div className="bg-red-50 border border-red-200 text-red-700 dark:bg-red-900/30 dark:border-red-800 dark:text-red-300 px-4 py-3 rounded text-sm">
                   {formError}
                 </div>
               )}
@@ -533,7 +533,7 @@ export default function Users() {
 
               <div>
                 <label className="label">
-                  Password{editingUser && <span className="text-gray-400 font-normal"> (leave blank to keep current)</span>}
+                  Password{editingUser && <span className="text-neutral-400 dark:text-neutral-500 font-normal"> (leave blank to keep current)</span>}
                 </label>
                 <input
                   type="password"
@@ -543,7 +543,7 @@ export default function Users() {
                   required={!editingUser}
                   minLength={8}
                 />
-                <p className="text-xs text-gray-400 mt-1">Min 8 chars, 1 uppercase, 1 lowercase, 1 number</p>
+                <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">Min 8 chars, 1 uppercase, 1 lowercase, 1 number</p>
               </div>
 
               <div>
@@ -563,11 +563,11 @@ export default function Users() {
 
               {/* Scope section (only for hiring managers) */}
               {formData.role === 'hiring_manager' && (
-                <div className="border rounded p-4 space-y-3 bg-gray-50">
+                <div className="border dark:border-neutral-700 rounded p-4 space-y-3 bg-neutral-50 dark:bg-neutral-700">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-semibold text-gray-700">Hiring Manager Scope</h3>
+                    <h3 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300">Hiring Manager Scope</h3>
                   </div>
-                  <p className="text-xs text-gray-400">
+                  <p className="text-xs text-neutral-400 dark:text-neutral-500">
                     Global access sees all jobs. Scoped access limits to specific departments and/or offices.
                   </p>
 
@@ -576,9 +576,9 @@ export default function Users() {
                       type="checkbox"
                       checked={formData.scopeGlobal}
                       onChange={(e) => setFormData({ ...formData, scopeGlobal: e.target.checked })}
-                      className="h-4 w-4 rounded border-gray-300"
+                      className="h-4 w-4 rounded border-neutral-300 dark:border-neutral-600"
                     />
-                    <span className="text-sm text-gray-700 font-medium">Global Access (all departments & offices)</span>
+                    <span className="text-sm text-neutral-700 dark:text-neutral-300 font-medium">Global Access (all departments & offices)</span>
                   </label>
 
                   {!formData.scopeGlobal && (
@@ -590,19 +590,19 @@ export default function Users() {
                           <button
                             type="button"
                             onClick={() => setFormData({ ...formData, scopeMode: 'or' })}
-                            className={`px-3 py-1.5 text-xs font-medium rounded border ${formData.scopeMode === 'or' ? 'bg-black text-white border-black' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'}`}
+                            className={`px-3 py-1.5 text-xs font-medium rounded border ${formData.scopeMode === 'or' ? 'bg-black text-white border-black dark:bg-white dark:text-black dark:border-white' : 'bg-white text-neutral-600 border-neutral-300 hover:bg-neutral-50 dark:bg-neutral-800 dark:text-neutral-400 dark:border-neutral-600 dark:hover:bg-neutral-700'}`}
                           >
                             OR
                           </button>
                           <button
                             type="button"
                             onClick={() => setFormData({ ...formData, scopeMode: 'and' })}
-                            className={`px-3 py-1.5 text-xs font-medium rounded border ${formData.scopeMode === 'and' ? 'bg-black text-white border-black' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'}`}
+                            className={`px-3 py-1.5 text-xs font-medium rounded border ${formData.scopeMode === 'and' ? 'bg-black text-white border-black dark:bg-white dark:text-black dark:border-white' : 'bg-white text-neutral-600 border-neutral-300 hover:bg-neutral-50 dark:bg-neutral-800 dark:text-neutral-400 dark:border-neutral-600 dark:hover:bg-neutral-700'}`}
                           >
                             AND
                           </button>
                         </div>
-                        <p className="text-xs text-gray-400 mt-1">
+                        <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">
                           {formData.scopeMode === 'or'
                             ? 'User sees jobs matching any selected department or office.'
                             : 'User sees only jobs matching both a selected department and office.'}
@@ -612,11 +612,11 @@ export default function Users() {
                       <div>
                         <label className="label text-xs">Departments</label>
                         {departments.length === 0 ? (
-                          <p className="text-xs text-gray-400">No departments found in jobs.</p>
+                          <p className="text-xs text-neutral-400 dark:text-neutral-500">No departments found in jobs.</p>
                         ) : (
-                          <div className="border rounded divide-y bg-white max-h-40 overflow-y-auto">
+                          <div className="border dark:border-neutral-600 rounded divide-y dark:divide-neutral-700 bg-white dark:bg-neutral-800 max-h-40 overflow-y-auto">
                             {departments.map((dept) => (
-                              <label key={dept} className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 cursor-pointer">
+                              <label key={dept} className="flex items-center gap-2 px-3 py-2 hover:bg-neutral-50 dark:hover:bg-neutral-700 cursor-pointer">
                                 <input
                                   type="checkbox"
                                   checked={formData.scopedDepartments.includes(dept)}
@@ -626,7 +626,7 @@ export default function Users() {
                                       : [...formData.scopedDepartments, dept];
                                     setFormData({ ...formData, scopedDepartments: next });
                                   }}
-                                  className="h-4 w-4 rounded border-gray-300"
+                                  className="h-4 w-4 rounded border-neutral-300 dark:border-neutral-600"
                                 />
                                 <span className="text-sm">{dept}</span>
                               </label>
@@ -638,11 +638,11 @@ export default function Users() {
                       <div>
                         <label className="label text-xs">Offices</label>
                         {offices.length === 0 ? (
-                          <p className="text-xs text-gray-400">No offices found.</p>
+                          <p className="text-xs text-neutral-400 dark:text-neutral-500">No offices found.</p>
                         ) : (
-                          <div className="border rounded divide-y bg-white max-h-40 overflow-y-auto">
+                          <div className="border dark:border-neutral-600 rounded divide-y dark:divide-neutral-700 bg-white dark:bg-neutral-800 max-h-40 overflow-y-auto">
                             {offices.map((office) => (
-                              <label key={office.id} className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 cursor-pointer">
+                              <label key={office.id} className="flex items-center gap-2 px-3 py-2 hover:bg-neutral-50 dark:hover:bg-neutral-700 cursor-pointer">
                                 <input
                                   type="checkbox"
                                   checked={formData.scopedOffices.includes(office.id)}
@@ -652,7 +652,7 @@ export default function Users() {
                                       : [...formData.scopedOffices, office.id];
                                     setFormData({ ...formData, scopedOffices: next });
                                   }}
-                                  className="h-4 w-4 rounded border-gray-300"
+                                  className="h-4 w-4 rounded border-neutral-300 dark:border-neutral-600"
                                 />
                                 <span className="text-sm">{office.name}</span>
                               </label>
@@ -664,33 +664,33 @@ export default function Users() {
                   )}
 
                   {/* Event Access toggle */}
-                  <div className="border-t pt-3 mt-3">
+                  <div className="border-t dark:border-neutral-600 pt-3 mt-3">
                     <label className="flex items-center gap-2 cursor-pointer">
                       <input
                         type="checkbox"
                         checked={formData.eventAccess}
                         onChange={(e) => setFormData({ ...formData, eventAccess: e.target.checked })}
-                        className="h-4 w-4 rounded border-gray-300"
+                        className="h-4 w-4 rounded border-neutral-300 dark:border-neutral-600"
                       />
-                      <span className="text-sm text-gray-700 font-medium">Event Access</span>
+                      <span className="text-sm text-neutral-700 dark:text-neutral-300 font-medium">Event Access</span>
                     </label>
-                    <p className="text-xs text-gray-400 mt-1">
+                    <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">
                       When enabled, this hiring manager can see and manage all recruitment events. Notification preferences are managed separately in Settings.
                     </p>
                   </div>
 
                   {/* Offer Access toggle */}
-                  <div className="border-t pt-3 mt-3">
+                  <div className="border-t dark:border-neutral-600 pt-3 mt-3">
                     <label className="flex items-center gap-2 cursor-pointer">
                       <input
                         type="checkbox"
                         checked={formData.offerAccess}
                         onChange={(e) => setFormData({ ...formData, offerAccess: e.target.checked })}
-                        className="h-4 w-4 rounded border-gray-300"
+                        className="h-4 w-4 rounded border-neutral-300 dark:border-neutral-600"
                       />
-                      <span className="text-sm text-gray-700 font-medium">Offer Access</span>
+                      <span className="text-sm text-neutral-700 dark:text-neutral-300 font-medium">Offer Access</span>
                     </label>
-                    <p className="text-xs text-gray-400 mt-1">
+                    <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">
                       When enabled, this hiring manager can create, view, and manage offer letters for applicants.
                     </p>
                   </div>

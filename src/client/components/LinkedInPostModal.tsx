@@ -94,18 +94,18 @@ export function LinkedInPostModal({ jobId, isOpen, onClose, onPosted }: LinkedIn
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-neutral-800 rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-start mb-4">
-          <h2 className="text-2xl font-bold">Post to LinkedIn</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700 text-2xl leading-none">
-            ×
+          <h2 className="text-2xl font-bold dark:text-neutral-100">Post to LinkedIn</h2>
+          <button onClick={onClose} className="text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200 text-2xl leading-none">
+            &times;
           </button>
         </div>
 
         {preview.currentlyPosted && (
-          <div className="bg-blue-50 border border-blue-200 rounded p-3 mb-4">
-            <p className="text-sm text-blue-800">
-              ✓ Already posted on {preview.postDate ? new Date(preview.postDate).toLocaleDateString() : 'Unknown date'}
+          <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded p-3 mb-4">
+            <p className="text-sm text-blue-800 dark:text-blue-200">
+              &check; Already posted on {preview.postDate ? new Date(preview.postDate).toLocaleDateString() : 'Unknown date'}
               {preview.postUrl && (
                 <>
                   {' - '}
@@ -119,30 +119,30 @@ export function LinkedInPostModal({ jobId, isOpen, onClose, onPosted }: LinkedIn
         )}
 
         <div className="mb-4">
-          <label className="block text-sm font-medium mb-2">LinkedIn Post Preview</label>
-          <div className="bg-gray-50 border rounded p-4 whitespace-pre-wrap font-mono text-sm max-h-96 overflow-y-auto">
+          <label className="block text-sm font-medium mb-2 dark:text-neutral-300">LinkedIn Post Preview</label>
+          <div className="bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded p-4 whitespace-pre-wrap font-mono text-sm max-h-96 overflow-y-auto dark:text-neutral-300">
             {preview.body}
           </div>
         </div>
 
         <div className="mb-4">
-          <label className="block text-sm font-medium mb-2">Apply URL (included in post)</label>
+          <label className="block text-sm font-medium mb-2 dark:text-neutral-300">Apply URL (included in post)</label>
           <input
             type="text"
             value={preview.applyUrl}
             readOnly
-            className="w-full px-3 py-2 border rounded bg-gray-50 text-sm"
+            className="input text-sm bg-neutral-50 dark:bg-neutral-900"
           />
         </div>
 
         <div className="mb-6">
-          <label className="block text-sm font-medium mb-2">LinkedIn Post URL (optional)</label>
+          <label className="block text-sm font-medium mb-2 dark:text-neutral-300">LinkedIn Post URL (optional)</label>
           <input
             type="url"
             value={linkedInUrl}
             onChange={(e) => setLinkedInUrl(e.target.value)}
             placeholder="Paste LinkedIn post URL after posting..."
-            className="w-full px-3 py-2 border rounded"
+            className="input"
           />
         </div>
 
@@ -151,7 +151,7 @@ export function LinkedInPostModal({ jobId, isOpen, onClose, onPosted }: LinkedIn
             onClick={copyToClipboard}
             className="flex-1 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
           >
-            {copied ? '✓ Copied!' : 'Copy Post Text'}
+            {copied ? '\u2713 Copied!' : 'Copy Post Text'}
           </button>
 
           <button
@@ -166,14 +166,14 @@ export function LinkedInPostModal({ jobId, isOpen, onClose, onPosted }: LinkedIn
             <button
               onClick={markAsUnposted}
               disabled={loading}
-              className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 disabled:opacity-50"
+              className="px-4 py-2 bg-neutral-600 text-white rounded hover:bg-neutral-700 disabled:opacity-50"
             >
               Unmark
             </button>
           )}
         </div>
 
-        <div className="mt-4 text-xs text-gray-500">
+        <div className="mt-4 text-xs text-neutral-500 dark:text-neutral-400">
           <p><strong>Instructions:</strong></p>
           <ol className="list-decimal ml-5 mt-2 space-y-1">
             <li>Click "Copy Post Text" to copy the formatted post</li>

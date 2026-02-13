@@ -355,8 +355,8 @@ export default function Applicants() {
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-start">
         <div>
-          <h1 className="text-3xl font-display font-bold text-gray-900 uppercase tracking-wide">Applicants</h1>
-          <p className="text-gray-500 mt-1">Review and manage job applicants</p>
+          <h1 className="text-3xl font-display font-bold text-neutral-900 dark:text-neutral-100 uppercase tracking-wide">Applicants</h1>
+          <p className="text-neutral-500 dark:text-neutral-400 mt-1">Review and manage job applicants</p>
         </div>
         <div className="flex items-center gap-2">
           {canAdd && (
@@ -385,7 +385,7 @@ export default function Applicants() {
                 className="input pl-10"
               />
               <svg
-                className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-neutral-400 dark:text-neutral-500"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -406,8 +406,8 @@ export default function Applicants() {
             onClick={() => handleStageChange('')}
             className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
               stageFilter === '' && !showSpam
-                ? 'bg-black text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'bg-black text-white dark:bg-white dark:text-black'
+                : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200 dark:bg-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-600'
             }`}
           >
             All
@@ -418,8 +418,8 @@ export default function Applicants() {
               onClick={() => handleStageChange(stage)}
               className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
                 stageFilter === stage && !showSpam
-                  ? 'bg-black text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-black text-white dark:bg-white dark:text-black'
+                  : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200 dark:bg-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-600'
               }`}
             >
               {stageLabels[stage]}
@@ -427,13 +427,13 @@ export default function Applicants() {
           ))}
           {canAdd && spamCount > 0 && (
             <>
-              <span className="text-gray-300 mx-1">|</span>
+              <span className="text-neutral-300 dark:text-neutral-600 mx-1">|</span>
               <button
                 onClick={() => { setShowSpam(!showSpam); setStageFilter(''); setPage(1); }}
                 className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
                   showSpam
                     ? 'bg-red-600 text-white'
-                    : 'bg-red-50 text-red-700 hover:bg-red-100'
+                    : 'bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-900/30 dark:text-red-300 dark:hover:bg-red-900/50'
                 }`}
               >
                 Spam ({spamCount})
@@ -458,7 +458,7 @@ export default function Applicants() {
               )}
               <button
                 onClick={() => setShowDeleteAllSpamModal(true)}
-                className="px-3 py-1.5 bg-red-50 text-red-700 border border-red-200 rounded text-sm font-medium hover:bg-red-100 transition-colors"
+                className="px-3 py-1.5 bg-red-50 text-red-700 border border-red-200 rounded text-sm font-medium hover:bg-red-100 transition-colors dark:bg-red-900/30 dark:text-red-300 dark:border-red-800 dark:hover:bg-red-900/50"
               >
                 Delete All Spam
               </button>
@@ -469,7 +469,7 @@ export default function Applicants() {
                 <>
                   <button
                     onClick={() => setShowBulkStageModal(true)}
-                    className="px-3 py-1.5 bg-gray-900 text-white rounded text-sm font-medium hover:bg-gray-700 transition-colors"
+                    className="px-3 py-1.5 bg-neutral-900 text-white rounded text-sm font-medium hover:bg-neutral-700 transition-colors dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-300"
                   >
                     Change Stage ({selectedIds.size})
                   </button>
@@ -489,11 +489,11 @@ export default function Applicants() {
       {/* Applicants List */}
       {loading ? (
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black dark:border-white"></div>
         </div>
       ) : applicants.length === 0 ? (
         <div className="card text-center py-12">
-          <p className="text-gray-500">No applicants found</p>
+          <p className="text-neutral-500 dark:text-neutral-400">No applicants found</p>
         </div>
       ) : (
         <>
@@ -503,7 +503,7 @@ export default function Applicants() {
             <Link
               key={applicant.id}
               to={`/applicants/${applicant.id}`}
-              className={`card-row ${selectedIds.has(applicant.id) ? 'ring-2 ring-black' : ''}`}
+              className={`card-row ${selectedIds.has(applicant.id) ? 'ring-2 ring-black dark:ring-white' : ''}`}
             >
               <div className="flex items-center gap-3">
                 {canManageSpam && (
@@ -512,13 +512,13 @@ export default function Applicants() {
                     checked={selectedIds.has(applicant.id)}
                     onChange={(e) => { e.preventDefault(); toggleSelect(applicant.id); }}
                     onClick={(e) => e.stopPropagation()}
-                    className="h-5 w-5 rounded border-gray-300 shrink-0"
+                    className="h-5 w-5 rounded border-neutral-300 dark:border-neutral-600 shrink-0"
                   />
                 )}
                 <Avatar name={`${applicant.firstName} ${applicant.lastName}`} email={applicant.email} size={36} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2">
-                    <p className="font-medium text-gray-900 truncate">
+                    <p className="font-medium text-neutral-900 dark:text-neutral-100 truncate">
                       {applicant.firstName} {applicant.lastName}
                       {applicant.spam && <span className="badge badge-spam ml-1.5">Spam</span>}
                     </p>
@@ -527,18 +527,18 @@ export default function Applicants() {
                         {stageLabels[applicant.stage]}
                       </span>
                       {applicant.reviews.length > 0 && (
-                        <span className="text-sm text-gray-600">
-                          <span className="text-gray-900">★</span>{getAverageRating(applicant.reviews)}
+                        <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                          <span className="text-neutral-900 dark:text-neutral-100">★</span>{getAverageRating(applicant.reviews)}
                         </span>
                       )}
-                      <span className="text-gray-400 text-sm">&rsaquo;</span>
+                      <span className="text-neutral-400 dark:text-neutral-500 text-sm">&rsaquo;</span>
                     </div>
                   </div>
                   <div className="flex items-center justify-between gap-2 mt-0.5">
-                    <p className="text-sm text-gray-500 truncate">
+                    <p className="text-sm text-neutral-500 dark:text-neutral-400 truncate">
                       {applicant.job ? applicant.job.title : 'General Application'}
                     </p>
-                    <span className="text-xs text-gray-400 shrink-0">
+                    <span className="text-xs text-neutral-400 dark:text-neutral-500 shrink-0">
                       {new Date(applicant.createdAt).toLocaleDateString()}
                     </span>
                   </div>
@@ -553,15 +553,15 @@ export default function Applicants() {
         <div className="hidden md:block card overflow-hidden p-0">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr className="text-left text-sm text-gray-500">
+              <thead className="bg-neutral-50 dark:bg-neutral-700">
+                <tr className="text-left text-sm text-neutral-500 dark:text-neutral-400">
                   {canManageSpam && (
                     <th className="pl-6 py-4 w-10">
                       <input
                         type="checkbox"
                         checked={applicants.length > 0 && selectedIds.size === applicants.length}
                         onChange={toggleSelectAll}
-                        className="h-4 w-4 rounded border-gray-300"
+                        className="h-4 w-4 rounded border-neutral-300 dark:border-neutral-600"
                       />
                     </th>
                   )}
@@ -573,16 +573,16 @@ export default function Applicants() {
                   <th className="px-6 py-4 font-medium"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-neutral-100 dark:divide-neutral-700">
                 {applicants.map((applicant) => (
-                  <tr key={applicant.id} className={`hover:bg-gray-50 ${selectedIds.has(applicant.id) ? 'bg-blue-50' : ''}`}>
+                  <tr key={applicant.id} className={`hover:bg-neutral-50 dark:hover:bg-neutral-700 ${selectedIds.has(applicant.id) ? 'bg-blue-50 dark:bg-blue-900/30' : ''}`}>
                     {canManageSpam && (
                       <td className="pl-6 py-4 w-10">
                         <input
                           type="checkbox"
                           checked={selectedIds.has(applicant.id)}
                           onChange={() => toggleSelect(applicant.id)}
-                          className="h-4 w-4 rounded border-gray-300"
+                          className="h-4 w-4 rounded border-neutral-300 dark:border-neutral-600"
                         />
                       </td>
                     )}
@@ -590,13 +590,15 @@ export default function Applicants() {
                       <div className="flex items-center gap-3">
                         <Avatar name={`${applicant.firstName} ${applicant.lastName}`} email={applicant.email} size={40} />
                         <div>
-                          <p className="font-medium text-gray-900">
-                            {applicant.firstName} {applicant.lastName}
+                          <p className="font-medium">
+                            <Link to={`/applicants/${applicant.id}`} className="text-neutral-900 dark:text-neutral-100 hover:underline">
+                              {applicant.firstName} {applicant.lastName}
+                            </Link>
                             {applicant.spam && (
                               <span className="badge badge-spam ml-2">Spam</span>
                             )}
                           </p>
-                          <p className="text-sm text-gray-500">{applicant.email}</p>
+                          <p className="text-sm text-neutral-500 dark:text-neutral-400">{applicant.email}</p>
                         </div>
                       </div>
                     </td>
@@ -605,22 +607,22 @@ export default function Applicants() {
                         <>
                           <Link
                             to={`/jobs/${applicant.job.id}`}
-                            className="text-gray-900 hover:text-gray-600 font-medium"
+                            className="text-neutral-900 hover:text-neutral-600 font-medium dark:text-neutral-100 dark:hover:text-neutral-400"
                           >
                             {applicant.job.title}
                           </Link>
                           {applicant.job.archived && (
-                            <span className="text-gray-400 text-xs ml-1">(Archived)</span>
+                            <span className="text-neutral-400 dark:text-neutral-500 text-xs ml-1">(Archived)</span>
                           )}
-                          <p className="text-sm text-gray-500">{applicant.job.department}</p>
+                          <p className="text-sm text-neutral-500 dark:text-neutral-400">{applicant.job.department}</p>
                         </>
                       ) : (
-                        <span className="text-gray-500 italic">General Application</span>
+                        <span className="text-neutral-500 dark:text-neutral-400 italic">General Application</span>
                       )}
                       {applicant.event && (
                         <Link
                           to={`/events/${applicant.event.id}`}
-                          className="text-xs text-blue-600 hover:text-blue-800 block mt-0.5"
+                          className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 block mt-0.5"
                         >
                           {applicant.event.name}
                         </Link>
@@ -638,9 +640,9 @@ export default function Applicants() {
                           const isCompleted = iv.status === 'completed';
                           return (
                             <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                              isCompleted ? 'bg-green-100 text-green-800'
-                                : isScheduled ? 'bg-blue-100 text-blue-800'
-                                : 'bg-gray-100 text-gray-600'
+                              isCompleted ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                                : isScheduled ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                                : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-700 dark:text-neutral-400'
                             }`}>
                               {isCompleted ? 'Interviewed' : isScheduled ? 'Interview ' + new Date(iv.scheduledAt).toLocaleDateString() : iv.status}
                             </span>
@@ -650,13 +652,13 @@ export default function Applicants() {
                           const offer = applicant.offers?.[0];
                           if (!offer || offer.status === 'draft') return null;
                           const offerColors: Record<string, string> = {
-                            extended: 'bg-purple-100 text-purple-800',
-                            accepted: 'bg-green-100 text-green-800',
-                            declined: 'bg-red-100 text-red-800',
-                            rescinded: 'bg-orange-100 text-orange-800',
+                            extended: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
+                            accepted: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+                            declined: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+                            rescinded: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
                           };
                           return (
-                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${offerColors[offer.status] || 'bg-gray-100 text-gray-600'}`}>
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${offerColors[offer.status] || 'bg-neutral-100 text-neutral-600 dark:bg-neutral-700 dark:text-neutral-400'}`}>
                               Offer {offer.status}
                             </span>
                           );
@@ -666,23 +668,23 @@ export default function Applicants() {
                     <td className="px-6 py-4">
                       {applicant.reviews.length > 0 ? (
                         <div className="flex items-center">
-                          <span className="text-gray-900 mr-1">★</span>
+                          <span className="text-neutral-900 dark:text-neutral-100 mr-1">★</span>
                           <span className="font-medium">{getAverageRating(applicant.reviews)}</span>
-                          <span className="text-gray-400 text-sm ml-1">
+                          <span className="text-neutral-400 dark:text-neutral-500 text-sm ml-1">
                             ({applicant._count.reviews})
                           </span>
                         </div>
                       ) : (
-                        <span className="text-gray-400 text-sm">No reviews</span>
+                        <span className="text-neutral-400 dark:text-neutral-500 text-sm">No reviews</span>
                       )}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-500">
+                    <td className="px-6 py-4 text-sm text-neutral-500 dark:text-neutral-400">
                       {new Date(applicant.createdAt).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4">
                       <Link
                         to={`/applicants/${applicant.id}`}
-                        className="text-gray-900 hover:text-gray-600 text-sm font-medium"
+                        className="text-neutral-900 hover:text-neutral-600 dark:text-neutral-100 dark:hover:text-neutral-400 text-sm font-medium"
                       >
                         View &rarr;
                       </Link>
@@ -700,14 +702,14 @@ export default function Applicants() {
       {/* Bulk Delete Confirmation Modal */}
       {showBulkDeleteModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded max-w-md w-full">
-            <div className="p-6 border-b border-gray-200">
+          <div className="bg-white dark:bg-neutral-800 rounded max-w-md w-full">
+            <div className="p-6 border-b border-neutral-200 dark:border-neutral-700">
               <h2 className="text-xl font-display font-semibold uppercase tracking-wide">
                 Delete Selected Applicants
               </h2>
             </div>
             <div className="p-6 space-y-4">
-              <p className="text-gray-700">
+              <p className="text-neutral-700 dark:text-neutral-300">
                 Are you sure you want to permanently delete <span className="font-medium">{selectedIds.size} applicant{selectedIds.size !== 1 ? 's' : ''}</span>?
                 This will remove all their data including reviews, notes, and uploaded files.
               </p>
@@ -735,14 +737,14 @@ export default function Applicants() {
       {/* Delete All Spam Confirmation Modal */}
       {showDeleteAllSpamModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded max-w-md w-full">
-            <div className="p-6 border-b border-gray-200">
+          <div className="bg-white dark:bg-neutral-800 rounded max-w-md w-full">
+            <div className="p-6 border-b border-neutral-200 dark:border-neutral-700">
               <h2 className="text-xl font-display font-semibold uppercase tracking-wide">
                 Delete All Spam
               </h2>
             </div>
             <div className="p-6 space-y-4">
-              <p className="text-gray-700">
+              <p className="text-neutral-700 dark:text-neutral-300">
                 Are you sure you want to permanently delete <span className="font-medium">all spam applicants</span>?
                 This will remove all their data including reviews, notes, and uploaded files. This action cannot be undone.
               </p>
@@ -770,14 +772,14 @@ export default function Applicants() {
       {/* Bulk Mark as Spam Confirmation Modal */}
       {showBulkMarkSpamModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded max-w-md w-full">
-            <div className="p-6 border-b border-gray-200">
+          <div className="bg-white dark:bg-neutral-800 rounded max-w-md w-full">
+            <div className="p-6 border-b border-neutral-200 dark:border-neutral-700">
               <h2 className="text-xl font-display font-semibold uppercase tracking-wide">
                 Mark as Spam
               </h2>
             </div>
             <div className="p-6 space-y-4">
-              <p className="text-gray-700">
+              <p className="text-neutral-700 dark:text-neutral-300">
                 Are you sure you want to mark <span className="font-medium">{selectedIds.size} applicant{selectedIds.size !== 1 ? 's' : ''}</span> as spam?
                 They will be moved to the spam queue.
               </p>
@@ -828,10 +830,10 @@ export default function Applicants() {
       {/* Add Applicant Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
+          <div className="bg-white dark:bg-neutral-800 rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white dark:bg-neutral-800 border-b dark:border-neutral-700 px-6 py-4 flex justify-between items-center">
               <h2 className="text-xl font-display font-bold uppercase tracking-wide">Add Applicant</h2>
-              <button onClick={() => setShowAddModal(false)} className="text-gray-400 hover:text-gray-600">
+              <button onClick={() => setShowAddModal(false)} className="text-neutral-400 hover:text-neutral-600 dark:text-neutral-500 dark:hover:text-neutral-300">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -840,7 +842,7 @@ export default function Applicants() {
 
             <form onSubmit={handleAddSubmit} className="p-6 space-y-4">
               {formError && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
+                <div className="bg-red-50 border border-red-200 text-red-700 dark:bg-red-900/30 dark:border-red-800 dark:text-red-300 px-4 py-3 rounded text-sm">
                   {formError}
                 </div>
               )}
@@ -896,7 +898,7 @@ export default function Applicants() {
                     required
                   />
                   {fieldErrors.email && (
-                    <p className="text-red-600 text-xs mt-1">{fieldErrors.email}</p>
+                    <p className="text-red-600 dark:text-red-400 text-xs mt-1">{fieldErrors.email}</p>
                   )}
                 </div>
                 <div>
@@ -909,19 +911,19 @@ export default function Applicants() {
                     className={`input ${fieldErrors.phone ? 'border-red-400' : ''}`}
                   />
                   {fieldErrors.phone && (
-                    <p className="text-red-600 text-xs mt-1">{fieldErrors.phone}</p>
+                    <p className="text-red-600 dark:text-red-400 text-xs mt-1">{fieldErrors.phone}</p>
                   )}
                 </div>
               </div>
 
               {duplicateWarnings.length > 0 && (
-                <div className="bg-yellow-50 border border-yellow-200 rounded p-3">
-                  <p className="text-sm font-medium text-yellow-800">
+                <div className="bg-yellow-50 border border-yellow-200 dark:bg-yellow-900/30 dark:border-yellow-800 rounded p-3">
+                  <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
                     Existing applications found for this email:
                   </p>
                   <ul className="mt-1 space-y-1">
                     {duplicateWarnings.map((d) => (
-                      <li key={d.id} className="text-xs text-yellow-700">
+                      <li key={d.id} className="text-xs text-yellow-700 dark:text-yellow-200">
                         {d.firstName} {d.lastName} — {d.job?.title || 'General Application'} ({d.stage})
                       </li>
                     ))}
@@ -977,9 +979,9 @@ export default function Applicants() {
                     type="file"
                     accept=".pdf,.doc,.docx"
                     onChange={(e) => setResumeFile(e.target.files?.[0] || null)}
-                    className="input text-sm file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:bg-gray-100 file:text-gray-700 file:font-medium file:cursor-pointer"
+                    className="input text-sm file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:bg-neutral-100 file:text-neutral-700 file:font-medium file:cursor-pointer dark:file:bg-neutral-600 dark:file:text-neutral-200"
                   />
-                  <p className="text-xs text-gray-400 mt-1">PDF, DOC, or DOCX</p>
+                  <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">PDF, DOC, or DOCX</p>
                 </div>
                 <div>
                   <label className="label">Portfolio File</label>
@@ -987,9 +989,9 @@ export default function Applicants() {
                     type="file"
                     accept=".pdf,.jpg,.jpeg,.png,.zip"
                     onChange={(e) => setPortfolioFile(e.target.files?.[0] || null)}
-                    className="input text-sm file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:bg-gray-100 file:text-gray-700 file:font-medium file:cursor-pointer"
+                    className="input text-sm file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:bg-neutral-100 file:text-neutral-700 file:font-medium file:cursor-pointer dark:file:bg-neutral-600 dark:file:text-neutral-200"
                   />
-                  <p className="text-xs text-gray-400 mt-1">PDF, JPG, PNG, or ZIP</p>
+                  <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">PDF, JPG, PNG, or ZIP</p>
                 </div>
               </div>
 
@@ -1028,14 +1030,14 @@ function BulkStageModal({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded max-w-md w-full">
-        <div className="p-6 border-b border-gray-200">
+      <div className="bg-white dark:bg-neutral-800 rounded max-w-md w-full">
+        <div className="p-6 border-b border-neutral-200 dark:border-neutral-700">
           <h2 className="text-xl font-display font-semibold uppercase tracking-wide">
             Change Stage
           </h2>
         </div>
         <div className="p-6 space-y-4">
-          <p className="text-gray-700">
+          <p className="text-neutral-700 dark:text-neutral-300">
             Move <span className="font-medium">{count} applicant{count !== 1 ? 's' : ''}</span> to a new stage.
           </p>
           <div>

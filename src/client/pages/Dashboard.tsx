@@ -157,7 +157,7 @@ export default function Dashboard() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black dark:border-white"></div>
       </div>
     );
   }
@@ -174,14 +174,14 @@ export default function Dashboard() {
   };
 
   const stageColors: Record<string, string> = {
-    fair_intake: 'bg-teal-400',
-    new: 'bg-gray-300',
-    screening: 'bg-gray-400',
-    interview: 'bg-gray-500',
-    offer: 'bg-gray-600',
-    hired: 'bg-black',
+    fair_intake: 'bg-teal-400 dark:bg-teal-500',
+    new: 'bg-neutral-300 dark:bg-neutral-600',
+    screening: 'bg-neutral-400 dark:bg-neutral-500',
+    interview: 'bg-neutral-500 dark:bg-neutral-400',
+    offer: 'bg-neutral-600 dark:bg-neutral-300',
+    hired: 'bg-black dark:bg-white',
     rejected: 'bg-red-500',
-    holding: 'bg-yellow-300',
+    holding: 'bg-yellow-300 dark:bg-yellow-500',
   };
 
   return (
@@ -189,13 +189,13 @@ export default function Dashboard() {
       {/* Page Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-3xl font-display font-bold text-gray-900 uppercase tracking-wide">Dashboard</h1>
-          <p className="text-gray-500 mt-1">Welcome back. Here's an overview of your recruiting pipeline.</p>
+          <h1 className="text-3xl font-display font-bold text-neutral-900 dark:text-neutral-100 uppercase tracking-wide">Dashboard</h1>
+          <p className="text-neutral-500 dark:text-neutral-400 mt-1">Welcome back. Here's an overview of your recruiting pipeline.</p>
         </div>
         {(stats?.spamCount ?? 0) > 0 && (
           <Link
             to="/applicants?spam=true"
-            className="flex items-center gap-2 px-3 py-1.5 bg-red-50 border border-red-200 rounded text-sm text-red-700 hover:bg-red-100 transition-colors"
+            className="flex items-center gap-2 px-3 py-1.5 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded text-sm text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
@@ -207,17 +207,17 @@ export default function Dashboard() {
 
       {/* Pipeline Overview */}
       <div className="card">
-        <h2 className="text-lg font-display font-semibold text-gray-900 mb-4 uppercase tracking-wide">Hiring Pipeline</h2>
+        <h2 className="text-lg font-display font-semibold text-neutral-900 dark:text-neutral-100 mb-4 uppercase tracking-wide">Hiring Pipeline</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
           {pipeline.map((stage) => (
             <div
               key={stage.stage}
               className={`text-center cursor-pointer rounded-lg p-2 transition-all ${
                 expandedStage === stage.stage
-                  ? 'ring-2 ring-black bg-gray-50'
+                  ? 'ring-2 ring-black dark:ring-white bg-neutral-50 dark:bg-neutral-700'
                   : dropTargetStage === stage.stage && draggedApplicant
-                    ? 'ring-2 ring-blue-500 bg-blue-50'
-                    : 'hover:bg-gray-50'
+                    ? 'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900/30'
+                    : 'hover:bg-neutral-50 dark:hover:bg-neutral-700'
               }`}
               onClick={() => setExpandedStage(expandedStage === stage.stage ? null : stage.stage)}
               onDragOver={(e) => {
@@ -231,10 +231,10 @@ export default function Dashboard() {
               }}
             >
               <div className={`w-full h-2 ${stageColors[stage.stage]} rounded-full mb-2`}></div>
-              <p className="text-2xl font-display font-bold text-gray-900">{stage.count}</p>
-              <p className="text-sm text-gray-500">{stageLabels[stage.stage]}</p>
+              <p className="text-2xl font-display font-bold text-neutral-900 dark:text-neutral-100">{stage.count}</p>
+              <p className="text-sm text-neutral-500 dark:text-neutral-400">{stageLabels[stage.stage]}</p>
               <svg
-                className={`w-4 h-4 mx-auto mt-1 text-gray-400 ${expandedStage === stage.stage ? 'scale-y-[-1]' : ''}`}
+                className={`w-4 h-4 mx-auto mt-1 text-neutral-400 dark:text-neutral-500 ${expandedStage === stage.stage ? 'scale-y-[-1]' : ''}`}
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -250,23 +250,23 @@ export default function Dashboard() {
           const stageData = pipeline.find(s => s.stage === expandedStage);
           if (!stageData) return null;
           return (
-            <div className="mt-4 pt-4 border-t">
+            <div className="mt-4 pt-4 border-t dark:border-neutral-700">
               <div className="flex items-center justify-between mb-3">
                 <div>
-                  <h3 className="text-sm font-display font-semibold text-gray-900 uppercase tracking-wide">
+                  <h3 className="text-sm font-display font-semibold text-neutral-900 dark:text-neutral-100 uppercase tracking-wide">
                     {stageLabels[expandedStage]} — Top {Math.min(stageData.applicants.length, 5)} of {stageData.count}
                   </h3>
-                  <p className="text-xs text-gray-400 mt-0.5">Drag applicants to a stage above to move them</p>
+                  <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-0.5">Drag applicants to a stage above to move them</p>
                 </div>
                 <Link
                   to={`/applicants?stage=${expandedStage}`}
-                  className="text-sm text-gray-900 hover:text-gray-600 font-medium"
+                  className="text-sm text-neutral-900 dark:text-neutral-100 hover:text-neutral-600 dark:hover:text-neutral-400 font-medium"
                 >
                   View all &rarr;
                 </Link>
               </div>
               {stageData.applicants.length === 0 ? (
-                <p className="text-sm text-gray-500 py-2">No applicants in this stage</p>
+                <p className="text-sm text-neutral-500 dark:text-neutral-400 py-2">No applicants in this stage</p>
               ) : (
                 <div className="space-y-1">
                   {stageData.applicants.map((applicant) => (
@@ -282,7 +282,7 @@ export default function Dashboard() {
                         setDropTargetStage(null);
                       }}
                       className={`flex items-center justify-between p-3 rounded transition-colors cursor-grab active:cursor-grabbing ${
-                        draggedApplicant?.id === applicant.id ? 'opacity-50 bg-gray-100' : 'hover:bg-gray-50'
+                        draggedApplicant?.id === applicant.id ? 'opacity-50 bg-neutral-100 dark:bg-neutral-700' : 'hover:bg-neutral-50 dark:hover:bg-neutral-700'
                       }`}
                     >
                       <Link
@@ -292,10 +292,10 @@ export default function Dashboard() {
                       >
                         <Avatar name={`${applicant.firstName} ${applicant.lastName}`} email={applicant.email} size={36} />
                         <div className="min-w-0">
-                          <p className="font-medium text-gray-900 truncate">
+                          <p className="font-medium text-neutral-900 dark:text-neutral-100 truncate">
                             {applicant.firstName} {applicant.lastName}
                           </p>
-                          <p className="text-sm text-gray-500 truncate">
+                          <p className="text-sm text-neutral-500 dark:text-neutral-400 truncate">
                             {applicant.job?.title || 'General Application'}
                           </p>
                         </div>
@@ -308,9 +308,9 @@ export default function Dashboard() {
                           const isScheduled = iv.status === 'scheduled';
                           return (
                             <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${
-                              isCompleted ? 'bg-green-100 text-green-800'
-                                : isScheduled ? 'bg-blue-100 text-blue-800'
-                                : 'bg-gray-100 text-gray-600'
+                              isCompleted ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                                : isScheduled ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                                : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-700 dark:text-neutral-400'
                             }`}>
                               {isCompleted ? 'Interview Done' : isScheduled ? 'Interview ' + new Date(iv.scheduledAt).toLocaleDateString() : iv.status}
                             </span>
@@ -320,23 +320,23 @@ export default function Dashboard() {
                           const offer = applicant.offers?.[0];
                           if (!offer) return null;
                           const offerColors: Record<string, string> = {
-                            draft: 'bg-gray-100 text-gray-700',
-                            extended: 'bg-purple-100 text-purple-800',
-                            accepted: 'bg-green-100 text-green-800',
-                            declined: 'bg-red-100 text-red-800',
-                            rescinded: 'bg-orange-100 text-orange-800',
+                            draft: 'bg-neutral-100 text-neutral-700 dark:bg-neutral-700 dark:text-neutral-300',
+                            extended: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
+                            accepted: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+                            declined: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+                            rescinded: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
                           };
                           return (
-                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${offerColors[offer.status] || 'bg-gray-100 text-gray-600'}`}>
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${offerColors[offer.status] || 'bg-neutral-100 text-neutral-600 dark:bg-neutral-700 dark:text-neutral-400'}`}>
                               Offer: {offer.status}
                             </span>
                           );
                         })()}
                         <div className="text-right">
-                          <p className="text-xs text-gray-400">
+                          <p className="text-xs text-neutral-400 dark:text-neutral-500">
                             {new Date(applicant.createdAt).toLocaleDateString()}
                           </p>
-                          <p className="text-xs text-gray-400">
+                          <p className="text-xs text-neutral-400 dark:text-neutral-500">
                             {applicant._count.reviews} review{applicant._count.reviews !== 1 ? 's' : ''}
                           </p>
                         </div>
@@ -354,8 +354,8 @@ export default function Dashboard() {
       {upcomingInterviews.length > 0 && (
         <div className="card">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-display font-semibold text-gray-900 uppercase tracking-wide">Your Upcoming Interviews</h2>
-            <Link to="/applicants?stage=interview" className="text-sm text-gray-900 hover:text-gray-600 font-medium">
+            <h2 className="text-lg font-display font-semibold text-neutral-900 dark:text-neutral-100 uppercase tracking-wide">Your Upcoming Interviews</h2>
+            <Link to="/applicants?stage=interview" className="text-sm text-neutral-900 dark:text-neutral-100 hover:text-neutral-600 dark:hover:text-neutral-400 font-medium">
               View all &rarr;
             </Link>
           </div>
@@ -366,7 +366,7 @@ export default function Dashboard() {
               return (
                 <div
                   key={interview.id}
-                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+                  className="flex items-center justify-between p-4 border dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors"
                 >
                   <Link
                     to={`/applicants/${interview.applicant.id}`}
@@ -378,34 +378,34 @@ export default function Dashboard() {
                       size={40}
                     />
                     <div>
-                      <p className="font-medium text-gray-900">
+                      <p className="font-medium text-neutral-900 dark:text-neutral-100">
                         {interview.applicant.firstName} {interview.applicant.lastName}
                       </p>
-                      <p className="text-sm text-gray-500">
+                      <p className="text-sm text-neutral-500 dark:text-neutral-400">
                         {interview.applicant.job?.title || 'General Application'}
                       </p>
                     </div>
                   </Link>
                   <div className="flex items-center gap-4 text-right">
                     <div>
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
                         {typeLabels[interview.type] || interview.type}
                       </span>
                       {interview.location && (
-                        <p className="text-xs text-gray-400 mt-0.5">{interview.location}</p>
+                        <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-0.5">{interview.location}</p>
                       )}
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-900">
+                      <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
                         {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                       </p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400">
                         {date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
                       </p>
                     </div>
                     <Link
                       to={`/interviews/${interview.id}/live`}
-                      className="text-xs px-2.5 py-1 bg-gray-900 text-white rounded hover:bg-gray-700 transition-colors whitespace-nowrap"
+                      className="text-xs px-2.5 py-1 bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900 rounded hover:bg-neutral-700 dark:hover:bg-neutral-300 transition-colors whitespace-nowrap"
                     >
                       Live Notes
                     </Link>
@@ -421,8 +421,8 @@ export default function Dashboard() {
       {upcomingEvents.length > 0 && (
         <div className="card">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-display font-semibold text-gray-900 uppercase tracking-wide">Upcoming Events</h2>
-            <Link to="/events" className="text-sm text-gray-900 hover:text-gray-600 font-medium">
+            <h2 className="text-lg font-display font-semibold text-neutral-900 dark:text-neutral-100 uppercase tracking-wide">Upcoming Events</h2>
+            <Link to="/events" className="text-sm text-neutral-900 dark:text-neutral-100 hover:text-neutral-600 dark:hover:text-neutral-400 font-medium">
               View all &rarr;
             </Link>
           </div>
@@ -431,14 +431,14 @@ export default function Dashboard() {
               <Link
                 key={event.id}
                 to={`/events/${event.id}`}
-                className="p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+                className="p-4 border dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors"
               >
-                <p className="font-medium text-gray-900">{event.name}</p>
-                <p className="text-sm text-gray-500 mt-1">
+                <p className="font-medium text-neutral-900 dark:text-neutral-100">{event.name}</p>
+                <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
                   {new Date(event.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                   {event.location && ` — ${event.location}`}
                 </p>
-                <p className="text-sm text-gray-400 mt-2">
+                <p className="text-sm text-neutral-400 dark:text-neutral-500 mt-2">
                   {event._count.applicants} applicant{event._count.applicants !== 1 ? 's' : ''}
                 </p>
               </Link>
@@ -451,43 +451,43 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Applicants */}
         <div className="card">
-          <h2 className="text-lg font-display font-semibold text-gray-900 mb-4 uppercase tracking-wide">Recent Applicants</h2>
+          <h2 className="text-lg font-display font-semibold text-neutral-900 dark:text-neutral-100 mb-4 uppercase tracking-wide">Recent Applicants</h2>
           <div className="space-y-3">
             {activity?.recentApplicants.slice(0, 5).map((applicant) => (
               <Link
                 key={applicant.id}
                 to={`/applicants/${applicant.id}`}
-                className="flex items-center justify-between p-3 hover:bg-gray-50 rounded transition-colors"
+                className="flex items-center justify-between p-3 hover:bg-neutral-50 dark:hover:bg-neutral-700 rounded transition-colors"
               >
                 <div className="flex items-center space-x-3">
                   <Avatar name={`${applicant.firstName} ${applicant.lastName}`} email={applicant.email} size={40} />
                   <div>
-                    <p className="font-medium text-gray-900">
+                    <p className="font-medium text-neutral-900 dark:text-neutral-100">
                       {applicant.firstName} {applicant.lastName}
                     </p>
-                    <p className="text-sm text-gray-500">{applicant.job?.title || 'General Application'}</p>
+                    <p className="text-sm text-neutral-500 dark:text-neutral-400">{applicant.job?.title || 'General Application'}</p>
                   </div>
                 </div>
-                <p className="text-xs text-gray-400">
+                <p className="text-xs text-neutral-400 dark:text-neutral-500">
                   {new Date(applicant.createdAt).toLocaleDateString()}
                 </p>
               </Link>
             ))}
             {(!activity?.recentApplicants || activity.recentApplicants.length === 0) && (
-              <p className="text-gray-500 text-center py-4">No recent applicants</p>
+              <p className="text-neutral-500 dark:text-neutral-400 text-center py-4">No recent applicants</p>
             )}
           </div>
         </div>
 
         {/* Recent Reviews */}
         <div className="card">
-          <h2 className="text-lg font-display font-semibold text-gray-900 mb-4 uppercase tracking-wide">Recent Reviews</h2>
+          <h2 className="text-lg font-display font-semibold text-neutral-900 dark:text-neutral-100 mb-4 uppercase tracking-wide">Recent Reviews</h2>
           <div className="space-y-3">
             {activity?.recentReviews.slice(0, 5).map((review) => (
               <Link
                 key={review.id}
                 to={`/applicants/${review.applicant.id}`}
-                className="flex items-center justify-between p-3 hover:bg-gray-50 rounded transition-colors"
+                className="flex items-center justify-between p-3 hover:bg-neutral-50 dark:hover:bg-neutral-700 rounded transition-colors"
               >
                 <div className="flex items-center space-x-3">
                   <div className="flex">
@@ -495,7 +495,7 @@ export default function Dashboard() {
                       <span
                         key={star}
                         className={`text-lg ${
-                          star <= review.rating ? 'text-gray-900' : 'text-gray-300'
+                          star <= review.rating ? 'text-neutral-900 dark:text-neutral-100' : 'text-neutral-300 dark:text-neutral-600'
                         }`}
                       >
                         ★
@@ -503,19 +503,19 @@ export default function Dashboard() {
                     ))}
                   </div>
                   <div>
-                    <p className="font-medium text-gray-900">
+                    <p className="font-medium text-neutral-900 dark:text-neutral-100">
                       {review.applicant.firstName} {review.applicant.lastName}
                     </p>
-                    <p className="text-sm text-gray-500">by {review.reviewer.name}</p>
+                    <p className="text-sm text-neutral-500 dark:text-neutral-400">by {review.reviewer.name}</p>
                   </div>
                 </div>
-                <p className="text-xs text-gray-400">
+                <p className="text-xs text-neutral-400 dark:text-neutral-500">
                   {new Date(review.createdAt).toLocaleDateString()}
                 </p>
               </Link>
             ))}
             {(!activity?.recentReviews || activity.recentReviews.length === 0) && (
-              <p className="text-gray-500 text-center py-4">No recent reviews</p>
+              <p className="text-neutral-500 dark:text-neutral-400 text-center py-4">No recent reviews</p>
             )}
           </div>
         </div>
@@ -523,10 +523,10 @@ export default function Dashboard() {
 
       {/* Application Sources */}
       <div className="card">
-        <h2 className="text-lg font-display font-semibold text-gray-900 mb-4 uppercase tracking-wide">
+        <h2 className="text-lg font-display font-semibold text-neutral-900 dark:text-neutral-100 mb-4 uppercase tracking-wide">
           Application Sources
         </h2>
-        <p className="text-sm text-gray-600 mb-4">
+        <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-4">
           Track where your applicants are coming from and measure the effectiveness of each platform.
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -556,7 +556,7 @@ export default function Dashboard() {
                 <p className={`text-3xl font-display font-bold ${textColorClasses} mb-3`}>
                   {data.total}
                 </p>
-                <div className="space-y-1.5 text-xs text-gray-700">
+                <div className="space-y-1.5 text-xs text-neutral-700 dark:text-neutral-300">
                   <div className="flex justify-between">
                     <span className="font-medium">Hired:</span>
                     <span className="font-semibold">{data.hired}</span>
@@ -565,7 +565,7 @@ export default function Dashboard() {
                     <span className="font-medium">Rejected:</span>
                     <span className="font-semibold">{data.rejected}</span>
                   </div>
-                  <div className="flex justify-between pt-1.5 border-t border-gray-300">
+                  <div className="flex justify-between pt-1.5 border-t border-neutral-300 dark:border-neutral-600">
                     <span className="font-medium">Conversion:</span>
                     <span className="font-bold">{conversionRate}%</span>
                   </div>

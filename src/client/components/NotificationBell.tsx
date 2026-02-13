@@ -119,7 +119,7 @@ export default function NotificationBell() {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={handleToggle}
-        className="relative p-2 rounded hover:bg-gray-800 transition-colors"
+        className="relative p-2 rounded hover:bg-neutral-800 transition-colors"
         aria-label="Notifications"
       >
         <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -133,14 +133,14 @@ export default function NotificationBell() {
       </button>
 
       {open && (
-        <div className="fixed inset-x-3 top-14 sm:absolute sm:inset-auto sm:right-0 sm:top-auto sm:mt-2 sm:w-80 bg-white rounded-lg shadow-lg border z-50 max-h-96 flex flex-col">
+        <div className="fixed inset-x-3 top-14 sm:absolute sm:inset-auto sm:right-0 sm:top-auto sm:mt-2 sm:w-80 bg-white dark:bg-neutral-800 rounded-lg shadow-lg border border-neutral-200 dark:border-neutral-700 z-50 max-h-96 flex flex-col">
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b">
-            <h3 className="text-sm font-semibold text-gray-900">Notifications</h3>
+          <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-200 dark:border-neutral-700">
+            <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Notifications</h3>
             {unreadCount > 0 && (
               <button
                 onClick={handleMarkAllRead}
-                className="text-xs text-gray-500 hover:text-gray-900 font-medium"
+                className="text-xs text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100 font-medium"
               >
                 Mark all read
               </button>
@@ -151,32 +151,32 @@ export default function NotificationBell() {
           <div className="overflow-y-auto flex-1">
             {loading && notifications.length === 0 ? (
               <div className="flex items-center justify-center py-8">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-black"></div>
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-black dark:border-white"></div>
               </div>
             ) : notifications.length === 0 ? (
-              <p className="text-sm text-gray-500 text-center py-8">No notifications</p>
+              <p className="text-sm text-neutral-500 dark:text-neutral-400 text-center py-8">No notifications</p>
             ) : (
               notifications.map((n) => (
                 <button
                   key={n.id}
                   onClick={() => handleClickNotification(n)}
-                  className={`w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors border-b last:border-b-0 ${
-                    !n.read ? 'bg-gray-50' : ''
+                  className={`w-full text-left px-4 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors border-b border-neutral-100 dark:border-neutral-700 last:border-b-0 ${
+                    !n.read ? 'bg-neutral-50 dark:bg-neutral-700/50' : ''
                   }`}
                 >
                   <div className="flex items-start gap-2.5">
                     <span className="text-base mt-0.5 shrink-0">{typeIcons[n.type] || '\u{1F514}'}</span>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <p className={`text-sm truncate ${!n.read ? 'font-semibold text-gray-900' : 'font-medium text-gray-700'}`}>
+                        <p className={`text-sm truncate ${!n.read ? 'font-semibold text-neutral-900 dark:text-neutral-100' : 'font-medium text-neutral-700 dark:text-neutral-300'}`}>
                           {n.title}
                         </p>
                         {!n.read && (
-                          <span className="w-2 h-2 bg-black rounded-full shrink-0" />
+                          <span className="w-2 h-2 bg-black dark:bg-white rounded-full shrink-0" />
                         )}
                       </div>
-                      <p className="text-xs text-gray-500 truncate mt-0.5">{n.message}</p>
-                      <p className="text-xs text-gray-400 mt-1">{relativeTime(n.createdAt)}</p>
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate mt-0.5">{n.message}</p>
+                      <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">{relativeTime(n.createdAt)}</p>
                     </div>
                   </div>
                 </button>

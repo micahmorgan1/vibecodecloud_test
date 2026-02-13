@@ -55,10 +55,10 @@ interface InterviewDetail {
 
 const typeLabels: Record<string, string> = { in_person: 'In Person', video: 'Video', phone: 'Phone' };
 const statusColors: Record<string, string> = {
-  scheduled: 'bg-blue-100 text-blue-800',
-  completed: 'bg-green-100 text-green-800',
-  cancelled: 'bg-gray-100 text-gray-500',
-  no_show: 'bg-red-100 text-red-800',
+  scheduled: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+  completed: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+  cancelled: 'bg-neutral-100 text-neutral-500 dark:bg-neutral-700 dark:text-neutral-400',
+  no_show: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
 };
 const stageLabels: Record<string, string> = {
   fair_intake: 'Fair Intake', new: 'New', screening: 'Screening', interview: 'Interview',
@@ -192,7 +192,7 @@ export default function LiveInterview() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black dark:border-white"></div>
       </div>
     );
   }
@@ -200,7 +200,7 @@ export default function LiveInterview() {
   if (error || !interview) {
     return (
       <div className="card text-center py-12">
-        <p className="text-gray-500">{error || 'Interview not found'}</p>
+        <p className="text-neutral-500 dark:text-neutral-400">{error || 'Interview not found'}</p>
         <Link to="/" className="btn btn-primary mt-4">Back to Dashboard</Link>
       </div>
     );
@@ -217,35 +217,35 @@ export default function LiveInterview() {
           <div>
             <Link
               to={`/applicants/${applicant.id}`}
-              className="text-sm text-gray-500 hover:text-gray-900 mb-1 inline-block"
+              className="text-sm text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100 mb-1 inline-block"
             >
               &larr; Back to {applicant.firstName} {applicant.lastName}
             </Link>
-            <h1 className="text-xl font-display font-bold text-gray-900 uppercase tracking-wide">
+            <h1 className="text-xl font-display font-bold text-neutral-900 dark:text-neutral-100 uppercase tracking-wide">
               Interview: {applicant.firstName} {applicant.lastName}
             </h1>
-            <div className="flex flex-wrap items-center gap-2 mt-1 text-sm text-gray-500">
+            <div className="flex flex-wrap items-center gap-2 mt-1 text-sm text-neutral-500 dark:text-neutral-400">
               <span>{date.toLocaleDateString(undefined, { dateStyle: 'medium' })}</span>
               <span>{date.toLocaleTimeString(undefined, { timeStyle: 'short' })}</span>
-              <span className="text-gray-300">|</span>
+              <span className="text-neutral-300 dark:text-neutral-600">|</span>
               <span>{typeLabels[interview.type] || interview.type}</span>
               {interview.location && (
                 <>
-                  <span className="text-gray-300">|</span>
+                  <span className="text-neutral-300 dark:text-neutral-600">|</span>
                   <span>{interview.location}</span>
                 </>
               )}
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${statusColors[interview.status] || 'bg-gray-100 text-gray-700'}`}>
+            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${statusColors[interview.status] || 'bg-neutral-100 text-neutral-700 dark:bg-neutral-700 dark:text-neutral-300'}`}>
               {interview.status.replace('_', ' ')}
             </span>
             {interview.outcome && (
               <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
-                interview.outcome === 'advance' ? 'bg-green-100 text-green-800' :
-                interview.outcome === 'hold' ? 'bg-yellow-100 text-yellow-800' :
-                'bg-red-100 text-red-800'
+                interview.outcome === 'advance' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
+                interview.outcome === 'hold' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' :
+                'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
               }`}>
                 {interview.outcome}
               </span>
@@ -263,20 +263,20 @@ export default function LiveInterview() {
             <div className="flex items-center gap-3 mb-4">
               <Avatar name={`${applicant.firstName} ${applicant.lastName}`} email={applicant.email} size={48} />
               <div className="min-w-0">
-                <p className="font-medium text-gray-900 truncate">{applicant.firstName} {applicant.lastName}</p>
-                <p className="text-sm text-gray-500 truncate">{applicant.email}</p>
+                <p className="font-medium text-neutral-900 dark:text-neutral-100 truncate">{applicant.firstName} {applicant.lastName}</p>
+                <p className="text-sm text-neutral-500 dark:text-neutral-400 truncate">{applicant.email}</p>
               </div>
             </div>
 
             <dl className="space-y-2 text-sm">
               {applicant.phone && (
                 <div>
-                  <dt className="text-gray-500">Phone</dt>
+                  <dt className="text-neutral-500 dark:text-neutral-400">Phone</dt>
                   <dd className="font-medium">{applicant.phone}</dd>
                 </div>
               )}
               <div>
-                <dt className="text-gray-500">Stage</dt>
+                <dt className="text-neutral-500 dark:text-neutral-400">Stage</dt>
                 <dd>
                   <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium badge-${applicant.stage}`}>
                     {stageLabels[applicant.stage] || applicant.stage}
@@ -284,39 +284,39 @@ export default function LiveInterview() {
                 </dd>
               </div>
               <div>
-                <dt className="text-gray-500">Position</dt>
+                <dt className="text-neutral-500 dark:text-neutral-400">Position</dt>
                 <dd className="font-medium">
                   {applicant.job ? (
-                    <Link to={`/jobs/${applicant.job.id}`} className="text-gray-900 hover:text-gray-600">
+                    <Link to={`/jobs/${applicant.job.id}`} className="text-neutral-900 hover:text-neutral-600 dark:text-neutral-100 dark:hover:text-neutral-400">
                       {applicant.job.title}
                     </Link>
                   ) : (
-                    <span className="text-gray-400 italic">General Application</span>
+                    <span className="text-neutral-400 dark:text-neutral-500 italic">General Application</span>
                   )}
                 </dd>
               </div>
               {applicant.job?.department && (
                 <div>
-                  <dt className="text-gray-500">Department</dt>
+                  <dt className="text-neutral-500 dark:text-neutral-400">Department</dt>
                   <dd className="font-medium">{applicant.job.department}</dd>
                 </div>
               )}
               {applicant.event && (
                 <div>
-                  <dt className="text-gray-500">Event</dt>
+                  <dt className="text-neutral-500 dark:text-neutral-400">Event</dt>
                   <dd className="font-medium">{applicant.event.name}</dd>
                 </div>
               )}
             </dl>
 
             {/* Document links */}
-            <div className="mt-4 pt-4 border-t border-gray-200 space-y-2">
+            <div className="mt-4 pt-4 border-t border-neutral-200 dark:border-neutral-700 space-y-2">
               {applicant.resumePath && (
                 <a
                   href={applicant.resumePath}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-sm text-gray-900 hover:text-gray-600"
+                  className="flex items-center gap-2 text-sm text-neutral-900 hover:text-neutral-600 dark:text-neutral-100 dark:hover:text-neutral-400"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -329,7 +329,7 @@ export default function LiveInterview() {
                   href={applicant.portfolioPath}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-sm text-gray-900 hover:text-gray-600"
+                  className="flex items-center gap-2 text-sm text-neutral-900 hover:text-neutral-600 dark:text-neutral-100 dark:hover:text-neutral-400"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -342,7 +342,7 @@ export default function LiveInterview() {
                   href={applicant.portfolioUrl.startsWith('http') ? applicant.portfolioUrl : `https://${applicant.portfolioUrl}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-sm text-gray-900 hover:text-gray-600"
+                  className="flex items-center gap-2 text-sm text-neutral-900 hover:text-neutral-600 dark:text-neutral-100 dark:hover:text-neutral-400"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
@@ -355,7 +355,7 @@ export default function LiveInterview() {
                   href={applicant.linkedIn.startsWith('http') ? applicant.linkedIn : `https://${applicant.linkedIn}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-sm text-gray-900 hover:text-gray-600"
+                  className="flex items-center gap-2 text-sm text-neutral-900 hover:text-neutral-600 dark:text-neutral-100 dark:hover:text-neutral-400"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
@@ -365,10 +365,10 @@ export default function LiveInterview() {
               )}
             </div>
 
-            <div className="mt-4 pt-4 border-t border-gray-200">
+            <div className="mt-4 pt-4 border-t border-neutral-200 dark:border-neutral-700">
               <Link
                 to={`/applicants/${applicant.id}`}
-                className="text-sm text-gray-900 hover:text-gray-600 font-medium"
+                className="text-sm text-neutral-900 hover:text-neutral-600 dark:text-neutral-100 dark:hover:text-neutral-400 font-medium"
               >
                 View Full Profile &rarr;
               </Link>
@@ -378,19 +378,19 @@ export default function LiveInterview() {
           {/* Past Reviews */}
           {applicant.reviews.length > 0 && (
             <div className="card">
-              <h3 className="text-sm font-display font-semibold text-gray-900 uppercase tracking-wide mb-3">
+              <h3 className="text-sm font-display font-semibold text-neutral-900 dark:text-neutral-100 uppercase tracking-wide mb-3">
                 Past Reviews ({applicant.reviews.length})
               </h3>
               <div className="space-y-3">
                 {applicant.reviews.map((review) => (
-                  <div key={review.id} className="p-2 bg-gray-50 rounded">
+                  <div key={review.id} className="p-2 bg-neutral-50 dark:bg-neutral-700 rounded">
                     <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium text-gray-900">{review.reviewer.name}</p>
+                      <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">{review.reviewer.name}</p>
                       <div className="flex">
                         {[1, 2, 3, 4, 5].map((star) => (
                           <span
                             key={star}
-                            className={`text-sm ${star <= review.rating ? 'text-gray-900' : 'text-gray-300'}`}
+                            className={`text-sm ${star <= review.rating ? 'text-neutral-900 dark:text-neutral-100' : 'text-neutral-300 dark:text-neutral-600'}`}
                           >
                             ★
                           </span>
@@ -398,12 +398,12 @@ export default function LiveInterview() {
                       </div>
                     </div>
                     {review.recommendation && (
-                      <p className="text-xs text-gray-500 mt-0.5">
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
                         {recommendationLabels[review.recommendation] || review.recommendation}
                       </p>
                     )}
                     {review.comments && (
-                      <p className="text-xs text-gray-600 mt-1 line-clamp-2">{review.comments}</p>
+                      <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-1 line-clamp-2">{review.comments}</p>
                     )}
                   </div>
                 ))}
@@ -417,7 +417,7 @@ export default function LiveInterview() {
           {/* Meeting Notes URL */}
           <div className="card">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-display font-semibold text-gray-900 uppercase tracking-wide">
+              <h3 className="text-sm font-display font-semibold text-neutral-900 dark:text-neutral-100 uppercase tracking-wide">
                 Meeting Notes Link
               </h3>
               {isAdminOrHM && !editingNotesUrl && (
@@ -426,7 +426,7 @@ export default function LiveInterview() {
                     setNotesUrlDraft(interview.notesUrl || '');
                     setEditingNotesUrl(true);
                   }}
-                  className="text-xs text-gray-500 hover:text-gray-900"
+                  className="text-xs text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100"
                 >
                   Edit
                 </button>
@@ -460,7 +460,7 @@ export default function LiveInterview() {
                 href={interview.notesUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-sm text-gray-900 hover:text-gray-600 font-medium"
+                className="inline-flex items-center gap-2 text-sm text-neutral-900 hover:text-neutral-600 dark:text-neutral-100 dark:hover:text-neutral-400 font-medium"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
@@ -468,18 +468,18 @@ export default function LiveInterview() {
                 Open Meeting Notes
               </a>
             ) : (
-              <p className="text-sm text-gray-400 italic">No meeting notes link set</p>
+              <p className="text-sm text-neutral-400 dark:text-neutral-500 italic">No meeting notes link set</p>
             )}
           </div>
 
           {/* Prep Notes */}
           {interview.notes && (
             <div className="card">
-              <h3 className="text-sm font-display font-semibold text-gray-900 uppercase tracking-wide mb-2">
+              <h3 className="text-sm font-display font-semibold text-neutral-900 dark:text-neutral-100 uppercase tracking-wide mb-2">
                 Prep Notes
               </h3>
               <div
-                className="text-sm text-gray-600 prose prose-sm max-w-none"
+                className="text-sm text-neutral-600 dark:text-neutral-200 prose prose-sm max-w-none dark:prose-invert"
                 dangerouslySetInnerHTML={{ __html: renderContent(interview.notes) }}
               />
             </div>
@@ -487,7 +487,7 @@ export default function LiveInterview() {
 
           {/* Participant Panels */}
           <div className="space-y-3">
-            <h3 className="text-sm font-display font-semibold text-gray-900 uppercase tracking-wide">
+            <h3 className="text-sm font-display font-semibold text-neutral-900 dark:text-neutral-100 uppercase tracking-wide">
               Participant Notes
             </h3>
             {interview.participants.map((participant) => {
@@ -495,11 +495,11 @@ export default function LiveInterview() {
 
               if (isMe) {
                 return (
-                  <div key={participant.id} className="card border-2 border-gray-900">
+                  <div key={participant.id} className="card border-2 border-neutral-900 dark:border-neutral-100">
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2">
-                        <p className="font-medium text-gray-900">{participant.user.name}</p>
-                        <span className="text-xs px-2 py-0.5 bg-gray-900 text-white rounded-full">You</span>
+                        <p className="font-medium text-neutral-900 dark:text-neutral-100">{participant.user.name}</p>
+                        <span className="text-xs px-2 py-0.5 bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900 rounded-full">You</span>
                       </div>
                       <div className="flex items-center gap-2">
                         {feedbackSaved && (
@@ -517,7 +517,7 @@ export default function LiveInterview() {
 
                     {/* Rating */}
                     <div className="mb-3">
-                      <p className="text-xs text-gray-500 mb-1">Rating</p>
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">Rating</p>
                       <div className="flex gap-1">
                         {[1, 2, 3, 4, 5].map((star) => (
                           <button
@@ -528,7 +528,7 @@ export default function LiveInterview() {
                               hasUnsavedEdits.current = true;
                             }}
                             className={`text-2xl transition-colors ${
-                              myRating && star <= myRating ? 'text-gray-900' : 'text-gray-300 hover:text-gray-500'
+                              myRating && star <= myRating ? 'text-neutral-900 dark:text-neutral-100' : 'text-neutral-300 hover:text-neutral-500 dark:text-neutral-600 dark:hover:text-neutral-400'
                             }`}
                           >
                             ★
@@ -555,13 +555,13 @@ export default function LiveInterview() {
               return (
                 <div key={participant.id} className="card">
                   <div className="flex items-center justify-between mb-2">
-                    <p className="font-medium text-gray-900">{participant.user.name}</p>
+                    <p className="font-medium text-neutral-900 dark:text-neutral-100">{participant.user.name}</p>
                     {participant.rating && (
                       <div className="flex">
                         {[1, 2, 3, 4, 5].map((star) => (
                           <span
                             key={star}
-                            className={`text-lg ${star <= participant.rating! ? 'text-gray-900' : 'text-gray-300'}`}
+                            className={`text-lg ${star <= participant.rating! ? 'text-neutral-900 dark:text-neutral-100' : 'text-neutral-300 dark:text-neutral-600'}`}
                           >
                             ★
                           </span>
@@ -571,11 +571,11 @@ export default function LiveInterview() {
                   </div>
                   {participant.feedback ? (
                     <div
-                      className="text-sm text-gray-600 prose prose-sm max-w-none"
+                      className="text-sm text-neutral-600 dark:text-neutral-200 prose prose-sm max-w-none dark:prose-invert"
                       dangerouslySetInnerHTML={{ __html: renderContent(participant.feedback) }}
                     />
                   ) : (
-                    <p className="text-sm text-gray-400 italic">No feedback yet</p>
+                    <p className="text-sm text-neutral-400 dark:text-neutral-500 italic">No feedback yet</p>
                   )}
                 </div>
               );
@@ -584,8 +584,8 @@ export default function LiveInterview() {
 
           {/* Action Bar — admin/HM only */}
           {isAdminOrHM && (
-            <div className="card bg-gray-50">
-              <h3 className="text-sm font-display font-semibold text-gray-900 uppercase tracking-wide mb-3">
+            <div className="card bg-neutral-50 dark:bg-neutral-700">
+              <h3 className="text-sm font-display font-semibold text-neutral-900 dark:text-neutral-100 uppercase tracking-wide mb-3">
                 Actions
               </h3>
               <div className="flex flex-wrap items-center gap-3">
@@ -602,7 +602,7 @@ export default function LiveInterview() {
                   <span className="text-sm text-green-600 font-medium">Interview completed</span>
                 )}
                 <div className="flex items-center gap-2">
-                  <label className="text-sm text-gray-600">Outcome:</label>
+                  <label className="text-sm text-neutral-600 dark:text-neutral-400">Outcome:</label>
                   <select
                     value={interview.outcome || ''}
                     onChange={(e) => updateOutcome(e.target.value)}

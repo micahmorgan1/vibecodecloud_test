@@ -263,7 +263,7 @@ export default function ApplicantDetail() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black dark:border-white"></div>
       </div>
     );
   }
@@ -271,7 +271,7 @@ export default function ApplicantDetail() {
   if (!applicant) {
     return (
       <div className="card text-center py-12">
-        <p className="text-gray-500">Applicant not found</p>
+        <p className="text-neutral-500 dark:text-neutral-400">Applicant not found</p>
         <Link to="/applicants" className="btn btn-primary mt-4">
           Back to Applicants
         </Link>
@@ -288,37 +288,37 @@ export default function ApplicantDetail() {
   const myReview = applicant.reviews.find((r) => r.reviewer.id === user?.id);
 
   const recommendationLabels: Record<string, { label: string; color: string }> = {
-    strong_yes: { label: 'Strong Yes', color: 'text-gray-900 font-bold' },
-    yes: { label: 'Yes', color: 'text-gray-800' },
-    maybe: { label: 'Maybe', color: 'text-gray-500' },
-    no: { label: 'No', color: 'text-gray-400' },
-    strong_no: { label: 'Strong No', color: 'text-gray-400 line-through' },
+    strong_yes: { label: 'Strong Yes', color: 'text-neutral-900 dark:text-neutral-100 font-bold' },
+    yes: { label: 'Yes', color: 'text-neutral-800 dark:text-neutral-300' },
+    maybe: { label: 'Maybe', color: 'text-neutral-500 dark:text-neutral-400' },
+    no: { label: 'No', color: 'text-neutral-400 dark:text-neutral-500' },
+    strong_no: { label: 'Strong No', color: 'text-neutral-400 dark:text-neutral-500 line-through' },
   };
 
   return (
     <div className="space-y-6">
       {/* Breadcrumb */}
-      <nav className="text-sm text-gray-500">
-        <Link to="/applicants" className="hover:text-gray-900">Applicants</Link>
+      <nav className="text-sm text-neutral-500 dark:text-neutral-400">
+        <Link to="/applicants" className="hover:text-neutral-900 dark:hover:text-neutral-100">Applicants</Link>
         <span className="mx-2">/</span>
-        <span className="text-gray-900">{applicant.firstName} {applicant.lastName}</span>
+        <span className="text-neutral-900 dark:text-neutral-100">{applicant.firstName} {applicant.lastName}</span>
       </nav>
 
       {/* Spam Banner */}
       {applicant.spam && canDelete && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+        <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg p-4">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="font-medium text-red-800">This applicant was flagged as spam</p>
+              <p className="font-medium text-red-800 dark:text-red-200">This applicant was flagged as spam</p>
               {applicant.spamReason && (
-                <p className="text-sm text-red-600 mt-1">Reason: {applicant.spamReason}</p>
+                <p className="text-sm text-red-600 dark:text-red-400 mt-1">Reason: {applicant.spamReason}</p>
               )}
             </div>
             <div className="flex gap-2 shrink-0">
               <button
                 onClick={markNotSpam}
                 disabled={spamActionLoading}
-                className="px-3 py-1.5 bg-white border border-gray-300 rounded text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                className="px-3 py-1.5 bg-white dark:bg-neutral-700 border border-neutral-300 dark:border-neutral-600 rounded text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-600 transition-colors"
               >
                 {spamActionLoading ? 'Updating...' : 'Not Spam'}
               </button>
@@ -340,19 +340,19 @@ export default function ApplicantDetail() {
           <div className="flex items-start gap-4">
             <Avatar name={`${applicant.firstName} ${applicant.lastName}`} email={applicant.email} size={64} />
             <div>
-              <h1 className="text-2xl font-display font-bold text-gray-900 uppercase tracking-wide">
+              <h1 className="text-2xl font-display font-bold text-neutral-900 dark:text-neutral-100 uppercase tracking-wide">
                 {applicant.firstName} {applicant.lastName}
               </h1>
-              <p className="text-gray-500">{applicant.email}</p>
-              {applicant.phone && <p className="text-gray-400 text-sm">{applicant.phone}</p>}
+              <p className="text-neutral-500 dark:text-neutral-400">{applicant.email}</p>
+              {applicant.phone && <p className="text-neutral-400 dark:text-neutral-500 text-sm">{applicant.phone}</p>}
               <div className="flex items-center gap-3 mt-2">
                 {applicant.linkedIn && (
-                  <a href={`https://${applicant.linkedIn}`} target="_blank" rel="noopener noreferrer" className="text-gray-900 hover:text-gray-600 text-sm font-medium">
+                  <a href={`https://${applicant.linkedIn}`} target="_blank" rel="noopener noreferrer" className="text-neutral-900 dark:text-neutral-100 hover:text-neutral-600 dark:hover:text-neutral-400 text-sm font-medium">
                     LinkedIn
                   </a>
                 )}
                 {applicant.website && (
-                  <a href={`https://${applicant.website}`} target="_blank" rel="noopener noreferrer" className="text-gray-900 hover:text-gray-600 text-sm font-medium">
+                  <a href={`https://${applicant.website}`} target="_blank" rel="noopener noreferrer" className="text-neutral-900 dark:text-neutral-100 hover:text-neutral-600 dark:hover:text-neutral-400 text-sm font-medium">
                     Website
                   </a>
                 )}
@@ -363,9 +363,9 @@ export default function ApplicantDetail() {
           <div className="flex items-center gap-2">
             {getAverageRating() && (
               <div className="flex items-center gap-1 mr-2">
-                <span className="text-gray-900 text-xl">★</span>
+                <span className="text-neutral-900 dark:text-neutral-100 text-xl">★</span>
                 <span className="text-2xl font-display font-bold">{getAverageRating()}</span>
-                <span className="text-gray-400 text-sm">({applicant.reviews.length})</span>
+                <span className="text-neutral-400 dark:text-neutral-500 text-sm">({applicant.reviews.length})</span>
               </div>
             )}
             <button
@@ -378,8 +378,8 @@ export default function ApplicantDetail() {
         </div>
 
         {/* Stage Pipeline */}
-        <div className="mt-6 pt-6 border-t border-gray-200">
-          <p className="text-sm font-medium text-gray-700 mb-3">Application Stage</p>
+        <div className="mt-6 pt-6 border-t border-neutral-200 dark:border-neutral-700">
+          <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-3">Application Stage</p>
           <div className="flex flex-wrap gap-2">
             {stages.map((stage) => (
               <button
@@ -395,8 +395,8 @@ export default function ApplicantDetail() {
                       ? 'bg-teal-600 text-white'
                       : stage === 'holding'
                       ? 'bg-yellow-500 text-white'
-                      : 'bg-gray-900 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      : 'bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900'
+                    : 'bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-600'
                 }`}
               >
                 {stageLabels[stage]}
@@ -406,7 +406,7 @@ export default function ApplicantDetail() {
         </div>
 
         {/* Actions */}
-        <div className="mt-6 pt-6 border-t border-gray-200 flex flex-wrap gap-2">
+        <div className="mt-6 pt-6 border-t border-neutral-200 dark:border-neutral-700 flex flex-wrap gap-2">
           {applicant.stage !== 'rejected' && applicant.stage !== 'hired' && (
             <button
               onClick={() => setShowRejectionModal(true)}
@@ -451,7 +451,7 @@ export default function ApplicantDetail() {
           {canDelete && (
             <button
               onClick={() => setShowDeleteModal(true)}
-              className="btn btn-secondary text-sm text-red-600 hover:text-red-700"
+              className="btn btn-secondary text-sm text-red-600 dark:text-red-400 hover:text-red-700"
             >
               Delete Applicant
             </button>
@@ -464,29 +464,29 @@ export default function ApplicantDetail() {
         <div className="lg:col-span-2 space-y-6">
           {/* Application Info */}
           <div className="card">
-            <h2 className="text-lg font-display font-semibold text-gray-900 mb-4 uppercase tracking-wide">Application Details</h2>
+            <h2 className="text-lg font-display font-semibold text-neutral-900 dark:text-neutral-100 mb-4 uppercase tracking-wide">Application Details</h2>
             <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <dt className="text-sm text-gray-500">Position</dt>
+                <dt className="text-sm text-neutral-500 dark:text-neutral-400">Position</dt>
                 <dd className="font-medium">
                   {applicant.job ? (
-                    <Link to={`/jobs/${applicant.job.id}`} className="text-gray-900 hover:text-gray-600">
+                    <Link to={`/jobs/${applicant.job.id}`} className="text-neutral-900 dark:text-neutral-100 hover:text-neutral-600 dark:hover:text-neutral-400">
                       {applicant.job.title}
                     </Link>
                   ) : (
-                    <span className="text-gray-500 italic">General Application</span>
+                    <span className="text-neutral-500 dark:text-neutral-400 italic">General Application</span>
                   )}
                 </dd>
               </div>
               <div>
-                <dt className="text-sm text-gray-500">Department</dt>
+                <dt className="text-sm text-neutral-500 dark:text-neutral-400">Department</dt>
                 <dd className="font-medium">{applicant.job?.department || '—'}</dd>
               </div>
               {applicant.event && (
                 <div>
-                  <dt className="text-sm text-gray-500">Event</dt>
+                  <dt className="text-sm text-neutral-500 dark:text-neutral-400">Event</dt>
                   <dd className="font-medium">
-                    <Link to={`/events/${applicant.event.id}`} className="text-gray-900 hover:text-gray-600">
+                    <Link to={`/events/${applicant.event.id}`} className="text-neutral-900 dark:text-neutral-100 hover:text-neutral-600 dark:hover:text-neutral-400">
                       {applicant.event.name}
                     </Link>
                   </dd>
@@ -494,24 +494,24 @@ export default function ApplicantDetail() {
               )}
               {applicant.source && (
                 <div>
-                  <dt className="text-sm text-gray-500">Source</dt>
+                  <dt className="text-sm text-neutral-500 dark:text-neutral-400">Source</dt>
                   <dd className="font-medium">{applicant.source}</dd>
                 </div>
               )}
               <div>
-                <dt className="text-sm text-gray-500">Applied On</dt>
+                <dt className="text-sm text-neutral-500 dark:text-neutral-400">Applied On</dt>
                 <dd className="font-medium">{new Date(applicant.createdAt).toLocaleDateString()}</dd>
               </div>
             </dl>
 
             {/* Documents */}
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              <h3 className="text-sm font-medium text-gray-900 mb-3">Documents</h3>
+            <div className="mt-6 pt-6 border-t border-neutral-200 dark:border-neutral-700">
+              <h3 className="text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-3">Documents</h3>
               <div className="flex flex-wrap gap-3">
                 {applicant.resumePath && (
                   <button
                     onClick={() => setViewingDocument({ url: applicant.resumePath!, title: `Resume - ${applicant.firstName} ${applicant.lastName}` })}
-                    className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded hover:bg-gray-700 transition-colors"
+                    className="flex items-center gap-2 px-4 py-2 bg-neutral-900 text-white rounded hover:bg-neutral-700 transition-colors dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-300"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -522,7 +522,7 @@ export default function ApplicantDetail() {
                 {applicant.portfolioPath && (
                   <button
                     onClick={() => setViewingDocument({ url: applicant.portfolioPath!, title: `Portfolio - ${applicant.firstName} ${applicant.lastName}` })}
-                    className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded hover:bg-gray-700 transition-colors"
+                    className="flex items-center gap-2 px-4 py-2 bg-neutral-900 text-white rounded hover:bg-neutral-700 transition-colors dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-300"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -535,9 +535,9 @@ export default function ApplicantDetail() {
                     href={applicant.portfolioUrl.startsWith('http') ? applicant.portfolioUrl : `https://${applicant.portfolioUrl}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded hover:bg-gray-200 transition-colors"
+                    className="flex items-center gap-2 px-4 py-2 bg-neutral-100 dark:bg-neutral-700 rounded hover:bg-neutral-200 dark:hover:bg-neutral-600 transition-colors"
                   >
-                    <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-5 h-5 text-neutral-600 dark:text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                     </svg>
                     Online Portfolio
@@ -548,25 +548,25 @@ export default function ApplicantDetail() {
 
             {/* Cover Letter */}
             {applicant.coverLetter && (
-              <div className="mt-6 pt-6 border-t border-gray-200">
-                <h3 className="text-sm font-medium text-gray-900 mb-3">Cover Letter</h3>
-                <p className="text-gray-600 whitespace-pre-wrap">{applicant.coverLetter}</p>
+              <div className="mt-6 pt-6 border-t border-neutral-200 dark:border-neutral-700">
+                <h3 className="text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-3">Cover Letter</h3>
+                <p className="text-neutral-600 dark:text-neutral-400 whitespace-pre-wrap">{applicant.coverLetter}</p>
               </div>
             )}
           </div>
 
           {/* Start Date — shown when hired */}
           {applicant.stage === 'hired' && (user?.role === 'admin' || user?.role === 'hiring_manager') && (
-            <div className="card bg-green-50 border border-green-200">
+            <div className="card bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-lg font-display font-semibold text-gray-900 uppercase tracking-wide">Start Date</h2>
+                  <h2 className="text-lg font-display font-semibold text-neutral-900 dark:text-neutral-100 uppercase tracking-wide">Start Date</h2>
                   {applicant.startDate ? (
-                    <p className="text-green-800 font-medium mt-1">
+                    <p className="text-green-800 dark:text-green-200 font-medium mt-1">
                       {new Date(applicant.startDate).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                     </p>
                   ) : (
-                    <p className="text-gray-500 text-sm mt-1">No start date set</p>
+                    <p className="text-neutral-500 dark:text-neutral-400 text-sm mt-1">No start date set</p>
                   )}
                 </div>
                 <StartDatePicker
@@ -581,7 +581,7 @@ export default function ApplicantDetail() {
           {/* Interviews */}
           <div className="card">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-display font-semibold text-gray-900 uppercase tracking-wide">
+              <h2 className="text-lg font-display font-semibold text-neutral-900 dark:text-neutral-100 uppercase tracking-wide">
                 Interviews ({applicant.interviews?.length || 0})
               </h2>
               {(user?.role === 'admin' || user?.role === 'hiring_manager') && (
@@ -594,7 +594,7 @@ export default function ApplicantDetail() {
               )}
             </div>
             {(!applicant.interviews || applicant.interviews.length === 0) ? (
-              <p className="text-gray-500 text-center py-4">No interviews scheduled</p>
+              <p className="text-neutral-500 dark:text-neutral-400 text-center py-4">No interviews scheduled</p>
             ) : (
               <div className="space-y-3">
                 {applicant.interviews.map((interview) => {
@@ -602,35 +602,35 @@ export default function ApplicantDetail() {
                   const myParticipant = interview.participants.find(p => p.user.id === user?.id);
                   const typeLabel: Record<string, string> = { in_person: 'In Person', video: 'Video', phone: 'Phone' };
                   const statusColors: Record<string, string> = {
-                    scheduled: 'bg-blue-100 text-blue-800',
-                    completed: 'bg-green-100 text-green-800',
-                    cancelled: 'bg-gray-100 text-gray-500',
-                    no_show: 'bg-red-100 text-red-800',
+                    scheduled: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+                    completed: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+                    cancelled: 'bg-neutral-100 text-neutral-500 dark:bg-neutral-700 dark:text-neutral-400',
+                    no_show: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
                   };
                   const outcomeColors: Record<string, string> = {
-                    advance: 'bg-green-100 text-green-800',
-                    hold: 'bg-yellow-100 text-yellow-800',
-                    reject: 'bg-red-100 text-red-800',
+                    advance: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+                    hold: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
+                    reject: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
                   };
                   return (
-                    <div key={interview.id} className="p-4 bg-gray-50 rounded border border-gray-100">
+                    <div key={interview.id} className="p-4 bg-neutral-50 dark:bg-neutral-700 rounded border border-neutral-100 dark:border-neutral-600">
                       <div className="flex items-start justify-between mb-2">
                         <div>
-                          <p className="font-medium text-gray-900">
+                          <p className="font-medium text-neutral-900 dark:text-neutral-100">
                             {new Date(interview.scheduledAt).toLocaleString(undefined, {
                               dateStyle: 'medium',
                               timeStyle: 'short',
                             })}
                           </p>
                           <div className="flex items-center gap-2 mt-1">
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-200 text-gray-700">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-neutral-200 dark:bg-neutral-600 text-neutral-700 dark:text-neutral-300">
                               {typeLabel[interview.type] || interview.type}
                             </span>
-                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${statusColors[interview.status] || 'bg-gray-100 text-gray-700'}`}>
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${statusColors[interview.status] || 'bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300'}`}>
                               {interview.status.replace('_', ' ')}
                             </span>
                             {interview.outcome && (
-                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${outcomeColors[interview.outcome] || 'bg-gray-100 text-gray-700'}`}>
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${outcomeColors[interview.outcome] || 'bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300'}`}>
                                 {interview.outcome}
                               </span>
                             )}
@@ -640,7 +640,7 @@ export default function ApplicantDetail() {
                           {interview.status === 'scheduled' && (
                             <Link
                               to={`/interviews/${interview.id}/live`}
-                              className="text-xs px-2 py-1 bg-gray-900 text-white rounded hover:bg-gray-700 transition-colors"
+                              className="text-xs px-2 py-1 bg-neutral-900 text-white rounded hover:bg-neutral-700 transition-colors dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-300"
                             >
                               Live Notes
                             </Link>
@@ -648,7 +648,7 @@ export default function ApplicantDetail() {
                           {isParticipant && (interview.status === 'scheduled' || interview.status === 'completed') && !myParticipant?.feedback && (
                             <button
                               onClick={() => setFeedbackInterview(interview)}
-                              className="text-xs px-2 py-1 bg-gray-900 text-white rounded hover:bg-gray-700 transition-colors"
+                              className="text-xs px-2 py-1 bg-neutral-900 text-white rounded hover:bg-neutral-700 transition-colors dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-300"
                             >
                               Add Feedback
                             </button>
@@ -656,23 +656,23 @@ export default function ApplicantDetail() {
                           {(user?.role === 'admin' || user?.role === 'hiring_manager') && interview.status !== 'cancelled' && (
                             <button
                               onClick={() => setEditingInterview(interview)}
-                              className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
+                              className="text-xs px-2 py-1 bg-neutral-100 dark:bg-neutral-600 text-neutral-700 dark:text-neutral-300 rounded hover:bg-neutral-200 dark:hover:bg-neutral-500 transition-colors"
                             >
                               Edit
                             </button>
                           )}
                           <button
                             onClick={() => setDetailInterview(interview)}
-                            className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
+                            className="text-xs px-2 py-1 bg-neutral-100 dark:bg-neutral-600 text-neutral-700 dark:text-neutral-300 rounded hover:bg-neutral-200 dark:hover:bg-neutral-500 transition-colors"
                           >
                             Details
                           </button>
                         </div>
                       </div>
                       {interview.location && (
-                        <p className="text-sm text-gray-500">{interview.location}</p>
+                        <p className="text-sm text-neutral-500 dark:text-neutral-400">{interview.location}</p>
                       )}
-                      <p className="text-xs text-gray-400 mt-1">
+                      <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">
                         Participants: {interview.participants.map(p => p.user.name).join(', ')}
                       </p>
                     </div>
@@ -686,7 +686,7 @@ export default function ApplicantDetail() {
           {(user?.role === 'admin' || (user?.role === 'hiring_manager' && user?.offerAccess)) && (
             <div className="card">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-display font-semibold text-gray-900 uppercase tracking-wide">
+                <h2 className="text-lg font-display font-semibold text-neutral-900 dark:text-neutral-100 uppercase tracking-wide">
                   Offers ({applicant.offers?.length || 0})
                 </h2>
                 <button
@@ -697,45 +697,45 @@ export default function ApplicantDetail() {
                 </button>
               </div>
               {(!applicant.offers || applicant.offers.length === 0) ? (
-                <p className="text-gray-500 text-center py-4">No offers yet</p>
+                <p className="text-neutral-500 dark:text-neutral-400 text-center py-4">No offers yet</p>
               ) : (
                 <div className="space-y-3">
                   {applicant.offers.map((offer) => {
                     const statusColors: Record<string, string> = {
-                      draft: 'bg-gray-100 text-gray-700',
-                      extended: 'bg-purple-100 text-purple-800',
-                      accepted: 'bg-green-100 text-green-800',
-                      declined: 'bg-red-100 text-red-800',
-                      rescinded: 'bg-orange-100 text-orange-800',
+                      draft: 'bg-neutral-100 text-neutral-700 dark:bg-neutral-700 dark:text-neutral-300',
+                      extended: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
+                      accepted: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+                      declined: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+                      rescinded: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
                     };
                     return (
-                      <div key={offer.id} className="p-4 bg-gray-50 rounded border border-gray-100">
+                      <div key={offer.id} className="p-4 bg-neutral-50 dark:bg-neutral-700 rounded border border-neutral-100 dark:border-neutral-600">
                         <div className="flex items-start justify-between mb-2">
                           <div>
                             <div className="flex items-center gap-2">
-                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${statusColors[offer.status] || 'bg-gray-100 text-gray-700'}`}>
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${statusColors[offer.status] || 'bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300'}`}>
                                 {offer.status}
                               </span>
                               {offer.salary && (
-                                <span className="text-sm text-gray-600">{offer.salary}</span>
+                                <span className="text-sm text-neutral-600 dark:text-neutral-400">{offer.salary}</span>
                               )}
                               {offer.offerDate && (
-                                <span className="text-xs text-gray-500">
+                                <span className="text-xs text-neutral-500 dark:text-neutral-400">
                                   Offered {new Date(offer.offerDate).toLocaleDateString()}
                                 </span>
                               )}
                               {offer.acceptedDate && (
-                                <span className="text-xs text-green-600">
+                                <span className="text-xs text-green-600 dark:text-green-400">
                                   Accepted {new Date(offer.acceptedDate).toLocaleDateString()}
                                 </span>
                               )}
                               {offer.declinedDate && (
-                                <span className="text-xs text-red-600">
+                                <span className="text-xs text-red-600 dark:text-red-400">
                                   Declined {new Date(offer.declinedDate).toLocaleDateString()}
                                 </span>
                               )}
                             </div>
-                            <p className="text-xs text-gray-400 mt-1">
+                            <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">
                               Created by {offer.createdBy.name} on {new Date(offer.createdAt).toLocaleDateString()}
                             </p>
                           </div>
@@ -745,21 +745,21 @@ export default function ApplicantDetail() {
                                 href={offer.filePath}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
+                                className="text-xs px-2 py-1 bg-neutral-100 dark:bg-neutral-600 text-neutral-700 dark:text-neutral-300 rounded hover:bg-neutral-200 dark:hover:bg-neutral-500 transition-colors"
                               >
                                 Download
                               </a>
                             )}
                             <button
                               onClick={() => { setEditingOffer(offer); setShowOfferModal(true); }}
-                              className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
+                              className="text-xs px-2 py-1 bg-neutral-100 dark:bg-neutral-600 text-neutral-700 dark:text-neutral-300 rounded hover:bg-neutral-200 dark:hover:bg-neutral-500 transition-colors"
                             >
                               Edit
                             </button>
                           </div>
                         </div>
                         {offer.notes && (
-                          <div className="text-sm text-gray-600 mt-2" dangerouslySetInnerHTML={{ __html: offer.notes }} />
+                          <div className="text-sm text-neutral-600 dark:text-neutral-400 mt-2" dangerouslySetInnerHTML={{ __html: offer.notes }} />
                         )}
                       </div>
                     );
@@ -771,19 +771,19 @@ export default function ApplicantDetail() {
 
           {/* Reviews */}
           <div className="card">
-            <h2 className="text-lg font-display font-semibold text-gray-900 mb-4 uppercase tracking-wide">
+            <h2 className="text-lg font-display font-semibold text-neutral-900 dark:text-neutral-100 mb-4 uppercase tracking-wide">
               Reviews ({applicant.reviews.length})
             </h2>
             {applicant.reviews.length === 0 ? (
-              <p className="text-gray-500 text-center py-4">No reviews yet</p>
+              <p className="text-neutral-500 dark:text-neutral-400 text-center py-4">No reviews yet</p>
             ) : (
               <div className="space-y-4">
                 {applicant.reviews.map((review) => (
-                  <div key={review.id} className="p-4 bg-gray-50 rounded border border-gray-100">
+                  <div key={review.id} className="p-4 bg-neutral-50 dark:bg-neutral-700 rounded border border-neutral-100 dark:border-neutral-600">
                     <div className="flex items-start justify-between mb-3">
                       <div>
-                        <p className="font-medium text-gray-900">{review.reviewer.name}</p>
-                        <p className="text-xs text-gray-500">
+                        <p className="font-medium text-neutral-900 dark:text-neutral-100">{review.reviewer.name}</p>
+                        <p className="text-xs text-neutral-500 dark:text-neutral-400">
                           {new Date(review.createdAt).toLocaleDateString()}
                         </p>
                       </div>
@@ -793,7 +793,7 @@ export default function ApplicantDetail() {
                             <span
                               key={star}
                               className={`text-lg ${
-                                star <= review.rating ? 'text-gray-900' : 'text-gray-300'
+                                star <= review.rating ? 'text-neutral-900 dark:text-neutral-100' : 'text-neutral-300 dark:text-neutral-600'
                               }`}
                             >
                               ★
@@ -811,39 +811,39 @@ export default function ApplicantDetail() {
                     {/* Criteria Ratings */}
                     <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-3">
                       {review.technicalSkills && (
-                        <div className="text-center p-2 bg-white rounded border border-gray-100">
-                          <p className="text-xs text-gray-500">Technical</p>
+                        <div className="text-center p-2 bg-white dark:bg-neutral-800 rounded border border-neutral-100 dark:border-neutral-600">
+                          <p className="text-xs text-neutral-500 dark:text-neutral-400">Technical</p>
                           <p className="font-medium">{review.technicalSkills}/5</p>
                         </div>
                       )}
                       {review.designAbility && (
-                        <div className="text-center p-2 bg-white rounded border border-gray-100">
-                          <p className="text-xs text-gray-500">Design</p>
+                        <div className="text-center p-2 bg-white dark:bg-neutral-800 rounded border border-neutral-100 dark:border-neutral-600">
+                          <p className="text-xs text-neutral-500 dark:text-neutral-400">Design</p>
                           <p className="font-medium">{review.designAbility}/5</p>
                         </div>
                       )}
                       {review.portfolioQuality && (
-                        <div className="text-center p-2 bg-white rounded border border-gray-100">
-                          <p className="text-xs text-gray-500">Portfolio</p>
+                        <div className="text-center p-2 bg-white dark:bg-neutral-800 rounded border border-neutral-100 dark:border-neutral-600">
+                          <p className="text-xs text-neutral-500 dark:text-neutral-400">Portfolio</p>
                           <p className="font-medium">{review.portfolioQuality}/5</p>
                         </div>
                       )}
                       {review.communication && (
-                        <div className="text-center p-2 bg-white rounded border border-gray-100">
-                          <p className="text-xs text-gray-500">Communication</p>
+                        <div className="text-center p-2 bg-white dark:bg-neutral-800 rounded border border-neutral-100 dark:border-neutral-600">
+                          <p className="text-xs text-neutral-500 dark:text-neutral-400">Communication</p>
                           <p className="font-medium">{review.communication}/5</p>
                         </div>
                       )}
                       {review.cultureFit && (
-                        <div className="text-center p-2 bg-white rounded border border-gray-100">
-                          <p className="text-xs text-gray-500">Culture Fit</p>
+                        <div className="text-center p-2 bg-white dark:bg-neutral-800 rounded border border-neutral-100 dark:border-neutral-600">
+                          <p className="text-xs text-neutral-500 dark:text-neutral-400">Culture Fit</p>
                           <p className="font-medium">{review.cultureFit}/5</p>
                         </div>
                       )}
                     </div>
 
                     {review.comments && (
-                      <p className="text-gray-600 text-sm">{review.comments}</p>
+                      <p className="text-neutral-600 dark:text-neutral-400 text-sm">{review.comments}</p>
                     )}
                   </div>
                 ))}
@@ -857,7 +857,7 @@ export default function ApplicantDetail() {
           {/* Other Applications (duplicates) */}
           {duplicates.length > 0 && (
             <div className="card">
-              <h2 className="text-lg font-display font-semibold text-gray-900 mb-4 uppercase tracking-wide">
+              <h2 className="text-lg font-display font-semibold text-neutral-900 dark:text-neutral-100 mb-4 uppercase tracking-wide">
                 Other Applications ({duplicates.length})
               </h2>
               <div className="space-y-2">
@@ -865,14 +865,14 @@ export default function ApplicantDetail() {
                   <Link
                     key={dup.id}
                     to={`/applicants/${dup.id}`}
-                    className="block p-3 bg-gray-50 rounded border border-gray-100 hover:bg-gray-100 transition-colors"
+                    className="block p-3 bg-neutral-50 dark:bg-neutral-700 rounded border border-neutral-100 dark:border-neutral-600 hover:bg-neutral-100 dark:hover:bg-neutral-600 transition-colors"
                   >
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm font-medium text-gray-900">
-                          {dup.job?.title || <span className="italic text-gray-500">General Application</span>}
+                        <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                          {dup.job?.title || <span className="italic text-neutral-500 dark:text-neutral-400">General Application</span>}
                         </p>
-                        <p className="text-xs text-gray-500">{new Date(dup.createdAt).toLocaleDateString()}</p>
+                        <p className="text-xs text-neutral-500 dark:text-neutral-400">{new Date(dup.createdAt).toLocaleDateString()}</p>
                       </div>
                       <span className={`badge ${
                         dup.stage === 'hired' ? 'badge-hired' :
@@ -890,7 +890,7 @@ export default function ApplicantDetail() {
           )}
 
           <div className="card">
-            <h2 className="text-lg font-display font-semibold text-gray-900 mb-4 uppercase tracking-wide">Notes</h2>
+            <h2 className="text-lg font-display font-semibold text-neutral-900 dark:text-neutral-100 mb-4 uppercase tracking-wide">Notes</h2>
 
             <form onSubmit={addNote} className="mb-4">
               <textarea
@@ -909,13 +909,13 @@ export default function ApplicantDetail() {
             </form>
 
             {applicant.notes.length === 0 ? (
-              <p className="text-gray-500 text-center py-4">No notes yet</p>
+              <p className="text-neutral-500 dark:text-neutral-400 text-center py-4">No notes yet</p>
             ) : (
               <div className="space-y-3">
                 {applicant.notes.map((note) => (
-                  <div key={note.id} className="p-3 bg-gray-50 rounded border border-gray-100">
-                    <p className="text-sm text-gray-600">{note.content}</p>
-                    <p className="text-xs text-gray-400 mt-2">
+                  <div key={note.id} className="p-3 bg-neutral-50 dark:bg-neutral-700 rounded border border-neutral-100 dark:border-neutral-600">
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400">{note.content}</p>
+                    <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-2">
                       {new Date(note.createdAt).toLocaleString()}
                     </p>
                   </div>
@@ -927,19 +927,19 @@ export default function ApplicantDetail() {
           {/* Activity Timeline */}
           {activityLogs.length > 0 && (
             <div className="card">
-              <h2 className="text-lg font-display font-semibold text-gray-900 mb-4 uppercase tracking-wide">Activity</h2>
+              <h2 className="text-lg font-display font-semibold text-neutral-900 dark:text-neutral-100 mb-4 uppercase tracking-wide">Activity</h2>
               <div className="space-y-0">
                 {activityLogs.map((log, i) => {
                   const meta = log.metadata ? JSON.parse(log.metadata) : {};
                   return (
                     <div key={log.id} className="flex gap-3">
                       <div className="flex flex-col items-center">
-                        <div className="w-2 h-2 rounded-full bg-gray-400 mt-1.5 shrink-0" />
-                        {i < activityLogs.length - 1 && <div className="w-px flex-1 bg-gray-200 my-1" />}
+                        <div className="w-2 h-2 rounded-full bg-neutral-400 dark:bg-neutral-500 mt-1.5 shrink-0" />
+                        {i < activityLogs.length - 1 && <div className="w-px flex-1 bg-neutral-200 dark:bg-neutral-700 my-1" />}
                       </div>
                       <div className="pb-4 min-w-0">
-                        <p className="text-sm text-gray-600">{formatActivityMessage(log.action, meta)}</p>
-                        <p className="text-xs text-gray-400 mt-0.5">
+                        <p className="text-sm text-neutral-600 dark:text-neutral-400">{formatActivityMessage(log.action, meta)}</p>
+                        <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-0.5">
                           {log.user?.name && <span>{log.user.name} &middot; </span>}
                           {formatRelativeTime(log.createdAt)}
                         </p>
@@ -969,14 +969,14 @@ export default function ApplicantDetail() {
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded max-w-md w-full">
-            <div className="p-6 border-b border-gray-200">
+          <div className="bg-white dark:bg-neutral-800 rounded max-w-md w-full">
+            <div className="p-6 border-b border-neutral-200 dark:border-neutral-700">
               <h2 className="text-xl font-display font-semibold uppercase tracking-wide">
                 Delete Applicant
               </h2>
             </div>
             <div className="p-6 space-y-4">
-              <p className="text-gray-700">
+              <p className="text-neutral-700 dark:text-neutral-300">
                 Are you sure you want to delete <span className="font-medium">{applicant.firstName} {applicant.lastName}</span>?
                 This will permanently remove their application, reviews, and notes.
               </p>
@@ -1004,18 +1004,18 @@ export default function ApplicantDetail() {
       {/* Un-reject Confirmation Modal */}
       {pendingStage && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded max-w-md w-full">
-            <div className="p-6 border-b border-gray-200">
+          <div className="bg-white dark:bg-neutral-800 rounded max-w-md w-full">
+            <div className="p-6 border-b border-neutral-200 dark:border-neutral-700">
               <h2 className="text-xl font-display font-semibold uppercase tracking-wide">
                 Un-reject Applicant?
               </h2>
             </div>
             <div className="p-6 space-y-4">
-              <p className="text-gray-700">
+              <p className="text-neutral-700 dark:text-neutral-300">
                 A rejection letter was sent to <span className="font-medium">{applicant.firstName} {applicant.lastName}</span> on{' '}
                 <span className="font-medium">{getRejectionDate()}</span>.
               </p>
-              <p className="text-gray-700">
+              <p className="text-neutral-700 dark:text-neutral-300">
                 Are you sure you want to move this applicant to <span className="font-medium">{stageLabels[pendingStage]}</span>?
               </p>
               <div className="flex justify-end gap-3 pt-4">
@@ -1269,7 +1269,7 @@ function ReviewModal({
     label: string;
   }) => (
     <div>
-      <p className="text-sm text-gray-700 mb-1">{label}</p>
+      <p className="text-sm text-neutral-700 dark:text-neutral-300 mb-1">{label}</p>
       <div className="flex gap-1">
         {[1, 2, 3, 4, 5].map((star) => (
           <button
@@ -1277,7 +1277,7 @@ function ReviewModal({
             type="button"
             onClick={() => onChange(value === star ? null : star)}
             className={`text-2xl transition-colors ${
-              value && star <= value ? 'text-gray-900' : 'text-gray-300 hover:text-gray-500'
+              value && star <= value ? 'text-neutral-900 dark:text-neutral-100' : 'text-neutral-300 dark:text-neutral-600 hover:text-neutral-500'
             }`}
           >
             ★
@@ -1289,13 +1289,13 @@ function ReviewModal({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded max-w-lg w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6 border-b border-gray-200 sticky top-0 bg-white">
+      <div className="bg-white dark:bg-neutral-800 rounded max-w-lg w-full max-h-[90vh] overflow-y-auto">
+        <div className="p-6 border-b border-neutral-200 dark:border-neutral-700 sticky top-0 bg-white dark:bg-neutral-800">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-display font-semibold uppercase tracking-wide">
               {existingReview ? 'Edit Review' : 'Add Review'}
             </h2>
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <button onClick={onClose} className="text-neutral-400 hover:text-neutral-600 dark:text-neutral-500 dark:hover:text-neutral-300">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -1305,14 +1305,14 @@ function ReviewModal({
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {error && (
-            <div className="bg-gray-100 border border-gray-300 text-gray-800 px-4 py-3 rounded">
+            <div className="bg-neutral-100 dark:bg-neutral-700 border border-neutral-300 dark:border-neutral-600 text-neutral-800 dark:text-neutral-300 px-4 py-3 rounded">
               {error}
             </div>
           )}
 
           {/* Overall Rating */}
           <div>
-            <p className="text-sm font-medium text-gray-700 mb-2">Overall Rating *</p>
+            <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">Overall Rating *</p>
             <div className="flex gap-2">
               {[1, 2, 3, 4, 5].map((star) => (
                 <button
@@ -1320,7 +1320,7 @@ function ReviewModal({
                   type="button"
                   onClick={() => setFormData({ ...formData, rating: star })}
                   className={`text-3xl transition-colors ${
-                    star <= formData.rating ? 'text-gray-900' : 'text-gray-300 hover:text-gray-500'
+                    star <= formData.rating ? 'text-neutral-900 dark:text-neutral-100' : 'text-neutral-300 dark:text-neutral-600 hover:text-neutral-500'
                   }`}
                 >
                   ★
@@ -1360,14 +1360,14 @@ function ReviewModal({
 
           {/* Recommendation */}
           <div>
-            <p className="text-sm font-medium text-gray-700 mb-2">Recommendation</p>
+            <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">Recommendation</p>
             <div className="flex flex-wrap gap-2">
               {[
-                { value: 'strong_yes', label: 'Strong Yes', color: 'bg-gray-900 text-white border-gray-900' },
-                { value: 'yes', label: 'Yes', color: 'bg-gray-700 text-white border-gray-700' },
-                { value: 'maybe', label: 'Maybe', color: 'bg-gray-300 text-gray-800 border-gray-400' },
-                { value: 'no', label: 'No', color: 'bg-gray-100 text-gray-500 border-gray-300' },
-                { value: 'strong_no', label: 'Strong No', color: 'bg-gray-50 text-gray-400 border-gray-200' },
+                { value: 'strong_yes', label: 'Strong Yes', color: 'bg-neutral-900 text-white border-neutral-900 dark:bg-neutral-100 dark:text-neutral-900 dark:border-neutral-100' },
+                { value: 'yes', label: 'Yes', color: 'bg-neutral-700 text-white border-neutral-700 dark:bg-neutral-300 dark:text-neutral-900 dark:border-neutral-300' },
+                { value: 'maybe', label: 'Maybe', color: 'bg-neutral-300 text-neutral-800 border-neutral-400 dark:bg-neutral-500 dark:text-neutral-100 dark:border-neutral-500' },
+                { value: 'no', label: 'No', color: 'bg-neutral-100 text-neutral-500 border-neutral-300 dark:bg-neutral-700 dark:text-neutral-400 dark:border-neutral-600' },
+                { value: 'strong_no', label: 'Strong No', color: 'bg-neutral-50 text-neutral-400 border-neutral-200 dark:bg-neutral-800 dark:text-neutral-500 dark:border-neutral-700' },
               ].map((rec) => (
                 <button
                   key={rec.value}
@@ -1381,7 +1381,7 @@ function ReviewModal({
                   className={`px-3 py-1.5 rounded text-sm font-medium border transition-colors ${
                     formData.recommendation === rec.value
                       ? rec.color
-                      : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
+                      : 'bg-neutral-50 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-400 border-neutral-200 dark:border-neutral-600 hover:bg-neutral-100 dark:hover:bg-neutral-600'
                   }`}
                 >
                   {rec.label}
@@ -1474,13 +1474,13 @@ The Hiring Team`;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded max-w-lg w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6 border-b border-gray-200 sticky top-0 bg-white">
+      <div className="bg-white dark:bg-neutral-800 rounded max-w-lg w-full max-h-[90vh] overflow-y-auto">
+        <div className="p-6 border-b border-neutral-200 dark:border-neutral-700 sticky top-0 bg-white dark:bg-neutral-800">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-display font-semibold uppercase tracking-wide">
               Send Rejection Letter
             </h2>
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <button onClick={onClose} className="text-neutral-400 hover:text-neutral-600 dark:text-neutral-500 dark:hover:text-neutral-300">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -1490,22 +1490,22 @@ The Hiring Team`;
 
         <div className="p-6 space-y-4">
           {error && (
-            <div className="bg-gray-100 border border-gray-300 text-gray-800 px-4 py-3 rounded">
+            <div className="bg-neutral-100 dark:bg-neutral-700 border border-neutral-300 dark:border-neutral-600 text-neutral-800 dark:text-neutral-300 px-4 py-3 rounded">
               {error}
             </div>
           )}
 
           <dl className="grid grid-cols-1 gap-2">
             <div>
-              <dt className="text-sm text-gray-500">Applicant</dt>
+              <dt className="text-sm text-neutral-500 dark:text-neutral-400">Applicant</dt>
               <dd className="font-medium">{applicant.firstName} {applicant.lastName}</dd>
             </div>
             <div>
-              <dt className="text-sm text-gray-500">Email</dt>
+              <dt className="text-sm text-neutral-500 dark:text-neutral-400">Email</dt>
               <dd className="font-medium">{applicant.email}</dd>
             </div>
             <div>
-              <dt className="text-sm text-gray-500">Position</dt>
+              <dt className="text-sm text-neutral-500 dark:text-neutral-400">Position</dt>
               <dd className="font-medium">{applicant.job?.title || 'General Application'}</dd>
             </div>
           </dl>
@@ -1513,8 +1513,8 @@ The Hiring Team`;
           <div>
             <label className="label">Rejection Letter</label>
             {loadingTemplate ? (
-              <div className="flex items-center justify-center h-[200px] border rounded bg-gray-50">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
+              <div className="flex items-center justify-center h-[200px] border dark:border-neutral-700 rounded bg-neutral-50 dark:bg-neutral-700">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black dark:border-white"></div>
               </div>
             ) : (
               <textarea
@@ -1607,20 +1607,20 @@ function RequestReviewModal({
   };
 
   const roleBadgeStyles: Record<string, string> = {
-    admin: 'bg-gray-900 text-white',
-    hiring_manager: 'bg-blue-100 text-blue-800',
-    reviewer: 'bg-green-100 text-green-800',
+    admin: 'bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900',
+    hiring_manager: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+    reviewer: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
   };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded max-w-lg w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6 border-b border-gray-200 sticky top-0 bg-white">
+      <div className="bg-white dark:bg-neutral-800 rounded max-w-lg w-full max-h-[90vh] overflow-y-auto">
+        <div className="p-6 border-b border-neutral-200 dark:border-neutral-700 sticky top-0 bg-white dark:bg-neutral-800">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-display font-semibold uppercase tracking-wide">
               Request Review
             </h2>
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <button onClick={onClose} className="text-neutral-400 hover:text-neutral-600 dark:text-neutral-500 dark:hover:text-neutral-300">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -1630,21 +1630,21 @@ function RequestReviewModal({
 
         <div className="p-6 space-y-4">
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
+            <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded text-sm">
               {error}
             </div>
           )}
 
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-neutral-600 dark:text-neutral-400">
             Send a review request for <span className="font-medium">{applicant.firstName} {applicant.lastName}</span> ({applicant.job?.title || 'General Application'}) to selected users.
           </p>
 
           {loading ? (
             <div className="flex items-center justify-center h-20">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black dark:border-white"></div>
             </div>
           ) : (
-            <div className="border rounded divide-y max-h-[250px] overflow-y-auto">
+            <div className="border dark:border-neutral-700 rounded divide-y dark:divide-neutral-700 max-h-[250px] overflow-y-auto">
               {users.map((u) => (
                 <div key={u.id} className="flex items-center justify-between px-4 py-3">
                   <div className="flex items-center gap-3">
@@ -1652,14 +1652,14 @@ function RequestReviewModal({
                       type="checkbox"
                       checked={selectedIds.has(u.id)}
                       onChange={() => toggleUser(u.id)}
-                      className="h-4 w-4 rounded border-gray-300"
+                      className="h-4 w-4 rounded border-neutral-300 dark:border-neutral-600"
                     />
                     <div>
-                      <p className="text-sm font-medium text-gray-900">{u.name}</p>
-                      <p className="text-xs text-gray-500">{u.email}</p>
+                      <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">{u.name}</p>
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400">{u.email}</p>
                     </div>
                   </div>
-                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${roleBadgeStyles[u.role] || 'bg-gray-100 text-gray-800'}`}>
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${roleBadgeStyles[u.role] || 'bg-neutral-100 dark:bg-neutral-700 text-neutral-800 dark:text-neutral-300'}`}>
                     {roleLabels[u.role] || u.role}
                   </span>
                 </div>
@@ -1725,34 +1725,34 @@ function ConfirmSpamModal({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded max-w-md w-full">
-        <div className="p-6 border-b border-gray-200">
+      <div className="bg-white dark:bg-neutral-800 rounded max-w-md w-full">
+        <div className="p-6 border-b border-neutral-200 dark:border-neutral-700">
           <h2 className="text-xl font-display font-semibold uppercase tracking-wide">
             Confirm Spam & Block
           </h2>
         </div>
         <div className="p-6 space-y-4">
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
+            <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded text-sm">
               {error}
             </div>
           )}
 
-          <p className="text-gray-700">
+          <p className="text-neutral-700 dark:text-neutral-300">
             This will block future submissions from <span className="font-medium">{applicant.email}</span>.
           </p>
 
           {emailDomain && (
-            <label className="flex items-start gap-3 p-3 bg-gray-50 rounded border border-gray-200 cursor-pointer">
+            <label className="flex items-start gap-3 p-3 bg-neutral-50 dark:bg-neutral-700 rounded border border-neutral-200 dark:border-neutral-600 cursor-pointer">
               <input
                 type="checkbox"
                 checked={blockDomain}
                 onChange={(e) => setBlockDomain(e.target.checked)}
-                className="h-4 w-4 rounded border-gray-300 mt-0.5"
+                className="h-4 w-4 rounded border-neutral-300 dark:border-neutral-600 mt-0.5"
               />
               <div>
-                <p className="text-sm font-medium text-gray-900">Also block domain @{emailDomain}</p>
-                <p className="text-xs text-gray-500 mt-0.5">
+                <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">Also block domain @{emailDomain}</p>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
                   All future submissions from any @{emailDomain} address will be auto-flagged as spam.
                 </p>
               </div>
@@ -1866,10 +1866,10 @@ function EditApplicantModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
+      <div className="bg-white dark:bg-neutral-800 rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 bg-white dark:bg-neutral-800 border-b dark:border-neutral-700 px-6 py-4 flex justify-between items-center">
           <h2 className="text-xl font-display font-bold uppercase tracking-wide">Edit Applicant Details</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+          <button onClick={onClose} className="text-neutral-400 hover:text-neutral-600 dark:text-neutral-500 dark:hover:text-neutral-300">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -1878,7 +1878,7 @@ function EditApplicantModal({
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
+            <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded text-sm">
               {error}
             </div>
           )}
@@ -1918,7 +1918,7 @@ function EditApplicantModal({
                 required
               />
               {fieldErrors.email && (
-                <p className="text-red-600 text-xs mt-1">{fieldErrors.email}</p>
+                <p className="text-red-600 dark:text-red-400 text-xs mt-1">{fieldErrors.email}</p>
               )}
             </div>
             <div>
@@ -1931,7 +1931,7 @@ function EditApplicantModal({
                 className={`input ${fieldErrors.phone ? 'border-red-400' : ''}`}
               />
               {fieldErrors.phone && (
-                <p className="text-red-600 text-xs mt-1">{fieldErrors.phone}</p>
+                <p className="text-red-600 dark:text-red-400 text-xs mt-1">{fieldErrors.phone}</p>
               )}
             </div>
           </div>
@@ -1993,27 +1993,27 @@ function EditApplicantModal({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="label">
-                Resume {applicant.resumePath && <span className="text-xs text-gray-400 font-normal">(replace existing)</span>}
+                Resume {applicant.resumePath && <span className="text-xs text-neutral-400 dark:text-neutral-500 font-normal">(replace existing)</span>}
               </label>
               <input
                 type="file"
                 accept=".pdf,.doc,.docx"
                 onChange={(e) => setResumeFile(e.target.files?.[0] || null)}
-                className="input text-sm file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:bg-gray-100 file:text-gray-700 file:font-medium file:cursor-pointer"
+                className="input text-sm file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:bg-neutral-100 dark:file:bg-neutral-700 file:text-neutral-700 dark:file:text-neutral-300 file:font-medium file:cursor-pointer"
               />
-              <p className="text-xs text-gray-400 mt-1">PDF, DOC, or DOCX</p>
+              <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">PDF, DOC, or DOCX</p>
             </div>
             <div>
               <label className="label">
-                Portfolio File {applicant.portfolioPath && <span className="text-xs text-gray-400 font-normal">(replace existing)</span>}
+                Portfolio File {applicant.portfolioPath && <span className="text-xs text-neutral-400 dark:text-neutral-500 font-normal">(replace existing)</span>}
               </label>
               <input
                 type="file"
                 accept=".pdf,.jpg,.jpeg,.png,.zip"
                 onChange={(e) => setPortfolioFile(e.target.files?.[0] || null)}
-                className="input text-sm file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:bg-gray-100 file:text-gray-700 file:font-medium file:cursor-pointer"
+                className="input text-sm file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:bg-neutral-100 dark:file:bg-neutral-700 file:text-neutral-700 dark:file:text-neutral-300 file:font-medium file:cursor-pointer"
               />
-              <p className="text-xs text-gray-400 mt-1">PDF, JPG, PNG, or ZIP</p>
+              <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">PDF, JPG, PNG, or ZIP</p>
             </div>
           </div>
 
@@ -2076,13 +2076,13 @@ function AssignJobModal({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded max-w-md w-full">
-        <div className="p-6 border-b border-gray-200">
+      <div className="bg-white dark:bg-neutral-800 rounded max-w-md w-full">
+        <div className="p-6 border-b border-neutral-200 dark:border-neutral-700">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-display font-semibold uppercase tracking-wide">
               {applicant.job ? 'Reassign Job' : 'Assign to Job'}
             </h2>
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <button onClick={onClose} className="text-neutral-400 hover:text-neutral-600 dark:text-neutral-500 dark:hover:text-neutral-300">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -2092,18 +2092,18 @@ function AssignJobModal({
 
         <div className="p-6 space-y-4">
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
+            <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded text-sm">
               {error}
             </div>
           )}
 
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-neutral-600 dark:text-neutral-400">
             Currently: <span className="font-medium">{applicant.job?.title || 'General Pool'}</span>
           </p>
 
           {loading ? (
             <div className="flex items-center justify-center h-20">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black dark:border-white"></div>
             </div>
           ) : (
             <div>
@@ -2252,13 +2252,13 @@ function ScheduleInterviewModal({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded max-w-lg w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6 border-b border-gray-200 sticky top-0 bg-white">
+      <div className="bg-white dark:bg-neutral-800 rounded max-w-lg w-full max-h-[90vh] overflow-y-auto">
+        <div className="p-6 border-b border-neutral-200 dark:border-neutral-700 sticky top-0 bg-white dark:bg-neutral-800">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-display font-semibold uppercase tracking-wide">
               {isEdit ? 'Edit Interview' : 'Schedule Interview'}
             </h2>
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <button onClick={onClose} className="text-neutral-400 hover:text-neutral-600 dark:text-neutral-500 dark:hover:text-neutral-300">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -2268,7 +2268,7 @@ function ScheduleInterviewModal({
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
+            <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded text-sm">
               {error}
             </div>
           )}
@@ -2343,21 +2343,21 @@ function ScheduleInterviewModal({
             <label className="label">Participants *</label>
             {loading ? (
               <div className="flex items-center justify-center h-16">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-black"></div>
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-black dark:border-white"></div>
               </div>
             ) : (
-              <div className="border rounded divide-y max-h-[200px] overflow-y-auto">
+              <div className="border dark:border-neutral-700 rounded divide-y dark:divide-neutral-700 max-h-[200px] overflow-y-auto">
                 {users.map((u) => (
-                  <label key={u.id} className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 cursor-pointer">
+                  <label key={u.id} className="flex items-center gap-3 px-4 py-2.5 hover:bg-neutral-50 dark:hover:bg-neutral-700 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={participantIds.has(u.id)}
                       onChange={() => toggleParticipant(u.id)}
-                      className="h-4 w-4 rounded border-gray-300"
+                      className="h-4 w-4 rounded border-neutral-300 dark:border-neutral-600"
                     />
                     <div>
-                      <p className="text-sm font-medium text-gray-900">{u.name}</p>
-                      <p className="text-xs text-gray-500">{u.email}</p>
+                      <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">{u.name}</p>
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400">{u.email}</p>
                     </div>
                   </label>
                 ))}
@@ -2394,7 +2394,7 @@ function ScheduleInterviewModal({
                   type="button"
                   onClick={handleDelete}
                   disabled={deleting || saving}
-                  className="text-sm text-red-600 hover:text-red-700 font-medium"
+                  className="text-sm text-red-600 dark:text-red-400 hover:text-red-700 font-medium"
                 >
                   {deleting ? 'Cancelling...' : 'Cancel Interview'}
                 </button>
@@ -2448,13 +2448,13 @@ function InterviewFeedbackModal({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded max-w-md w-full">
-        <div className="p-6 border-b border-gray-200">
+      <div className="bg-white dark:bg-neutral-800 rounded max-w-md w-full">
+        <div className="p-6 border-b border-neutral-200 dark:border-neutral-700">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-display font-semibold uppercase tracking-wide">
               Interview Feedback
             </h2>
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <button onClick={onClose} className="text-neutral-400 hover:text-neutral-600 dark:text-neutral-500 dark:hover:text-neutral-300">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -2464,17 +2464,17 @@ function InterviewFeedbackModal({
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
+            <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded text-sm">
               {error}
             </div>
           )}
 
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-neutral-600 dark:text-neutral-400">
             Interview on {new Date(interview.scheduledAt).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}
           </p>
 
           <div>
-            <p className="text-sm font-medium text-gray-700 mb-2">Rating</p>
+            <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">Rating</p>
             <div className="flex gap-2">
               {[1, 2, 3, 4, 5].map((star) => (
                 <button
@@ -2482,7 +2482,7 @@ function InterviewFeedbackModal({
                   type="button"
                   onClick={() => setRating(rating === star ? null : star)}
                   className={`text-3xl transition-colors ${
-                    rating && star <= rating ? 'text-gray-900' : 'text-gray-300 hover:text-gray-500'
+                    rating && star <= rating ? 'text-neutral-900 dark:text-neutral-100' : 'text-neutral-300 dark:text-neutral-600 hover:text-neutral-500'
                   }`}
                 >
                   ★
@@ -2524,26 +2524,26 @@ function InterviewDetailModal({
 }) {
   const typeLabel: Record<string, string> = { in_person: 'In Person', video: 'Video', phone: 'Phone' };
   const statusColors: Record<string, string> = {
-    scheduled: 'bg-blue-100 text-blue-800',
-    completed: 'bg-green-100 text-green-800',
-    cancelled: 'bg-gray-100 text-gray-500',
-    no_show: 'bg-red-100 text-red-800',
+    scheduled: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+    completed: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+    cancelled: 'bg-neutral-100 text-neutral-500 dark:bg-neutral-700 dark:text-neutral-400',
+    no_show: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
   };
   const outcomeColors: Record<string, string> = {
-    advance: 'bg-green-100 text-green-800',
-    hold: 'bg-yellow-100 text-yellow-800',
-    reject: 'bg-red-100 text-red-800',
+    advance: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+    hold: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
+    reject: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
   };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded max-w-lg w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6 border-b border-gray-200 sticky top-0 bg-white">
+      <div className="bg-white dark:bg-neutral-800 rounded max-w-lg w-full max-h-[90vh] overflow-y-auto">
+        <div className="p-6 border-b border-neutral-200 dark:border-neutral-700 sticky top-0 bg-white dark:bg-neutral-800">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-display font-semibold uppercase tracking-wide">
               Interview Details
             </h2>
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <button onClick={onClose} className="text-neutral-400 hover:text-neutral-600 dark:text-neutral-500 dark:hover:text-neutral-300">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -2554,7 +2554,7 @@ function InterviewDetailModal({
         <div className="p-6 space-y-4">
           <dl className="grid grid-cols-2 gap-4">
             <div>
-              <dt className="text-sm text-gray-500">Date & Time</dt>
+              <dt className="text-sm text-neutral-500 dark:text-neutral-400">Date & Time</dt>
               <dd className="font-medium">
                 {new Date(interview.scheduledAt).toLocaleString(undefined, {
                   dateStyle: 'medium',
@@ -2563,22 +2563,22 @@ function InterviewDetailModal({
               </dd>
             </div>
             <div>
-              <dt className="text-sm text-gray-500">Type</dt>
+              <dt className="text-sm text-neutral-500 dark:text-neutral-400">Type</dt>
               <dd className="font-medium">{typeLabel[interview.type] || interview.type}</dd>
             </div>
             <div>
-              <dt className="text-sm text-gray-500">Status</dt>
+              <dt className="text-sm text-neutral-500 dark:text-neutral-400">Status</dt>
               <dd>
-                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${statusColors[interview.status] || 'bg-gray-100 text-gray-700'}`}>
+                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${statusColors[interview.status] || 'bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300'}`}>
                   {interview.status.replace('_', ' ')}
                 </span>
               </dd>
             </div>
             {interview.outcome && (
               <div>
-                <dt className="text-sm text-gray-500">Outcome</dt>
+                <dt className="text-sm text-neutral-500 dark:text-neutral-400">Outcome</dt>
                 <dd>
-                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${outcomeColors[interview.outcome] || 'bg-gray-100 text-gray-700'}`}>
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${outcomeColors[interview.outcome] || 'bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300'}`}>
                     {interview.outcome}
                   </span>
                 </dd>
@@ -2586,19 +2586,19 @@ function InterviewDetailModal({
             )}
             {interview.location && (
               <div className="col-span-2">
-                <dt className="text-sm text-gray-500">Location</dt>
+                <dt className="text-sm text-neutral-500 dark:text-neutral-400">Location</dt>
                 <dd className="font-medium">{interview.location}</dd>
               </div>
             )}
             {interview.notesUrl && (
               <div className="col-span-2">
-                <dt className="text-sm text-gray-500">Meeting Notes</dt>
+                <dt className="text-sm text-neutral-500 dark:text-neutral-400">Meeting Notes</dt>
                 <dd>
                   <a
                     href={interview.notesUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm text-gray-900 hover:text-gray-600 font-medium"
+                    className="text-sm text-neutral-900 dark:text-neutral-100 hover:text-neutral-600 dark:hover:text-neutral-400 font-medium"
                   >
                     Open Notes Link &rarr;
                   </a>
@@ -2606,41 +2606,41 @@ function InterviewDetailModal({
               </div>
             )}
             <div className="col-span-2">
-              <dt className="text-sm text-gray-500">Scheduled by</dt>
+              <dt className="text-sm text-neutral-500 dark:text-neutral-400">Scheduled by</dt>
               <dd className="font-medium">{interview.createdBy.name}</dd>
             </div>
           </dl>
 
           {interview.notes && (
             <div>
-              <h3 className="text-sm font-medium text-gray-900 mb-1">Prep Notes</h3>
-              <p className="text-sm text-gray-600 whitespace-pre-wrap">{interview.notes}</p>
+              <h3 className="text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-1">Prep Notes</h3>
+              <p className="text-sm text-neutral-600 dark:text-neutral-400 whitespace-pre-wrap">{interview.notes}</p>
             </div>
           )}
 
           {interview.feedback && (
             <div>
-              <h3 className="text-sm font-medium text-gray-900 mb-1">Summary Feedback</h3>
-              <p className="text-sm text-gray-600 whitespace-pre-wrap">{interview.feedback}</p>
+              <h3 className="text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-1">Summary Feedback</h3>
+              <p className="text-sm text-neutral-600 dark:text-neutral-400 whitespace-pre-wrap">{interview.feedback}</p>
             </div>
           )}
 
           <div>
-            <h3 className="text-sm font-medium text-gray-900 mb-2">Participants</h3>
+            <h3 className="text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-2">Participants</h3>
             <div className="space-y-3">
               {interview.participants.map((p) => (
-                <div key={p.id} className="p-3 bg-gray-50 rounded border border-gray-100">
+                <div key={p.id} className="p-3 bg-neutral-50 dark:bg-neutral-700 rounded border border-neutral-100 dark:border-neutral-600">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-gray-900">{p.user.name}</p>
-                      <p className="text-xs text-gray-500">{p.user.email}</p>
+                      <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">{p.user.name}</p>
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400">{p.user.email}</p>
                     </div>
                     {p.rating && (
                       <div className="flex">
                         {[1, 2, 3, 4, 5].map((star) => (
                           <span
                             key={star}
-                            className={`text-lg ${star <= p.rating! ? 'text-gray-900' : 'text-gray-300'}`}
+                            className={`text-lg ${star <= p.rating! ? 'text-neutral-900 dark:text-neutral-100' : 'text-neutral-300 dark:text-neutral-600'}`}
                           >
                             ★
                           </span>
@@ -2649,10 +2649,10 @@ function InterviewDetailModal({
                     )}
                   </div>
                   {p.feedback && (
-                    <p className="text-sm text-gray-600 mt-2">{p.feedback}</p>
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-2">{p.feedback}</p>
                   )}
                   {!p.feedback && !p.rating && (
-                    <p className="text-xs text-gray-400 mt-1 italic">No feedback yet</p>
+                    <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1 italic">No feedback yet</p>
                   )}
                 </div>
               ))}
@@ -2756,14 +2756,14 @@ function OfferModal({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-neutral-800 rounded-lg shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6">
-          <h2 className="text-lg font-display font-semibold text-gray-900 mb-4 uppercase tracking-wide">
+          <h2 className="text-lg font-display font-semibold text-neutral-900 dark:text-neutral-100 mb-4 uppercase tracking-wide">
             {existingOffer ? 'Edit Offer' : 'Create Offer'}
           </h2>
 
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-sm text-red-600">
+            <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded text-sm text-red-600 dark:text-red-400">
               {error}
             </div>
           )}
@@ -2851,8 +2851,8 @@ function OfferModal({
                 className="input text-sm"
               />
               {existingOffer?.filePath && !file && (
-                <p className="text-xs text-gray-500 mt-1">
-                  Current file: <a href={existingOffer.filePath} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">View</a>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                  Current file: <a href={existingOffer.filePath} target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 hover:underline">View</a>
                 </p>
               )}
             </div>
@@ -2864,7 +2864,7 @@ function OfferModal({
                     type="button"
                     onClick={handleDelete}
                     disabled={deleting}
-                    className="text-sm text-red-600 hover:text-red-800"
+                    className="text-sm text-red-600 dark:text-red-400 hover:text-red-800"
                   >
                     {deleting ? 'Deleting...' : 'Delete Offer'}
                   </button>
@@ -2918,7 +2918,7 @@ function StartDatePicker({
     return (
       <button
         onClick={() => setEditing(true)}
-        className="text-sm text-blue-600 hover:text-blue-800"
+        className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
       >
         {currentDate ? 'Change' : 'Set Date'}
       </button>
@@ -2942,7 +2942,7 @@ function StartDatePicker({
       </button>
       <button
         onClick={() => { setEditing(false); setDate(currentDate ? currentDate.split('T')[0] : ''); }}
-        className="text-sm text-gray-500 hover:text-gray-700"
+        className="text-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300"
       >
         Cancel
       </button>

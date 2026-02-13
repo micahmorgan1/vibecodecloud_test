@@ -41,9 +41,9 @@ const typeLabels: Record<string, string> = {
 };
 
 const typeBadgeStyles: Record<string, string> = {
-  job_fair: 'bg-blue-100 text-blue-800',
-  campus_visit: 'bg-purple-100 text-purple-800',
-  info_session: 'bg-green-100 text-green-800',
+  job_fair: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+  campus_visit: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
+  info_session: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
 };
 
 export default function Events() {
@@ -86,8 +86,8 @@ export default function Events() {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-start">
         <div>
-          <h1 className="text-3xl font-display font-bold text-gray-900 uppercase tracking-wide">Events</h1>
-          <p className="text-gray-500 mt-1">Recruitment events, job fairs, and campus visits</p>
+          <h1 className="text-3xl font-display font-bold text-neutral-900 dark:text-neutral-100 uppercase tracking-wide">Events</h1>
+          <p className="text-neutral-500 dark:text-neutral-400 mt-1">Recruitment events, job fairs, and campus visits</p>
         </div>
         {canManage && (
           <button onClick={() => setShowCreateModal(true)} className="btn btn-primary">
@@ -98,11 +98,11 @@ export default function Events() {
 
       {loading ? (
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black dark:border-white"></div>
         </div>
       ) : events.length === 0 ? (
         <div className="card text-center py-12">
-          <p className="text-gray-500">No events found</p>
+          <p className="text-neutral-500 dark:text-neutral-400">No events found</p>
         </div>
       ) : (
         <>
@@ -117,12 +117,12 @@ export default function Events() {
               <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <p className="font-medium text-gray-900 truncate">{event.name}</p>
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium shrink-0 ${typeBadgeStyles[event.type] || 'bg-gray-100 text-gray-800'}`}>
+                    <p className="font-medium text-neutral-900 dark:text-neutral-100 truncate">{event.name}</p>
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium shrink-0 ${typeBadgeStyles[event.type] || 'bg-neutral-100 text-neutral-800 dark:bg-neutral-700 dark:text-neutral-300'}`}>
                       {typeLabels[event.type] || event.type}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2 mt-0.5 text-sm text-gray-500">
+                  <div className="flex items-center gap-2 mt-0.5 text-sm text-neutral-500 dark:text-neutral-400">
                     {event.university && <span className="truncate">{event.university}</span>}
                     {event.university && <span>&middot;</span>}
                     <span className="shrink-0">{new Date(event.date).toLocaleDateString()}</span>
@@ -130,7 +130,7 @@ export default function Events() {
                     <span className="shrink-0">{event._count.applicants} applicants</span>
                   </div>
                 </div>
-                <span className="text-gray-400 text-sm shrink-0">&rsaquo;</span>
+                <span className="text-neutral-400 dark:text-neutral-500 text-sm shrink-0">&rsaquo;</span>
               </div>
             </Link>
           ))}
@@ -140,8 +140,8 @@ export default function Events() {
         <div className="hidden md:block card overflow-hidden p-0">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr className="text-left text-sm text-gray-500">
+              <thead className="bg-neutral-50 dark:bg-neutral-800">
+                <tr className="text-left text-sm text-neutral-500 dark:text-neutral-400">
                   <th className="px-6 py-4 font-medium">Event</th>
                   <th className="px-6 py-4 font-medium">Type</th>
                   <th className="px-6 py-4 font-medium">Date</th>
@@ -151,31 +151,31 @@ export default function Events() {
                   <th className="px-6 py-4 font-medium"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-neutral-100 dark:divide-neutral-700">
                 {events.map((event) => (
-                  <tr key={event.id} className="hover:bg-gray-50">
+                  <tr key={event.id} className="hover:bg-neutral-50 dark:hover:bg-neutral-700">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
-                        <p className="font-medium text-gray-900">{event.name}</p>
+                        <p className="font-medium text-neutral-900 dark:text-neutral-100">{event.name}</p>
                         {event.publishToWebsite && (
-                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-100 text-emerald-700">
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300">
                             Website
                           </span>
                         )}
                       </div>
                       {event.university && (
-                        <p className="text-xs text-gray-500 mt-0.5">{event.university}</p>
+                        <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">{event.university}</p>
                       )}
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${typeBadgeStyles[event.type] || 'bg-gray-100 text-gray-800'}`}>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${typeBadgeStyles[event.type] || 'bg-neutral-100 text-neutral-800 dark:bg-neutral-700 dark:text-neutral-300'}`}>
                         {typeLabels[event.type] || event.type}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-500">
+                    <td className="px-6 py-4 text-sm text-neutral-500 dark:text-neutral-400">
                       {new Date(event.date).toLocaleDateString()}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-500">
+                    <td className="px-6 py-4 text-sm text-neutral-500 dark:text-neutral-400">
                       {event.location || '—'}
                     </td>
                     <td className="px-6 py-4">
@@ -189,19 +189,19 @@ export default function Events() {
                           </div>
                         ))}
                         {event.attendees.length > 3 && (
-                          <span className="text-xs text-gray-500 ml-1">
+                          <span className="text-xs text-neutral-500 dark:text-neutral-400 ml-1">
                             +{event.attendees.length - 3}
                           </span>
                         )}
                         {event.attendees.length === 0 && (
-                          <span className="text-sm text-gray-400">None</span>
+                          <span className="text-sm text-neutral-400 dark:text-neutral-500">None</span>
                         )}
                       </div>
                     </td>
                     <td className="px-6 py-4">
                       <Link
                         to={`/events/${event.id}`}
-                        className="text-gray-900 hover:text-gray-600 text-sm font-medium"
+                        className="text-neutral-900 hover:text-neutral-600 dark:text-neutral-100 dark:hover:text-neutral-400 text-sm font-medium"
                       >
                         View &rarr;
                       </Link>
@@ -303,12 +303,12 @@ function EventFormModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
+      <div className="bg-white dark:bg-neutral-800 rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 bg-white dark:bg-neutral-800 border-b dark:border-neutral-700 px-6 py-4 flex justify-between items-center">
           <h2 className="text-xl font-display font-bold uppercase tracking-wide">
             {event ? 'Edit Event' : 'Create Event'}
           </h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+          <button onClick={onClose} className="text-neutral-400 hover:text-neutral-600 dark:text-neutral-500 dark:hover:text-neutral-300">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -317,7 +317,7 @@ function EventFormModal({
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
+            <div className="bg-red-50 border border-red-200 text-red-700 dark:bg-red-900/30 dark:border-red-800 dark:text-red-300 px-4 py-3 rounded text-sm">
               {error}
             </div>
           )}
@@ -415,17 +415,17 @@ function EventFormModal({
               id="publishToWebsite"
               checked={publishToWebsite}
               onChange={(e) => setPublishToWebsite(e.target.checked)}
-              className="h-4 w-4 rounded border-gray-300"
+              className="h-4 w-4 rounded border-neutral-300 dark:border-neutral-600"
             />
-            <label htmlFor="publishToWebsite" className="text-sm font-medium text-gray-900">
+            <label htmlFor="publishToWebsite" className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
               Publish to website
             </label>
-            <span className="text-xs text-gray-400">Show this event on the public careers page</span>
+            <span className="text-xs text-neutral-400 dark:text-neutral-500">Show this event on the public careers page</span>
           </div>
 
           <div>
             <label className="label">Attendees</label>
-            <div className="border rounded divide-y max-h-[200px] overflow-y-auto">
+            <div className="border dark:border-neutral-700 rounded divide-y dark:divide-neutral-700 max-h-[200px] overflow-y-auto">
               {users.map((u) => (
                 <div key={u.id} className="flex items-center justify-between px-4 py-2">
                   <div className="flex items-center gap-3">
@@ -433,14 +433,14 @@ function EventFormModal({
                       type="checkbox"
                       checked={selectedAttendees.has(u.id)}
                       onChange={() => toggleAttendee(u.id)}
-                      className="h-4 w-4 rounded border-gray-300"
+                      className="h-4 w-4 rounded border-neutral-300 dark:border-neutral-600"
                     />
                     <div>
-                      <p className="text-sm font-medium text-gray-900">{u.name}</p>
-                      <p className="text-xs text-gray-500">{u.email}</p>
+                      <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">{u.name}</p>
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400">{u.email}</p>
                     </div>
                   </div>
-                  <span className="text-xs text-gray-400 capitalize">{u.role.replace('_', ' ')}</span>
+                  <span className="text-xs text-neutral-400 dark:text-neutral-500 capitalize">{u.role.replace('_', ' ')}</span>
                 </div>
               ))}
             </div>

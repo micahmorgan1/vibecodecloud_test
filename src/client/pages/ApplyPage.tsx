@@ -58,8 +58,8 @@ export default function ApplyPage() {
     const encodedTitle = encodeURIComponent(`We're hiring: ${jobTitle}`);
 
     return (
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-        <h3 className="font-semibold text-gray-900 mb-2">Share this job</h3>
+      <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
+        <h3 className="font-semibold text-neutral-900 dark:text-neutral-100 mb-2">Share this job</h3>
         <div className="flex flex-wrap gap-2">
           <a
             href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`}
@@ -82,7 +82,7 @@ export default function ApplyPage() {
               navigator.clipboard.writeText(jobUrl);
               alert('Link copied to clipboard!');
             }}
-            className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 text-sm font-medium transition-colors"
+            className="px-4 py-2 bg-neutral-600 text-white rounded hover:bg-neutral-700 text-sm font-medium transition-colors"
           >
             Copy Link
           </button>
@@ -179,23 +179,23 @@ export default function ApplyPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black"></div>
+      <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black dark:border-white"></div>
       </div>
     );
   }
 
   if (submitted) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 flex items-center justify-center p-4">
         <div className="max-w-md w-full text-center">
-          <div className="w-20 h-20 bg-gray-900 rounded-full mx-auto mb-6 flex items-center justify-center">
-            <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="w-20 h-20 bg-neutral-900 dark:bg-neutral-100 rounded-full mx-auto mb-6 flex items-center justify-center">
+            <svg className="w-10 h-10 text-white dark:text-neutral-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h1 className="text-2xl font-display font-bold text-gray-900 mb-2 uppercase tracking-wide">Application Submitted</h1>
-          <p className="text-gray-600 mb-6">
+          <h1 className="text-2xl font-display font-bold text-neutral-900 dark:text-neutral-100 mb-2 uppercase tracking-wide">Application Submitted</h1>
+          <p className="text-neutral-600 dark:text-neutral-400 mb-6">
             Thank you for your interest in joining WHLC Architecture. We'll review your application and get back to you soon.
           </p>
           <a href="https://whlcarchitecture.com" className="btn btn-primary">
@@ -208,10 +208,10 @@ export default function ApplyPage() {
 
   if (!job || job.status !== 'open') {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 flex items-center justify-center p-4">
         <div className="max-w-md w-full text-center">
-          <h1 className="text-2xl font-display font-bold text-gray-900 mb-2 uppercase tracking-wide">Position Not Available</h1>
-          <p className="text-gray-600 mb-6">
+          <h1 className="text-2xl font-display font-bold text-neutral-900 dark:text-neutral-100 mb-2 uppercase tracking-wide">Position Not Available</h1>
+          <p className="text-neutral-600 dark:text-neutral-400 mb-6">
             This job posting is no longer accepting applications.
           </p>
           <a href="https://whlcarchitecture.com/careers" className="btn btn-primary">
@@ -223,7 +223,7 @@ export default function ApplyPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
       {/* Header */}
       <header className="bg-black text-white py-6">
         <div className="max-w-4xl mx-auto px-4">
@@ -231,7 +231,7 @@ export default function ApplyPage() {
             <WhlcMark height={36} />
             <div className="flex items-center gap-2.5">
               <WhlcWordmark height={16} />
-              <span className="text-[10px] uppercase tracking-[0.2em] text-gray-400 border-l border-gray-600 pl-2.5">Careers</span>
+              <span className="text-[10px] uppercase tracking-[0.2em] text-neutral-400 dark:text-neutral-500 border-l border-neutral-600 pl-2.5">Careers</span>
             </div>
           </div>
         </div>
@@ -242,8 +242,8 @@ export default function ApplyPage() {
         <div className="card mb-8">
           <div className="flex items-start justify-between mb-4">
             <div>
-              <h2 className="text-2xl font-display font-bold text-gray-900 uppercase tracking-wide">{job.title}</h2>
-              <div className="flex flex-wrap gap-3 mt-2 text-sm text-gray-500">
+              <h2 className="text-2xl font-display font-bold text-neutral-900 dark:text-neutral-100 uppercase tracking-wide">{job.title}</h2>
+              <div className="flex flex-wrap gap-3 mt-2 text-sm text-neutral-500 dark:text-neutral-400">
                 <span>{job.department}</span>
                 <span>|</span>
                 <span>{job.location}</span>
@@ -259,24 +259,24 @@ export default function ApplyPage() {
             </div>
           </div>
 
-          <div className="prose prose-sm max-w-none text-gray-600">
-            <h3 className="text-lg font-display font-semibold text-gray-900 mt-6 mb-2 uppercase tracking-wide">About the Role</h3>
-            <div dangerouslySetInnerHTML={{ __html: renderContent(job.description) }} />
+          <div className="prose prose-sm max-w-none text-neutral-600 dark:text-neutral-400 dark:prose-invert">
+            <h3 className="text-lg font-display font-semibold text-neutral-900 dark:text-neutral-100 mt-6 mb-2 uppercase tracking-wide">About the Role</h3>
+            <div className="dark:text-neutral-200" dangerouslySetInnerHTML={{ __html: renderContent(job.description) }} />
 
             {job.responsibilities && (
               <>
-                <h3 className="text-lg font-display font-semibold text-gray-900 mt-6 mb-2 uppercase tracking-wide">Responsibilities</h3>
-                <div dangerouslySetInnerHTML={{ __html: renderContent(job.responsibilities) }} />
+                <h3 className="text-lg font-display font-semibold text-neutral-900 dark:text-neutral-100 mt-6 mb-2 uppercase tracking-wide">Responsibilities</h3>
+                <div className="dark:text-neutral-200" dangerouslySetInnerHTML={{ __html: renderContent(job.responsibilities) }} />
               </>
             )}
 
-            <h3 className="text-lg font-display font-semibold text-gray-900 mt-6 mb-2 uppercase tracking-wide">Desired Qualifications</h3>
-            <div dangerouslySetInnerHTML={{ __html: renderContent(job.requirements) }} />
+            <h3 className="text-lg font-display font-semibold text-neutral-900 dark:text-neutral-100 mt-6 mb-2 uppercase tracking-wide">Desired Qualifications</h3>
+            <div className="dark:text-neutral-200" dangerouslySetInnerHTML={{ __html: renderContent(job.requirements) }} />
 
             {job.benefits && (
               <>
-                <h3 className="text-lg font-display font-semibold text-gray-900 mt-6 mb-2 uppercase tracking-wide">Benefits</h3>
-                <div dangerouslySetInnerHTML={{ __html: renderContent(job.benefits) }} />
+                <h3 className="text-lg font-display font-semibold text-neutral-900 dark:text-neutral-100 mt-6 mb-2 uppercase tracking-wide">Benefits</h3>
+                <div className="dark:text-neutral-200" dangerouslySetInnerHTML={{ __html: renderContent(job.benefits) }} />
               </>
             )}
           </div>
@@ -285,8 +285,8 @@ export default function ApplyPage() {
         {/* About WHLC */}
         {aboutWhlc && (
           <div className="card mb-8">
-            <h3 className="text-lg font-display font-semibold text-gray-900 mb-4 uppercase tracking-wide">About WHLC</h3>
-            <div className="prose prose-sm max-w-none text-gray-600" dangerouslySetInnerHTML={{ __html: renderContent(aboutWhlc) }} />
+            <h3 className="text-lg font-display font-semibold text-neutral-900 dark:text-neutral-100 mb-4 uppercase tracking-wide">About WHLC</h3>
+            <div className="prose prose-sm max-w-none text-neutral-600 dark:text-neutral-400 dark:prose-invert dark:text-neutral-200" dangerouslySetInnerHTML={{ __html: renderContent(aboutWhlc) }} />
           </div>
         )}
 
@@ -295,10 +295,10 @@ export default function ApplyPage() {
 
         {/* Application Form */}
         <div className="card">
-          <h2 className="text-xl font-display font-semibold text-gray-900 mb-6 uppercase tracking-wide">Apply for this Position</h2>
+          <h2 className="text-xl font-display font-semibold text-neutral-900 dark:text-neutral-100 mb-6 uppercase tracking-wide">Apply for this Position</h2>
 
           {error && (
-            <div className="bg-gray-100 border border-gray-300 text-gray-800 px-4 py-3 rounded mb-6">
+            <div className="bg-neutral-100 dark:bg-neutral-700 border border-neutral-300 dark:border-neutral-600 text-neutral-800 dark:text-neutral-300 px-4 py-3 rounded mb-6">
               {error}
             </div>
           )}
@@ -306,7 +306,7 @@ export default function ApplyPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Personal Info */}
             <div>
-              <h3 className="text-sm font-medium text-gray-700 mb-4 uppercase tracking-wider">Personal Information</h3>
+              <h3 className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-4 uppercase tracking-wider">Personal Information</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="label">First Name *</label>
@@ -352,7 +352,7 @@ export default function ApplyPage() {
 
             {/* Online Profiles */}
             <div>
-              <h3 className="text-sm font-medium text-gray-700 mb-4 uppercase tracking-wider">Online Profiles</h3>
+              <h3 className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-4 uppercase tracking-wider">Online Profiles</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="label">LinkedIn Profile</label>
@@ -369,7 +369,7 @@ export default function ApplyPage() {
 
             {/* Portfolio Links */}
             <div>
-              <h3 className="text-sm font-medium text-gray-700 mb-4 uppercase tracking-wider">Portfolio & Website</h3>
+              <h3 className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-4 uppercase tracking-wider">Portfolio & Website</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="label">Personal Website</label>
@@ -396,7 +396,7 @@ export default function ApplyPage() {
 
             {/* File Uploads */}
             <div>
-              <h3 className="text-sm font-medium text-gray-700 mb-4 uppercase tracking-wider">Documents</h3>
+              <h3 className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-4 uppercase tracking-wider">Documents</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="label">Resume (PDF, DOC, DOCX)</label>
@@ -404,7 +404,7 @@ export default function ApplyPage() {
                     type="file"
                     accept=".pdf,.doc,.docx"
                     onChange={(e) => setResume(e.target.files?.[0] || null)}
-                    className="input file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
+                    className="input file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-medium file:bg-neutral-100 file:text-neutral-700 hover:file:bg-neutral-200 dark:file:bg-neutral-600 dark:file:text-neutral-200"
                   />
                 </div>
                 <div>
@@ -413,7 +413,7 @@ export default function ApplyPage() {
                     type="file"
                     accept=".pdf,.zip,.jpg,.jpeg,.png"
                     onChange={(e) => setPortfolio(e.target.files?.[0] || null)}
-                    className="input file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
+                    className="input file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-medium file:bg-neutral-100 file:text-neutral-700 hover:file:bg-neutral-200 dark:file:bg-neutral-600 dark:file:text-neutral-200"
                   />
                 </div>
               </div>
@@ -466,7 +466,7 @@ export default function ApplyPage() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-black text-gray-500 py-6 mt-12">
+      <footer className="bg-black text-neutral-500 py-6 mt-12">
         <div className="max-w-4xl mx-auto px-4 text-center text-sm">
           <p>&copy; {new Date().getFullYear()} WHLC Architecture. All rights reserved.</p>
           <p className="mt-1">Baton Rouge, LA | Fairhope, AL | Biloxi, MS</p>

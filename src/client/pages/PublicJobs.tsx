@@ -57,9 +57,9 @@ export default function PublicJobs() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200">
+      <div className="bg-white dark:bg-neutral-800 border-b border-neutral-200 dark:border-neutral-700">
         <div className="max-w-6xl mx-auto px-4 py-6">
           <div className="flex items-center gap-3">
             <WhlcMark className="h-10 w-10" />
@@ -71,25 +71,25 @@ export default function PublicJobs() {
       {/* Main Content */}
       <div className="max-w-6xl mx-auto px-4 py-12">
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-display font-bold text-gray-900 uppercase tracking-wide mb-4">
+          <h1 className="text-4xl font-display font-bold text-neutral-900 dark:text-neutral-100 uppercase tracking-wide mb-4">
             Join Our Team
           </h1>
-          <p className="text-xl text-gray-600">
+          <p className="text-xl text-neutral-600 dark:text-neutral-400">
             Explore open positions at WHLC Architecture
           </p>
         </div>
 
         {/* Filters */}
-        <div className="bg-white rounded-lg shadow p-6 mb-8">
+        <div className="bg-white dark:bg-neutral-800 rounded-lg shadow p-6 mb-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
                 Department
               </label>
               <select
                 value={filters.department}
                 onChange={(e) => setFilters({ ...filters, department: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-black focus:border-transparent"
+                className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 focus:ring-2 focus:ring-black dark:ring-white focus:border-transparent"
               >
                 <option value="">All Departments</option>
                 <option value="Architecture">Architecture</option>
@@ -100,13 +100,13 @@ export default function PublicJobs() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
                 Type
               </label>
               <select
                 value={filters.type}
                 onChange={(e) => setFilters({ ...filters, type: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-black focus:border-transparent"
+                className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 focus:ring-2 focus:ring-black dark:ring-white focus:border-transparent"
               >
                 <option value="">All Types</option>
                 <option value="full-time">Full-Time</option>
@@ -117,13 +117,13 @@ export default function PublicJobs() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
                 Location
               </label>
               <select
                 value={filters.location}
                 onChange={(e) => setFilters({ ...filters, location: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-black focus:border-transparent"
+                className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 focus:ring-2 focus:ring-black dark:ring-white focus:border-transparent"
               >
                 <option value="">All Locations</option>
                 <option value="Baton Rouge, LA">Baton Rouge, LA</option>
@@ -137,11 +137,11 @@ export default function PublicJobs() {
         {/* Job Listings */}
         {loading ? (
           <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black dark:border-white"></div>
           </div>
         ) : jobs.length === 0 ? (
-          <div className="text-center py-12 bg-white rounded-lg shadow">
-            <p className="text-gray-500">No open positions match your criteria</p>
+          <div className="text-center py-12 bg-white dark:bg-neutral-800 rounded-lg shadow">
+            <p className="text-neutral-500 dark:text-neutral-400">No open positions match your criteria</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -149,14 +149,14 @@ export default function PublicJobs() {
               <Link
                 key={job.id}
                 to={`/apply/${job.id}`}
-                className="block bg-white rounded-lg shadow hover:shadow-lg transition-shadow p-6"
+                className="block bg-white dark:bg-neutral-800 rounded-lg shadow hover:shadow-lg transition-shadow p-6"
               >
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
-                    <h2 className="text-2xl font-display font-bold text-gray-900 mb-2 uppercase tracking-wide">
+                    <h2 className="text-2xl font-display font-bold text-neutral-900 dark:text-neutral-100 mb-2 uppercase tracking-wide">
                       {job.title}
                     </h2>
-                    <div className="flex flex-wrap gap-4 text-sm text-gray-600 mb-3">
+                    <div className="flex flex-wrap gap-4 text-sm text-neutral-600 dark:text-neutral-400 mb-3">
                       <span className="flex items-center">
                         <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -185,9 +185,9 @@ export default function PublicJobs() {
                         </span>
                       )}
                     </div>
-                    <p className="text-gray-700 line-clamp-2">{job.description}</p>
+                    <p className="text-neutral-700 dark:text-neutral-300 line-clamp-2">{job.description}</p>
                   </div>
-                  <span className="ml-4 text-blue-600 font-semibold text-sm whitespace-nowrap">
+                  <span className="ml-4 text-blue-600 dark:text-blue-400 font-semibold text-sm whitespace-nowrap">
                     Apply →
                   </span>
                 </div>
@@ -198,8 +198,8 @@ export default function PublicJobs() {
       </div>
 
       {/* Footer */}
-      <div className="bg-white border-t border-gray-200 mt-12">
-        <div className="max-w-6xl mx-auto px-4 py-6 text-center text-sm text-gray-500">
+      <div className="bg-white dark:bg-neutral-800 border-t border-neutral-200 dark:border-neutral-700 mt-12">
+        <div className="max-w-6xl mx-auto px-4 py-6 text-center text-sm text-neutral-500 dark:text-neutral-400">
           <p>© 2026 WHLC Architecture. All rights reserved.</p>
         </div>
       </div>
