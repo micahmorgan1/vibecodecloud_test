@@ -517,7 +517,45 @@ export default function JobDetail() {
         {job.applicants.length === 0 ? (
           <p className="text-gray-500 text-center py-8">No applicants yet</p>
         ) : (
-          <div className="overflow-x-auto">
+          <>
+          {/* Mobile card-rows */}
+          <div className="md:hidden space-y-2 -mx-6 px-4">
+            {job.applicants.map((applicant) => (
+              <Link
+                key={applicant.id}
+                to={`/applicants/${applicant.id}`}
+                className="card-row"
+              >
+                <div className="flex items-center gap-3">
+                  <Avatar name={`${applicant.firstName} ${applicant.lastName}`} email={applicant.email} size={36} />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="font-medium text-gray-900 truncate">
+                        {applicant.firstName} {applicant.lastName}
+                      </p>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className={`badge ${stageBadge(applicant.stage)}`}>
+                          {stageLabels[applicant.stage]}
+                        </span>
+                        {applicant.reviews.length > 0 && (
+                          <span className="text-sm text-gray-600">
+                            <span className="text-gray-900">★</span>{getAverageRating(applicant.reviews)}
+                          </span>
+                        )}
+                        <span className="text-gray-400 text-sm">&rsaquo;</span>
+                      </div>
+                    </div>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      {new Date(applicant.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+
+          {/* Desktop table */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-200 text-left text-sm text-gray-500">
@@ -576,6 +614,7 @@ export default function JobDetail() {
               </tbody>
             </table>
           </div>
+          </>
         )}
       </div>
 

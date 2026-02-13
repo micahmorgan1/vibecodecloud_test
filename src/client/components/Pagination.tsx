@@ -27,7 +27,7 @@ export default function Pagination({ page, totalPages, total, pageSize, onPageCh
   }
 
   return (
-    <div className="flex items-center justify-between mt-4">
+    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mt-4">
       <p className="text-sm text-gray-500">
         Showing {start}–{end} of {total}
       </p>
@@ -35,7 +35,7 @@ export default function Pagination({ page, totalPages, total, pageSize, onPageCh
         <button
           onClick={() => onPageChange(page - 1)}
           disabled={page <= 1}
-          className="px-2 py-1 text-sm rounded border border-gray-300 disabled:opacity-40 hover:bg-gray-50"
+          className="px-3 py-2 sm:px-2 sm:py-1 text-sm rounded border border-gray-300 disabled:opacity-40 hover:bg-gray-50"
         >
           Prev
         </button>
@@ -46,7 +46,7 @@ export default function Pagination({ page, totalPages, total, pageSize, onPageCh
             <button
               key={p}
               onClick={() => onPageChange(p)}
-              className={`px-2 py-1 text-sm rounded border ${
+              className={`px-3 py-2 sm:px-2 sm:py-1 text-sm rounded border ${
                 p === page
                   ? 'bg-black text-white border-black'
                   : 'border-gray-300 hover:bg-gray-50'
@@ -59,7 +59,7 @@ export default function Pagination({ page, totalPages, total, pageSize, onPageCh
         <button
           onClick={() => onPageChange(page + 1)}
           disabled={page >= totalPages}
-          className="px-2 py-1 text-sm rounded border border-gray-300 disabled:opacity-40 hover:bg-gray-50"
+          className="px-3 py-2 sm:px-2 sm:py-1 text-sm rounded border border-gray-300 disabled:opacity-40 hover:bg-gray-50"
         >
           Next
         </button>

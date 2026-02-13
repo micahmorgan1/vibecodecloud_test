@@ -267,3 +267,25 @@ h1, h2, h3, h4, h5, h6 {
 .ProseMirror p {
   margin: 0.25em 0;
 }
+
+/* Mobile card-row list items */
+.card-row {
+  @apply block bg-white border border-gray-200 rounded-lg px-4 py-3 transition-colors;
+}
+
+.card-row:hover {
+  @apply bg-gray-50;
+}
+
+.card-row:active {
+  @apply bg-gray-100;
+}
+
+/* Hide scrollbar for horizontal scroll containers (e.g. mobile tabs) */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}

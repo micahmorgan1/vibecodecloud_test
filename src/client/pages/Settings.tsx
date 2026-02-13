@@ -942,12 +942,12 @@ export default function Settings() {
       </div>
 
       {/* Tab Bar */}
-      <div className="flex gap-1 flex-wrap">
+      <div className="flex gap-1 overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap">
         {TABS.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setTab(tab.id)}
-            className={`px-4 py-2 rounded text-sm font-medium font-display uppercase tracking-wider transition-colors ${
+            className={`px-4 py-2 rounded text-sm font-medium font-display uppercase tracking-wider transition-colors whitespace-nowrap shrink-0 ${
               activeTab === tab.id
                 ? 'bg-black text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'

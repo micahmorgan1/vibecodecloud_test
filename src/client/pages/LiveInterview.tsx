@@ -256,8 +256,8 @@ export default function LiveInterview() {
 
       {/* Two-column layout */}
       <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-4">
-        {/* Sidebar */}
-        <div className="space-y-4">
+        {/* Sidebar — rendered after main content on mobile via order */}
+        <div className="space-y-4 order-2 lg:order-1">
           {/* Applicant Info */}
           <div className="card">
             <div className="flex items-center gap-3 mb-4">
@@ -412,8 +412,8 @@ export default function LiveInterview() {
           )}
         </div>
 
-        {/* Main Area */}
-        <div className="space-y-4">
+        {/* Main Area — shown first on mobile */}
+        <div className="space-y-4 order-1 lg:order-2">
           {/* Meeting Notes URL */}
           <div className="card">
             <div className="flex items-center justify-between mb-2">

@@ -84,7 +84,7 @@ export default function Events() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-start">
+      <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-start">
         <div>
           <h1 className="text-3xl font-display font-bold text-gray-900 uppercase tracking-wide">Events</h1>
           <p className="text-gray-500 mt-1">Recruitment events, job fairs, and campus visits</p>
@@ -105,7 +105,39 @@ export default function Events() {
           <p className="text-gray-500">No events found</p>
         </div>
       ) : (
-        <div className="card overflow-hidden p-0">
+        <>
+        {/* Mobile card-rows */}
+        <div className="md:hidden space-y-2">
+          {events.map((event) => (
+            <Link
+              key={event.id}
+              to={`/events/${event.id}`}
+              className="card-row"
+            >
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium text-gray-900 truncate">{event.name}</p>
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium shrink-0 ${typeBadgeStyles[event.type] || 'bg-gray-100 text-gray-800'}`}>
+                      {typeLabels[event.type] || event.type}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 mt-0.5 text-sm text-gray-500">
+                    {event.university && <span className="truncate">{event.university}</span>}
+                    {event.university && <span>&middot;</span>}
+                    <span className="shrink-0">{new Date(event.date).toLocaleDateString()}</span>
+                    <span>&middot;</span>
+                    <span className="shrink-0">{event._count.applicants} applicants</span>
+                  </div>
+                </div>
+                <span className="text-gray-400 text-sm shrink-0">&rsaquo;</span>
+              </div>
+            </Link>
+          ))}
+        </div>
+
+        {/* Desktop table */}
+        <div className="hidden md:block card overflow-hidden p-0">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50">
@@ -180,6 +212,7 @@ export default function Events() {
             </table>
           </div>
         </div>
+        </>
       )}
 
       <Pagination page={page} totalPages={totalPages} total={total} pageSize={pageSize} onPageChange={setPage} />

@@ -233,7 +233,7 @@ export default function Users() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-start">
+      <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-start">
         <div>
           <h1 className="text-3xl font-display font-bold text-gray-900 uppercase tracking-wide">Users</h1>
           <p className="text-gray-500 mt-1">Manage system users and roles</p>
@@ -304,7 +304,73 @@ export default function Users() {
           <p className="text-gray-500">No users found</p>
         </div>
       ) : (
-        <div className="card overflow-hidden p-0">
+        <>
+        {/* Mobile card-rows */}
+        <div className="md:hidden space-y-2">
+          {users.map((user) => (
+            <div
+              key={user.id}
+              className="card-row"
+            >
+              <div className="flex items-center gap-3">
+                <Avatar name={user.name} email={user.email} size={36} />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="font-medium text-gray-900 truncate">{user.name}</p>
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium shrink-0 ${roleBadge(user.role)}`}>
+                      {roleLabel(user.role)}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-500 truncate mt-0.5">{user.email}</p>
+                </div>
+              </div>
+              <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-100">
+                <div className="flex flex-wrap gap-1">
+                  {user.role === 'hiring_manager' && (
+                    <>
+                      {!user.scopedDepartments && !user.scopedOffices ? (
+                        <span className="text-xs text-gray-400">Global</span>
+                      ) : (
+                        <>
+                          {user.scopedDepartments?.map((d) => (
+                            <span key={d} className="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-blue-50 text-blue-700">{d}</span>
+                          ))}
+                          {user.scopedOffices?.map((o) => (
+                            <span key={o} className="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-green-50 text-green-700">{officeMap[o] || o}</span>
+                          ))}
+                        </>
+                      )}
+                      {user.offerAccess === true && (
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-purple-50 text-purple-600">Offers</span>
+                      )}
+                    </>
+                  )}
+                </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => openEditModal(user)}
+                    className="text-gray-600 hover:text-gray-900 text-sm font-medium px-2 py-1"
+                  >
+                    Edit
+                  </button>
+                  {currentUser?.id !== user.id && (
+                    deleteConfirm === user.id ? (
+                      <span className="flex items-center gap-2">
+                        <button onClick={() => handleDelete(user.id)} className="text-red-600 text-sm font-medium px-2 py-1">Confirm</button>
+                        <button onClick={() => setDeleteConfirm(null)} className="text-gray-400 text-sm font-medium px-2 py-1">Cancel</button>
+                      </span>
+                    ) : (
+                      <button onClick={() => setDeleteConfirm(user.id)} className="text-red-500 text-sm font-medium px-2 py-1">Delete</button>
+                    )
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Desktop table */}
+        <div className="hidden md:block card overflow-hidden p-0">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50">
@@ -416,6 +482,7 @@ export default function Users() {
             </table>
           </div>
         </div>
+        </>
       )}
 
       <Pagination page={page} totalPages={totalPages} total={total} pageSize={pageSize} onPageChange={setPage} />

@@ -353,7 +353,7 @@ export default function Applicants() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-start">
+      <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-start">
         <div>
           <h1 className="text-3xl font-display font-bold text-gray-900 uppercase tracking-wide">Applicants</h1>
           <p className="text-gray-500 mt-1">Review and manage job applicants</p>
@@ -496,7 +496,61 @@ export default function Applicants() {
           <p className="text-gray-500">No applicants found</p>
         </div>
       ) : (
-        <div className="card overflow-hidden p-0">
+        <>
+        {/* Mobile card-rows */}
+        <div className="md:hidden space-y-2">
+          {applicants.map((applicant) => (
+            <Link
+              key={applicant.id}
+              to={`/applicants/${applicant.id}`}
+              className={`card-row ${selectedIds.has(applicant.id) ? 'ring-2 ring-black' : ''}`}
+            >
+              <div className="flex items-center gap-3">
+                {canManageSpam && (
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.has(applicant.id)}
+                    onChange={(e) => { e.preventDefault(); toggleSelect(applicant.id); }}
+                    onClick={(e) => e.stopPropagation()}
+                    className="h-5 w-5 rounded border-gray-300 shrink-0"
+                  />
+                )}
+                <Avatar name={`${applicant.firstName} ${applicant.lastName}`} email={applicant.email} size={36} />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="font-medium text-gray-900 truncate">
+                      {applicant.firstName} {applicant.lastName}
+                      {applicant.spam && <span className="badge badge-spam ml-1.5">Spam</span>}
+                    </p>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className={`badge ${stageBadge(applicant.stage)}`}>
+                        {stageLabels[applicant.stage]}
+                      </span>
+                      {applicant.reviews.length > 0 && (
+                        <span className="text-sm text-gray-600">
+                          <span className="text-gray-900">★</span>{getAverageRating(applicant.reviews)}
+                        </span>
+                      )}
+                      <span className="text-gray-400 text-sm">&rsaquo;</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between gap-2 mt-0.5">
+                    <p className="text-sm text-gray-500 truncate">
+                      {applicant.job ? applicant.job.title : 'General Application'}
+                    </p>
+                    <span className="text-xs text-gray-400 shrink-0">
+                      {new Date(applicant.createdAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </Link>
+          ))}
+          <Pagination page={page} totalPages={totalPages} total={total} pageSize={pageSize} onPageChange={setPage} />
+        </div>
+
+        {/* Desktop table */}
+        <div className="hidden md:block card overflow-hidden p-0">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50">
@@ -640,6 +694,7 @@ export default function Applicants() {
           </div>
           <Pagination page={page} totalPages={totalPages} total={total} pageSize={pageSize} onPageChange={setPage} />
         </div>
+        </>
       )}
 
       {/* Bulk Delete Confirmation Modal */}
