@@ -4,13 +4,30 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { WhlcMark, WhlcWordmark } from './WhlcLogo';
 import NotificationBell from './NotificationBell';
+import useKeyboardShortcuts from '../hooks/useKeyboardShortcuts';
 
 export default function Layout() {
+  useKeyboardShortcuts();
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    return localStorage.getItem('sidebarCollapsed') === 'true';
+  });
+
+  // Swipe-to-close state for mobile drawer
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
+  const [swipeOffset, setSwipeOffset] = useState(0);
+
+  const toggleSidebar = () => {
+    setSidebarCollapsed(prev => {
+      const next = !prev;
+      localStorage.setItem('sidebarCollapsed', String(next));
+      return next;
+    });
+  };
 
   // Close drawer on route change
   useEffect(() => {
@@ -26,6 +43,29 @@ export default function Layout() {
     }
     return () => { document.body.style.overflow = ''; };
   }, [drawerOpen]);
+
+  // Swipe-to-close handlers for mobile drawer
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStartX(e.touches[0].clientX);
+    setSwipeOffset(0);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (touchStartX === null) return;
+    const diff = e.touches[0].clientX - touchStartX;
+    // Only allow swiping left (to close)
+    if (diff < 0) {
+      setSwipeOffset(diff);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (swipeOffset < -80) {
+      setDrawerOpen(false);
+    }
+    setTouchStartX(null);
+    setSwipeOffset(0);
+  };
 
   const handleLogout = () => {
     setDrawerOpen(false);
@@ -117,10 +157,37 @@ export default function Layout() {
 
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 flex">
-      {/* Desktop Sidebar — always visible at lg+ */}
-      <aside className="hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:w-64 bg-neutral-900 text-white z-30">
+      {/* Desktop Sidebar — collapsible */}
+      <aside className={`hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 bg-neutral-900 text-white z-30 transition-all duration-300 ease-in-out ${
+        sidebarCollapsed ? 'lg:w-0 overflow-hidden' : 'lg:w-64'
+      }`}>
         {sidebarContent}
+        {/* Collapse button at bottom of sidebar */}
+        {!sidebarCollapsed && (
+          <button
+            onClick={toggleSidebar}
+            className="hidden lg:flex items-center justify-center absolute top-3 right-3 p-1 text-neutral-500 hover:text-white rounded transition-colors"
+            title="Collapse sidebar"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+            </svg>
+          </button>
+        )}
       </aside>
+
+      {/* Desktop sidebar expand button (visible when collapsed) */}
+      {sidebarCollapsed && (
+        <button
+          onClick={toggleSidebar}
+          className="hidden lg:flex fixed top-4 left-4 z-40 p-2 bg-neutral-900 text-neutral-400 hover:text-white rounded-lg shadow-lg transition-colors"
+          title="Expand sidebar"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+      )}
 
       {/* Mobile Drawer Backdrop */}
       <div
@@ -132,15 +199,23 @@ export default function Layout() {
 
       {/* Mobile Drawer */}
       <aside
-        className={`lg:hidden fixed inset-y-0 left-0 w-64 bg-neutral-900 text-white z-50 flex flex-col transform transition-transform duration-300 ease-in-out ${
+        className={`lg:hidden fixed inset-y-0 left-0 w-64 bg-neutral-900 text-white z-50 flex flex-col transform ${
+          swipeOffset < 0 ? '' : 'transition-transform duration-300 ease-in-out'
+        } ${
           drawerOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
+        style={swipeOffset < 0 ? { transform: `translateX(${swipeOffset}px)` } : undefined}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
       >
         {sidebarContent}
       </aside>
 
       {/* Main area (offset by sidebar on desktop) */}
-      <div className="flex-1 flex flex-col lg:pl-64">
+      <div className={`flex-1 flex flex-col transition-all duration-300 ease-in-out ${
+        sidebarCollapsed ? 'lg:pl-0' : 'lg:pl-64'
+      }`}>
         {/* Mobile Header */}
         <header className="lg:hidden bg-neutral-900 text-white shadow-lg sticky top-0 z-30">
           <div className="px-4 sm:px-6">

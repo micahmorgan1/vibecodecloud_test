@@ -11,6 +11,9 @@ html.dark {
 }
 
 @layer base {
+  * {
+    @apply transition-colors duration-150;
+  }
   body {
     font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     @apply bg-white text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100;

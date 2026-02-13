@@ -98,12 +98,20 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
 
     const pagination = parsePagination(req.query);
 
+    // Sort support
+    const sortField = (req.query.sortBy as string) || 'createdAt';
+    const sortDir: 'asc' | 'desc' = (req.query.sortDir as string) === 'asc' ? 'asc' : 'desc';
+    const allowedSortFields = ['createdAt', 'firstName', 'lastName', 'email', 'stage'];
+    const orderBy = allowedSortFields.includes(sortField)
+      ? { [sortField]: sortDir }
+      : { createdAt: 'desc' as const };
+
     if (pagination) {
       const [applicants, total] = await Promise.all([
         prisma.applicant.findMany({
           where,
           include: includeClause,
-          orderBy: { createdAt: 'desc' },
+          orderBy,
           ...prismaSkipTake(pagination),
         }),
         prisma.applicant.count({ where }),
@@ -114,7 +122,7 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
     const applicants = await prisma.applicant.findMany({
       where,
       include: includeClause,
-      orderBy: { createdAt: 'desc' },
+      orderBy,
     });
 
     res.json(applicants);

@@ -53,12 +53,20 @@ router.get('/', authenticate, requireRole('admin'), async (req: AuthRequest, res
       scopedDepartments: true, scopedOffices: true, scopeMode: true, eventAccess: true, offerAccess: true,
     };
 
+    // Sort support
+    const sortField = (req.query.sortBy as string) || 'createdAt';
+    const sortDir: 'asc' | 'desc' = (req.query.sortDir as string) === 'asc' ? 'asc' : 'desc';
+    const allowedSortFields = ['createdAt', 'name', 'email', 'role'];
+    const orderBy = allowedSortFields.includes(sortField)
+      ? { [sortField]: sortDir }
+      : { createdAt: 'desc' as const };
+
     if (pagination) {
       const [users, total] = await Promise.all([
         prisma.user.findMany({
           where,
           select: selectClause,
-          orderBy: { createdAt: 'desc' },
+          orderBy,
           ...prismaSkipTake(pagination),
         }),
         prisma.user.count({ where }),
@@ -70,7 +78,7 @@ router.get('/', authenticate, requireRole('admin'), async (req: AuthRequest, res
     const users = await prisma.user.findMany({
       where,
       select: selectClause,
-      orderBy: { createdAt: 'desc' },
+      orderBy,
     });
     res.json(users.map(parseUserScope));
   } catch (error) {

@@ -953,6 +953,38 @@ export default function ApplicantDetail() {
         </div>
       </div>
 
+      {/* Mobile Bottom Action Bar */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-neutral-800 border-t border-neutral-200 dark:border-neutral-700 px-4 py-3 z-20 flex items-center gap-2">
+        <button
+          onClick={() => setShowReviewModal(true)}
+          className="btn btn-primary text-sm flex-1"
+        >
+          {myReview ? 'Edit Review' : 'Add Review'}
+        </button>
+        {(user?.role === 'admin' || user?.role === 'hiring_manager') && (
+          <select
+            value={applicant.stage}
+            onChange={(e) => handleStageClick(e.target.value)}
+            className="input text-sm py-2 flex-1"
+          >
+            {stages.map((stage) => (
+              <option key={stage} value={stage}>{stageLabels[stage]}</option>
+            ))}
+          </select>
+        )}
+        {(user?.role === 'admin' || user?.role === 'hiring_manager' || (user?.role === 'reviewer' && applicant.event)) && (
+          <button
+            onClick={() => setShowEditModal(true)}
+            className="btn btn-secondary text-sm"
+          >
+            Edit
+          </button>
+        )}
+      </div>
+
+      {/* Spacer for mobile bottom action bar */}
+      <div className="lg:hidden h-16" />
+
       {/* Review Modal */}
       {showReviewModal && (
         <ReviewModal

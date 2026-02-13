@@ -35,7 +35,7 @@ export default function Pagination({ page, totalPages, total, pageSize, onPageCh
         <button
           onClick={() => onPageChange(page - 1)}
           disabled={page <= 1}
-          className="px-3 py-2 sm:px-2 sm:py-1 text-sm rounded border border-neutral-300 dark:border-neutral-600 disabled:opacity-40 hover:bg-neutral-50 dark:hover:bg-neutral-700 dark:text-neutral-200"
+          className="min-h-[44px] min-w-[44px] px-3 py-2 sm:min-h-0 sm:min-w-0 sm:px-2 sm:py-1 text-sm rounded border border-neutral-300 dark:border-neutral-600 disabled:opacity-40 hover:bg-neutral-50 dark:hover:bg-neutral-700 dark:text-neutral-200"
         >
           Prev
         </button>
@@ -46,9 +46,9 @@ export default function Pagination({ page, totalPages, total, pageSize, onPageCh
             <button
               key={p}
               onClick={() => onPageChange(p)}
-              className={`px-3 py-2 sm:px-2 sm:py-1 text-sm rounded border ${
+              className={`min-h-[44px] min-w-[44px] px-3 py-2 sm:min-h-0 sm:min-w-0 sm:px-2 sm:py-1 text-sm rounded border ${
                 p === page
-                  ? 'bg-black text-white border-black dark:bg-white dark:text-black dark:border-white'
+                  ? 'bg-black text-white border-black dark:bg-neutral-200 dark:text-neutral-900 dark:border-neutral-200'
                   : 'border-neutral-300 dark:border-neutral-600 hover:bg-neutral-50 dark:hover:bg-neutral-700 dark:text-neutral-200'
               }`}
             >
@@ -59,7 +59,7 @@ export default function Pagination({ page, totalPages, total, pageSize, onPageCh
         <button
           onClick={() => onPageChange(page + 1)}
           disabled={page >= totalPages}
-          className="px-3 py-2 sm:px-2 sm:py-1 text-sm rounded border border-neutral-300 dark:border-neutral-600 disabled:opacity-40 hover:bg-neutral-50 dark:hover:bg-neutral-700 dark:text-neutral-200"
+          className="min-h-[44px] min-w-[44px] px-3 py-2 sm:min-h-0 sm:min-w-0 sm:px-2 sm:py-1 text-sm rounded border border-neutral-300 dark:border-neutral-600 disabled:opacity-40 hover:bg-neutral-50 dark:hover:bg-neutral-700 dark:text-neutral-200"
         >
           Next
         </button>

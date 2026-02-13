@@ -3,6 +3,8 @@ import { useAuth } from '../context/AuthContext';
 import { api } from '../lib/api';
 import Avatar from '../components/Avatar';
 import Pagination from '../components/Pagination';
+import SortableHeader from '../components/SortableHeader';
+import { SkeletonTable } from '../components/Skeleton';
 import { PaginatedResponse, isPaginated } from '../lib/pagination';
 
 interface Office {
@@ -88,7 +90,19 @@ export default function Users() {
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
+  const [sortBy, setSortBy] = useState('createdAt');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const pageSize = 25;
+
+  const handleSort = (field: string) => {
+    if (sortBy === field) {
+      setSortDir(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(field);
+      setSortDir('asc');
+    }
+    setPage(1);
+  };
 
   const [officeMap, setOfficeMap] = useState<Record<string, string>>({});
 
@@ -103,7 +117,7 @@ export default function Users() {
 
   useEffect(() => {
     fetchUsers();
-  }, [roleFilter, page]);
+  }, [roleFilter, page, sortBy, sortDir]);
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -113,6 +127,10 @@ export default function Users() {
       if (search) params.append('search', search);
       params.append('page', String(page));
       params.append('pageSize', String(pageSize));
+      if (sortBy !== 'createdAt' || sortDir !== 'desc') {
+        params.append('sortBy', sortBy);
+        params.append('sortDir', sortDir);
+      }
       const queryString = params.toString();
       const res = await api.get<PaginatedResponse<User> | User[]>(`/users${queryString ? `?${queryString}` : ''}`);
       if (isPaginated(res.data)) {
@@ -244,7 +262,7 @@ export default function Users() {
       </div>
 
       {/* Search and Filters */}
-      <div className="card">
+      <div className="card sticky top-14 lg:top-0 z-20">
         <div className="flex flex-col md:flex-row gap-4">
           <form onSubmit={handleSearch} className="flex-1">
             <div className="relative">
@@ -254,6 +272,7 @@ export default function Users() {
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search by name or email..."
                 className="input pl-10"
+                data-search-input
               />
               <svg
                 className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-neutral-400 dark:text-neutral-500"
@@ -296,9 +315,7 @@ export default function Users() {
 
       {/* Users Table */}
       {loading ? (
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black dark:border-white"></div>
-        </div>
+        <SkeletonTable rows={6} cols={5} />
       ) : users.length === 0 ? (
         <div className="card text-center py-12">
           <p className="text-neutral-500 dark:text-neutral-400">No users found</p>
@@ -375,11 +392,11 @@ export default function Users() {
             <table className="w-full">
               <thead className="bg-neutral-50 dark:bg-neutral-700">
                 <tr className="text-left text-sm text-neutral-500 dark:text-neutral-400">
-                  <th className="px-6 py-4 font-medium">Name</th>
-                  <th className="px-6 py-4 font-medium">Email</th>
-                  <th className="px-6 py-4 font-medium">Role</th>
+                  <SortableHeader label="Name" field="name" currentSort={sortBy} currentDir={sortDir} onSort={handleSort} className="px-6 py-4 font-medium" />
+                  <SortableHeader label="Email" field="email" currentSort={sortBy} currentDir={sortDir} onSort={handleSort} className="px-6 py-4 font-medium" />
+                  <SortableHeader label="Role" field="role" currentSort={sortBy} currentDir={sortDir} onSort={handleSort} className="px-6 py-4 font-medium" />
                   <th className="px-6 py-4 font-medium">Scope</th>
-                  <th className="px-6 py-4 font-medium">Created</th>
+                  <SortableHeader label="Created" field="createdAt" currentSort={sortBy} currentDir={sortDir} onSort={handleSort} className="px-6 py-4 font-medium" />
                   <th className="px-6 py-4 font-medium"></th>
                 </tr>
               </thead>
