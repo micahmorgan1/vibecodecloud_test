@@ -5,6 +5,8 @@ import { useAuth } from '../context/AuthContext';
 import { isValidEmail, isValidPhone } from '../utils/validation';
 import Avatar from '../components/Avatar';
 import DocumentViewer from '../components/DocumentViewer';
+import RichTextEditor from '../components/RichTextEditor';
+import { renderContent } from '../utils/formatText';
 
 interface Review {
   id: string;
@@ -843,7 +845,7 @@ export default function ApplicantDetail() {
                     </div>
 
                     {review.comments && (
-                      <p className="text-neutral-600 dark:text-neutral-400 text-sm">{review.comments}</p>
+                      <div className="text-neutral-600 dark:text-neutral-400 text-sm prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: renderContent(review.comments) }} />
                     )}
                   </div>
                 ))}
@@ -1425,11 +1427,11 @@ function ReviewModal({
           {/* Comments */}
           <div>
             <label className="label">Comments</label>
-            <textarea
+            <RichTextEditor
               value={formData.comments}
-              onChange={(e) => setFormData({ ...formData, comments: e.target.value })}
-              className="input min-h-[100px]"
+              onChange={(html) => setFormData({ ...formData, comments: html })}
               placeholder="Share your thoughts on this candidate..."
+              minHeight="100px"
             />
           </div>
 

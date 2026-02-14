@@ -192,29 +192,12 @@ export default function DocumentViewer({ url, title, onClose }: DocumentViewerPr
             </a>
           </div>
         ) : isPdf(ext) ? (
-          <object
-            data={url}
-            type="application/pdf"
-            className="w-full rounded bg-white"
-            style={{ height: 'calc(100vh - 72px)' }}
-          >
-            <div className="flex flex-col items-center justify-center h-64 text-center">
-              <p className="text-neutral-400 text-lg font-display uppercase tracking-wide mb-2">
-                PDF preview not supported
-              </p>
-              <p className="text-neutral-500 text-sm mb-4">
-                Your browser cannot display this PDF inline.
-              </p>
-              <div className="flex gap-3">
-                <a href={url} target="_blank" rel="noopener noreferrer" className="btn btn-primary">
-                  Open in New Tab
-                </a>
-                <a href={url} download className="btn btn-secondary">
-                  Download
-                </a>
-              </div>
-            </div>
-          </object>
+          <iframe
+            src={url}
+            className="w-full rounded"
+            style={{ height: 'calc(100vh - 72px)', border: 'none' }}
+            title={title}
+          />
         ) : isDocx(ext) ? (
           <div
             className="bg-white rounded shadow-lg w-full max-w-4xl mx-auto"

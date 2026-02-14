@@ -403,7 +403,7 @@ export default function LiveInterview() {
                       </p>
                     )}
                     {review.comments && (
-                      <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-1 line-clamp-2">{review.comments}</p>
+                      <div className="text-xs text-neutral-600 dark:text-neutral-400 mt-1 line-clamp-2 prose prose-xs dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: renderContent(review.comments) }} />
                     )}
                   </div>
                 ))}
